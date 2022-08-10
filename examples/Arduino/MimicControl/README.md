@@ -2,13 +2,13 @@ Mimic Control Arduino Example
 ==========================================
 [![Web-site](https://www.basecamelectronics.com/img/logo.basecam.onwhite.png)](https://www.basecamelectronics.com)
 
-This is example sketch for Arduino, that shows how to control
+This is an example sketch for Arduino, that shows how to control
 SimpleBGC-driven gimbal via Serial API. API specs are available at
 [SerialAPI](http://www.basecamelectronics.com/serialapi/)
 
-*Demo: gimbal will repeat motion of the remote controller build of 2 potentiometers and 2 push-buttons:*
+*Demo: gimbal will repeat the motion of the remote controller build of 2 potentiometers and 2 push-buttons:*
 
-- "Menu" button for gimbal controller
+- "Menu" button for the gimbal controller
 
 - "Rec" button for camera control via PWM->IR converter
 
@@ -16,7 +16,7 @@ SimpleBGC-driven gimbal via Serial API. API specs are available at
 
 - Arduino Mega 2560
 
-- 2 potentimeters (or encoders with analog output), connect GND, +3.3 V to the side outputs of potentiometers
+- 2 potentiometers (or encoders with analog output), connect GND, +3.3 V to the side outputs of potentiometers
 
 - 2 Buttons (Menu, Rec)
 
@@ -26,6 +26,6 @@ SimpleBGC-driven gimbal via Serial API. API specs are available at
 
 - RC SPEED should be set high enough to track fast movements of a controller's handle (100..150)
 
-- Acceleration limit is set to a value that gimbal can process without loosing sync in motors
+- Acceleration limit is set to a value that the gimbal can process without losing sync in motors
 
-*Note: Project has been builded with PlatformIO framework*
+*Note: Project has been built with PlatformIO framework*

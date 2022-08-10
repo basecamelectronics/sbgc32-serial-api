@@ -9,13 +9,13 @@ For more comfortable interaction with the SBGC32 devices repository contents pos
 driver algorithms are presented. General source files are placed in the /sources folder. Also, you may include the
 pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS systems.
 
-Pay attention to the **User Defined Parameter** constants, contains in the core.h file. Uncomment the SYS_BIG_ENDIAN constant
+Pay attention to the **User Defined Parameter** constants, contained in the core.h file. Uncomment the SYS_BIG_ENDIAN constant
 if your general processing system have a BIG ENDIAN memory type. Uncomment the SBGC_DEBUG_MODE constant if you need to display
 debug information. Reducing the MAX_BUFF_SIZE you also reduce the load on the stack (256 byte is a optimal value).
 
 ### Header library files involve: ###
 
-- Macros and constant
+- Macros and constants
 
 - Auxiliary flags and their functions
 
@@ -35,7 +35,7 @@ Requirements
 To fully use the functions of this library, it is recommended to use a device with at least **2 KB RAM**
 and at least **16 KB FLASH**.
 
-File Descriptions
+Files Description
 -----------------
 ### Source files ###
 
@@ -196,34 +196,34 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 *Notes:*
 
-*- Default speed of SimpleBGC32 devices is a 115200 bits per second.*
+*- The default speed of SimpleBGC32 devices is 115200 bits per second.*
 
 *- Initialize the **DebugData** functions with **NULL** if you don't want to use debug mode;*
 
-*- If you are connect SBGC32 through UART, RX pin must be pulled down;*
+*- If you are connecting SBGC32 through UART, the RX pin must be pulled up;*
 
-*- If you want to create your own gimbal communication driver, create it based on the necessary functions defined in the GeneralSBGC_t structure;*
+*- If you want to create your gimbal communication driver, create it based on the necessary functions defined in the GeneralSBGC_t structure;*
 
-*- Starting to work with the gimbal using Arduino don't forget check the **SERIAL_TX_BUFFER_SIZE** and **SERIAL_RX_BUFFER_SIZE** constants.
-Strongly recommend increase this value to 256;*
+*- Starting to work with the gimbal using Arduino don't forget to check the **SERIAL_TX_BUFFER_SIZE** and **SERIAL_RX_BUFFER_SIZE** constants.
+Strongly recommend increasing this value to 256;*
 
-*- When SBGC32 device connected with Linux device you need to set **choose mode** for this connection to **read, write and executable** 
+*- When SBGC32 device connected with Linux device you need to set **choose mode** for this connection to **read, write, and executable** 
 using the terminal (sudo chmod a+rwx /dev/ttyUSBx);*
 
 *- The communication driver for STM32 devices supports HAL and LL libraries;*
 
 ### Data handling ###
 
-Each function beginning with SBGC32_... communicates with the SBGC32 device in a different ways.
+Each function beginning with SBGC32_... communicates with the SBGC32 device in a different way.
 
-- Transmit functions required a preparing data in the target writable structures or other arguments. Such structures are
-marked by **const** key word. Besides, for most -TX functions after sending data, the SBGC32 device sends a confirmation
-command processed automatically in the functions body.
+- Transmit functions required preparing data in the target writable structures or other arguments. Such structures are
+marked by the **const** keyword. Besides, for most -TX functions after sending data, the SBGC32 device sends a confirmation
+command processed automatically in the function's body.
 
-- Request functions require partial filling of the fields of the target structure or nothing at all. Received data is stores
-in this structure. Confirmation of correct data reception is a returned status-value of this functions.
+- Request functions require partial filling of the fields of the target structure or nothing at all. Received data is stored
+in this structure. Confirmation of correct data reception is a returned status value of this function.
 
 - For manual data management use the **SBGC32_TX** and **SBGC32_RX** functions.
 
-The rest of the details are contained in the descriptions inside the library itself. Also you can generate project documentation
+The rest of the details are contained in the descriptions inside the library itself. Also, you can generate project documentation
 using doxyfile in the /doxygen folder.

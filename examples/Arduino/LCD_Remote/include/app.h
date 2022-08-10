@@ -17,7 +17,7 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *	This is example sketch for Arduino, that shows how to control
+ *	This is an example sketch for Arduino, that shows how to control
  *	SimpleBGC-driven gimbal via Serial API. API specs are available at
  *	[SerialAPI](http://www.basecamelectronics.com/serialapi/)
  *
@@ -32,11 +32,11 @@
  *				(Left/Right arrow or encoder Push-button to scroll),
  *				change their values by the rotary encoder and save
  *				to EEPROM by pressing an encoder button
- *		## Trim ROLL axis with 0.1 degree precision
- *		## Use analog joystick to control PITCH and YAW axis
+ *		## Trim ROLL axis with 0.1-degree precision
+ *		## Use an analog joystick to control the PITCH and YAW axis
  *		   (passed to SBGC controller as regular RC channels)
- *		## Joystick push-button acts as "Menu" button
- *		## Navigation "select" button turns motors ON/OFF
+ *		## The joystick push-button acts as a "Menu" button
+ *		## The navigation "select" button turns motors ON/OFF
  *
  *	# Hardware:
  *		## Arduino Mega 2560
@@ -50,7 +50,8 @@
  *	# Gimbal settings:
  *		## Firmware version 2.61 or above
  *		## RC control in SPEED or ANGLE mode
- *		## Assign desired actions to menu button in the "Service" tab
+ *		## Assign desired actions to the "Menu" button
+ *		   in the "Service" tab
  *	____________________________________________________________________
  */
 
