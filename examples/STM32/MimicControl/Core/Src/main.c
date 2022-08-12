@@ -263,7 +263,7 @@ int main(void)
 			InputsInfo.menuBtn = BTN_RELEASED;
 
 
-		/* Make a constant sampling time by inserting delay 1 ms */
+		/* Make a constant sampling time by inserting a delay of 1 ms */
 		while ((SBGC_1.GetTimeFunc(SBGC_1.Drv) - currentTime) < 1);
 
 		/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

@@ -73,7 +73,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *										   Constants
  */
 /**	@addtogroup	Adjvar
  * 	@{
@@ -232,7 +232,7 @@ typedef struct
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *		Adjustable Variable Configurations Structure
+ *		Adjustable Variable Configuration Structures
  */
 /**	@addtogroup	Adjvar_Cfg
  * 	@{
@@ -291,7 +291,7 @@ typedef struct __PACKED__
  * 	@{
  */
 /**	@brief	Structure type for work with
- *  		AdjVarsState parameters.
+ *  		AdjVarsState parameters
  *
  *	@note	<b><i>Parameters:</i></b>
  *

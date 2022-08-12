@@ -21,7 +21,7 @@
 //    S = 0; No shift 
 //
 // Note, however, that resetting the Arduino doesn't reset the LCD, so we
-// can't assume that it's in that state when a sketch starts (and the
+// cannot assume that it's in that state when a sketch starts (and the
 // LiquidCrystal constructor is called).
 
 LiquidCrystal::LiquidCrystal(uint8_t rs, uint8_t rw, uint8_t enable,
@@ -83,7 +83,7 @@ void LiquidCrystal::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
 
   setRowOffsets(0x00, 0x40, 0x00 + cols, 0x40 + cols);  
 
-  // for some 1 line displays you can select a 10 pixel high font
+  // for some 1 line displays, you can select a 10-pixel high font
   if ((dotsize != LCD_5x8DOTS) && (lines == 1)) {
     _displayfunction |= LCD_5x10DOTS;
   }
@@ -102,8 +102,8 @@ void LiquidCrystal::begin(uint8_t cols, uint8_t lines, uint8_t dotsize) {
    } 
 
   // SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
-  // according to datasheet, we need at least 40 ms after power rises above 2.7 V
-  // before sending commands. Arduino can turn on way before 4.5 V so we'll wait 50
+  // according to the datasheet, we need at least 40 ms after power rises above 2.7 V
+  // before sending commands. Arduino can turn on way before 4.5 V so we'll wait for 50 ms
   delayMicroseconds(50000); 
   // Now we pull both RS and R/W low to begin commands
   digitalWrite(_rs_pin, LOW);

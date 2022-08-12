@@ -49,7 +49,7 @@ void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_Remote
 }
 
 
-/* De-bounce button: it should keep it's state for a given period
+/* De-bounce button: it should keep its state for a given period
    of time, specified in the BTN_BOUNCE_THRESHOLD_MS returns 1
    if LCD_RemoteGeneral->....triggerState is changed. */
 ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDirection_t newState)

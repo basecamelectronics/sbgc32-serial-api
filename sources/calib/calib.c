@@ -73,7 +73,7 @@
 /**	@addtogroup	Calib_IMU
  * 	@{
  */
-/**	@brief	Calibrate accelerometer
+/**	@brief	Calibrates accelerometer
  *
  *	@note	Starts regular calibration of currently active IMU,
  *			selected by the @ref SBGC32_SelectIMU_3 function
@@ -89,7 +89,7 @@ TxRxStatus_t SBGC32_CalibACC (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Calibrate gyroscope
+/**	@brief	Calibrates gyroscope
  *
  *	@note	Starts regular calibration of currently active IMU,
  *			selected by the @ref SBGC32_SelectIMU_3 function
@@ -105,7 +105,7 @@ TxRxStatus_t SBGC32_CalibGyro (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Calibrate magnetometer
+/**	@brief	Calibrates magnetometer
  *
  *	@note	Starts regular calibration of currently active IMU,
  *			selected by the @ref SBGC32_SelectIMU_3 function
@@ -153,7 +153,7 @@ TxRxStatus_t SBGC32_RequestCalibInfo (GeneralSBGC_t *generalSBGC, CalibInfo_t *c
 /**	@addtogroup	Calib_Encoders_Offset
  * 	@{
  */
-/**	@brief	Calibrate offset of encoders
+/**	@brief	Calibrates offset of encoders
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -166,7 +166,7 @@ TxRxStatus_t SBGC32_CalibEncodersOffset (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Start field offset calibration of encoders
+/**	@brief	Starts field offset calibration of encoders
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -179,7 +179,7 @@ TxRxStatus_t SBGC32_CalibEncodersFldOffset (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Start field offset calibration of encoders
+/**	@brief	Starts field offset calibration of encoders
  * 			in extended format
  *
  * 	@param 	*generalSBGC - serial connection descriptor
@@ -206,7 +206,7 @@ TxRxStatus_t SBGC32_CalibEncodersFldOffsetExt (GeneralSBGC_t *generalSBGC, const
 /**	@addtogroup	Calib_Other
  * 	@{
  */
-/**	@brief	Calibrate EXT_FC gains (MainParams3_t.ExtFC_Gain)
+/**	@brief	Calibrates EXT_FC gains (MainParams3_t.ExtFC_Gain)
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -219,7 +219,7 @@ TxRxStatus_t SBGC32_CalibExtGain (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Calibrate poles and direction
+/**	@brief	Calibrates poles and direction
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -232,7 +232,7 @@ TxRxStatus_t SBGC32_CalibPoles (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Calibrate follow offset
+/**	@brief	Calibrates follow offset
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -245,7 +245,7 @@ TxRxStatus_t SBGC32_CalibOffset (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Calibrate internal voltage sensor
+/**	@brief	Calibrates internal voltage sensor
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  * 	@param	voltage - reference voltage value
@@ -264,7 +264,7 @@ TxRxStatus_t SBGC32_CalibBat (GeneralSBGC_t *generalSBGC, ui16 voltage, Confirma
 }
 
 
-/**	@brief	Start the calibration of sensor misalignment correction
+/**	@brief	Starts the calibration of sensor misalignment correction
  *
  *	@attention	Firmware: 2.61+
  *

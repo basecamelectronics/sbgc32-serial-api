@@ -79,10 +79,10 @@ static		LCD_RemoteGeneral_t		LCD_RemoteGeneral;
 			InputsInfo_t			InputsInfo;
 
 
-/* A set of adjustable variables that can be changed by encoder knob.
+/* A set of adjustable variables that can be changed by the encoder knob.
    You may add any variables listed in the AdjVarsList_t
-   Be careful, this structure is placed in to the RAM, that
-   may be a problem with the low memory for boards */
+   Be careful, this structure is placed into the RAM, which
+   may be a problem with the low memory of boards */
 static AdjVarsGeneral_t AdjVarsGeneral [] =
 {
 	  {	ADJ_VAR_BLOCK(ADJ_VAR_RC_TRIM_YAW), -127, 127, _SIGNED_CHAR_, 5, NOT_CHANGED, SAVED

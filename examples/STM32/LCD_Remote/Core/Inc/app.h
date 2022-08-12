@@ -162,7 +162,7 @@ extern 		"C" {
  */
 /*  - - - - - User Defined Parameters - - - - - - */
 /* BLUETOOTH_HC05. Be sure to use the HC-05 module with a KEY pin. This pin should be pulled to 3.3V
- * If you are using the Bluetooth module, set the SBGC_RX_WAITING to at least 500
+ * If you are using the Bluetooth module, set the SBGC_RX_WAITING to at least 500 ms
  */
 #define		BLUETOOTH_CONNECTION
 

@@ -677,7 +677,7 @@ void FromLittleEndian (void *value, ui8 *payload, ui8 size)
 }
 
 
-/**	@brief	Swap bytes by address
+/**	@brief	Swaps bytes by address
  *
  *	@param	*p1 - pointer to first byte
  *	@param	*p2 - pointer to second byte

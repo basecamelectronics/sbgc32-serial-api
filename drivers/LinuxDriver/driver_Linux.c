@@ -138,7 +138,7 @@ ui16 GetAvailableBytes (void *Driver)
  *	@param	*Driver - main hardware driver object
  *	@param	*data - data buffer
  *
- *	@return	Receipt status (0 - receiving in progress | 1 - receive completed)
+ *	@return	Receipt status (0 - receiving in progress | 1 - received)
  */
 ui8 PortReceiveByte (void *Driver, ui8 *data)
 {

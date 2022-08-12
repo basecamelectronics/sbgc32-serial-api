@@ -22,9 +22,9 @@ static		LCD_RemoteGeneral_t		LCD_RemoteGeneral;
 extern 		LiquidCrystal			lcd;
 
 
-/* A set of adjustable variables that can be changed by encoder knob.
+/* A set of adjustable variables that can be changed by the encoder knob.
    You may add any variables listed in the AdjVarsList_t
-   Be careful, this structure is placed in to the RAM, that
+   Be careful, this structure is placed into the RAM, which
    may be a problem with the low memory for boards */
 static AdjVarsGeneral_t AdjVarsGeneral [] =
 {
@@ -72,7 +72,7 @@ void setup()
 	pinMode(ENCODER_B_PIN, INPUT);
 	digitalWrite(ENCODER_A_PIN, 1);
 	digitalWrite(ENCODER_B_PIN, 1);
-	attachInterrupt(1, KnobEncoderCallBackHandler, FALLING);  /* Interrupts: numbers 0 (on digital pin 2) and 1 (on digital pin 3 */
+	attachInterrupt(1, KnobEncoderCallBackHandler, FALLING);  // Interrupts: numbers 0 (on digital pin 2) and 1 (on digital pin 3) 
 
 	
   	/*  - - - - - - - - SBGC Hardware-Software Init - - - - - - - - - */

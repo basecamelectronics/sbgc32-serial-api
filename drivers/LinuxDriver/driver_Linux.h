@@ -84,7 +84,7 @@ extern 		"C" {
 /*  - - - - - User Defined Parameters - - - - - - */
 /*		   ### !!! ATTENTION !!! ###		  */
 /* 		 sudo chmod a+rwx /dev/ttyUSB0 		  */
-#define 	SBGC_SERIAL_PORT    	"/dev/ttyUSB0"	/*!<  Path to connected SBGC32 device												*/
+#define 	SBGC_SERIAL_PORT    	"/dev/ttyUSB0"	/*!<  Path to a connected SBGC32 device												*/
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

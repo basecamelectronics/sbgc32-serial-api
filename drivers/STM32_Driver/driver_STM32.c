@@ -93,7 +93,7 @@ void TimerDRV_CallBack (void *Driver)
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *															Tx Functions
  */
-/**	@brief	Sends an amount of data to Tx ring buffer
+/**	@brief	Sends an amount of data to the Tx ring buffer
  *
  *	@param	*Driver - main hardware driver object
  *	@param	*data - transferred data
@@ -213,7 +213,7 @@ ui16 GetAvailableBytes (void *Driver)
 }
 
 
-/**	@brief	Receives byte from Rx ring buffer
+/**	@brief	Receives byte from the Rx ring buffer
  *
  *	@param	*Driver - main hardware driver object
  *	@param	*data - data buffer
