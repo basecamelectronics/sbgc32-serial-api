@@ -86,7 +86,7 @@ extern 		"C" {
 #define 	DEGREE_TO_ANGLE(val) 	((val) * DEGREE_ANGLE_SCALE)
 #define 	ANGLE_TO_DEGREE(val) 	((val) * ANGLE_DEGREE_SCALE)
 
-/*	The same, optimized for integers */
+/*	Same thing, optimized for integers */
 #define 	DEGREE_TO_ANGLE_INT(val)\
 									((i32)(val) * ANGLE_FULL_TURN / 360)
 #define		DEGREE_01_TO_ANGLE_INT(val)\

@@ -58,7 +58,7 @@ TxRxStatus_t SBGC32_WriteRegBuffI2C (GeneralSBGC_t *generalSBGC, const I2C_RegBu
 }
 
 
-/**	@brief	Requests reading from any device connected to I2C line
+/**	@brief	Requests reading from any device connected to an I2C line
  *
  *	@note	Must be set:\n
  *			I2C_RegBuff_t.deviceAddr \n
@@ -91,7 +91,7 @@ TxRxStatus_t SBGC32_ReadRegBuffI2C (GeneralSBGC_t *generalSBGC, I2C_RegBuff_t *I
 /**	@addtogroup	EEPROM_Data
  * 	@{
  */
-/**	@brief	Writes a block of data to EEPROM to specified address
+/**	@brief	Writes a block of data to EEPROM to a specified address
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	addr - address for writing. Should be aligned to 64
@@ -190,7 +190,7 @@ TxRxStatus_t SBGC32_ReadExternalData (GeneralSBGC_t *generalSBGC, i8 *data)
 /**	@addtogroup	EEPROM_File
  * 	@{
  */
-/**	@brief	Writes file to internal filesystem
+/**	@brief	Writes the file to the internal filesystem
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*writeReadFile - structure with written file
@@ -212,7 +212,7 @@ TxRxStatus_t SBGC32_WriteFile (GeneralSBGC_t *generalSBGC, const WriteReadFile_t
 }
 
 
-/**	@brief	Read file from internal filesystem
+/**	@brief	Read the file from internal filesystem
  *
  *	@note	Must be set:\n
  *			WriteReadFile_t.fileID \n

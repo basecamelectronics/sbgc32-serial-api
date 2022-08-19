@@ -149,7 +149,7 @@
 /**	@addtogroup	Ext_IMU_Debug_Info
  * 	@{
  */
-/**	@brief	Debug information for the external IMU sensor
+/**	@brief	Debugs information for the external IMU sensor
  *
  *	@attention	Firmware: 2.66+
  *
@@ -242,7 +242,7 @@ TxRxStatus_t SBGC32_SendCmdToExtIMU (GeneralSBGC_t *generalSBGC, SerialCommand_t
 /**	@addtogroup	Gyro_Correction
  * 	@{
  */
-/**	@brief	Correct the gyroscope sensor's zero bias manually
+/**	@brief	Corrects the gyroscope sensor's zero bias manually
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*gyroCorrection - structure with written
@@ -304,7 +304,7 @@ TxRxStatus_t SBGC32_CallAHRS_Helper (GeneralSBGC_t *generalSBGC, AHRS_Helper_t *
 /**	@addtogroup	Helper_Data
  * 	@{
  */
-/**	@brief	Provide helper data for AHRS system
+/**	@brief	Provides helper data for the AHRS system
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*helperData - prepared helper data structure
@@ -322,7 +322,7 @@ TxRxStatus_t SBGC32_ProvideHelperData (GeneralSBGC_t *generalSBGC, HelperData_t 
 }
 
 
-/**	@brief	Provide extended helper data for AHRS system
+/**	@brief	Provides extended helper data for the AHRS system
  *
  *	@attention	Firmware: 2.60+
  *

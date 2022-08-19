@@ -477,7 +477,7 @@ TxRxStatus_t SBGC32_WriteParams3 (GeneralSBGC_t *generalSBGC, const MainParams3_
 }
 
 
-/**	@brief	Read system configuration part 1
+/**	@brief	Reads system configuration part 1
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParams3 - structure for storing profile parameters
@@ -522,7 +522,7 @@ TxRxStatus_t SBGC32_WriteParamsExt (GeneralSBGC_t *generalSBGC, const MainParams
 }
 
 
-/**	@brief	Read system configuration part 2
+/**	@brief	Reads system configuration part 2
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParamsExt - structure for storing profile parameters
@@ -567,7 +567,7 @@ TxRxStatus_t SBGC32_WriteParamsExt2 (GeneralSBGC_t *generalSBGC, const MainParam
 }
 
 
-/**	@brief	Read system configuration part 3
+/**	@brief	Reads system configuration part 3
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParamsExt2 - structure for storing profile parameters
@@ -617,7 +617,7 @@ TxRxStatus_t SBGC32_WriteParamsExt3 (GeneralSBGC_t *generalSBGC, const MainParam
 }
 
 
-/**	@brief	Read system configuration part 4
+/**	@brief	Reads system configuration part 4
  *
  *	@attention	Firmware: 2.66+
  *

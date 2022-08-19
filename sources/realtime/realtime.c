@@ -210,7 +210,7 @@
 /**	@brief	Register or update data stream
  *
  *	@note	Firmware: 2.60+\n
- *			A commands sent by the controller with
+ *			Commands sent by the controller with
  *			the fixed rate without request
  *
  *	@note	Firmware: 2.65+\n
@@ -377,7 +377,7 @@ TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealT
 /**	@addtogroup	Realtime_Data_3_4
  * 	@{
  */
-/** @brief	Receive real-time data
+/** @brief	Receives real-time data
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  * 	@param 	*realTimeData - structure for storing real-time data
@@ -397,7 +397,7 @@ TxRxStatus_t SBGC32_ReadRealTimeData3 (GeneralSBGC_t *generalSBGC, RealTimeData_
 }
 
 
-/**	@brief	Receive extended version of real-time data
+/**	@brief	Receives extended version of real-time data
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  * 	@param 	*realTimeData - structure for storing real-time data
@@ -421,7 +421,7 @@ TxRxStatus_t SBGC32_ReadRealTimeData4 (GeneralSBGC_t *generalSBGC, RealTimeData_
 /**	@addtogroup	Get_Angles
  * 	@{
  */
-/** @brief	Get information about actual gimbal control state
+/** @brief	Get information about the actual gimbal control state
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  * 	@param 	*getAngles - structure for storing angles state
@@ -496,7 +496,7 @@ TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_I
 /**	@addtogroup	Debug_Var_3
  * 	@{
  */
-/**	@brief	Request information about debug variables
+/**	@brief	Requests information about debug variables
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*debugVars3 - structure to storing debug variables info
@@ -525,7 +525,7 @@ TxRxStatus_t SBGC32_RequestDebugVarInfo3 (GeneralSBGC_t *generalSBGC, DebugVars3
 }
 
 
-/**	@brief	Request values of debug variables
+/**	@brief	Requests values of debug variables
  *
  *	@attention	Before using need get information about debug variables
  *				through SBGC32_RequestDebugVarInfo3 function

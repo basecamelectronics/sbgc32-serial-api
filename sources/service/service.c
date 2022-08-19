@@ -214,7 +214,7 @@
 /**	@addtogroup	Board_Info
  * 	@{
  */
-/**	@brief	Read version and board information
+/**	@brief	Reads version and board information
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*boardInfo - structure storing board information
@@ -235,7 +235,7 @@ TxRxStatus_t SBGC32_ReadBoardInfo (GeneralSBGC_t *generalSBGC, BoardInfo_t *boar
 }
 
 
-/**	@brief	Read additional board information
+/**	@brief	Reads additional board information
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*boardInfo3 - structure storing additional board information
@@ -377,7 +377,7 @@ TxRxStatus_t SBGC32_SetMotorsOFF (GeneralSBGC_t *generalSBGC, MotorsMode_t mode,
 /**	@addtogroup	Boot_Mode
  * 	@{
  */
-/**	@brief	Enter bootloader mode to upload firmware
+/**	@brief	Enters bootloader mode to upload firmware
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *
@@ -390,7 +390,7 @@ TxRxStatus_t SBGC32_SetBootMode (GeneralSBGC_t *generalSBGC)
 }
 
 
-/**	@brief	Enter bootloader mode to upload firmware
+/**	@brief	Enters bootloader mode to upload firmware
  * 			in extended format
  *
  * 	@param 	*generalSBGC - serial connection descriptor
@@ -480,7 +480,7 @@ void SBGC32_ParseScriptDebugInfoCmd (SerialCommand_t *cmd, ScriptDebugInfo_t *sc
 /**	@addtogroup	State_Vars
  * 	@{
  */
-/**	@brief	Write system persistent state variables, cumulative
+/**	@brief	Writes system persistent state variables, cumulative
  * 			statistics and maintenance data
  *
  * 	@attention	Firmware: 2.68b7+ (“Extended” family only)

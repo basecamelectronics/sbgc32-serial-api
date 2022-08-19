@@ -475,7 +475,7 @@ typedef struct
 							rxTimeout,				/*!<  The value of the maximum timeout for receiving a SerialCommand				*/
 							txrxTimeout;			/*!<  The maximum timeout value for receiving a response to a SerialCommand request	*/
 
-	/* Private variables */							// 	  Values not allowed to be manually modified by the user!
+	/* Private variables */							// 	  Values are not allowed to be manually modified by the user!
 	ui16	_txErrorsCount;							/*!<  Counter of unsuccessful attempts to send SerialCommands						*/
 	ui16	_rxErrorsCount;							/*!<  Parser error counter when receiving a SerialCommands							*/
 
