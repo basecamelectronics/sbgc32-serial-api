@@ -73,9 +73,9 @@ int main ()
     Control.AxisC[PITCH].speed = 500;
     Control.AxisC[YAW].speed = 500;
 
-    // SBGC32_Reset(&SBGC_1, RF_RESET_WITH_RESTORING_STATES, 500);
-    // SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_RESET);
-    // sleep(5);
+    /* SBGC32_Reset(&SBGC_1, RF_RESET_WITH_RESTORING_STATES, 500);
+    SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_RESET);
+    sleep(5); */
 
     SBGC32_ControlConfig(&SBGC_1, &ControlConfig, &Confirm);
 
@@ -104,51 +104,51 @@ TxRxStatus_t PrintBoardParameters (GeneralSBGC_t *generalSBGC, Profile_t slot)
     FormatBoardVersion(BoardInfo.boardVer, boardVersionStr);
     FormatFirmwareVersion(BoardInfo.firmwareVer, firmwareVersionStr);
 
-    PrintMessage(generalSBGC, TEXT_SIZE_("Board Version: "));
+    PrintMessage(generalSBGC, TEXT_SIZE_("Board Version:"));
     PrintMessage(generalSBGC, TEXT_SIZE_(boardVersionStr));
     PrintMessage(generalSBGC, TEXT_SIZE_(" \n"));
-    PrintMessage(generalSBGC, TEXT_SIZE_("Firmware Version: "));
+    PrintMessage(generalSBGC, TEXT_SIZE_("Firmware Version:"));
     PrintMessage(generalSBGC, TEXT_SIZE_(firmwareVersionStr));
     PrintMessage(generalSBGC, TEXT_SIZE_(" \n"));
 
-    PrintStructElement(generalSBGC, BoardInfo3.flashSize, "Flash Size =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &BoardInfo3.flashSize, "Flash Size =", _UNSIGNED_CHAR_);
 
-    PrintStructElement(generalSBGC, MainParams3.profileID + 1, "Current profile #", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.profileID + 1, "Current profile #", _UNSIGNED_CHAR_);
 
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[ROLL].p, "Roll P =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[ROLL].i, "Roll I =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[ROLL].d, "Roll D =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[PITCH].p, "Pitch P =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[PITCH].i, "Pitch I =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[PITCH].d, "Pitch D =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[YAW].p, "Yaw P =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[YAW].i, "Yaw I =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisCMP3[YAW].d, "Yaw D =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.ACC_LimiterAll, "ACC Limiter all = ", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.AxisRC_MP3[ROLL].RC_MaxAngle, "RC Max Angle =", _SIGNED_SHORT_);
-    PrintStructElement(generalSBGC, MainParams3.AxisRC_MP3[YAW].RC_MinAngle, "RC Min Angle =", _SIGNED_SHORT_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapROLL, "RC Map ROLL =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapPITCH, "RC_MapPITCH =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapYAW, "RC_MapYAW =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapCmd, "RC_MapCmd =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapFC_ROLL, "RC_MapFC_ROLL =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParams3.RC_MapFC_PITCH, "RC_MapFC_PITCH =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[ROLL].p, "Roll P =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[ROLL].i, "Roll I =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[ROLL].d, "Roll D =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[PITCH].p, "Pitch P =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[PITCH].i, "Pitch I =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[PITCH].d, "Pitch D =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[YAW].p, "Yaw P =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[YAW].i, "Yaw I =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisCMP3[YAW].d, "Yaw D =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.ACC_LimiterAll, "ACC Limiter all = ", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisRC_MP3[ROLL].RC_MaxAngle, "RC Max Angle =", _SIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParams3.AxisRC_MP3[YAW].RC_MinAngle, "RC Min Angle =", _SIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapROLL, "RC Map ROLL =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapPITCH, "RC_MapPITCH =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapYAW, "RC_MapYAW =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapCmd, "RC_MapCmd =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapFC_ROLL, "RC_MapFC_ROLL =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParams3.RC_MapFC_PITCH, "RC_MapFC_PITCH =", _UNSIGNED_CHAR_);
 
-    PrintStructElement(generalSBGC, MainParamsExt.LPF_Freq[ROLL], "ROLL LPF Frequency =", _UNSIGNED_SHORT_);
-    PrintStructElement(generalSBGC, MainParamsExt.LPF_Freq[PITCH], "PITCH LPF Frequency =", _UNSIGNED_SHORT_);
-    PrintStructElement(generalSBGC, MainParamsExt.LPF_Freq[YAW], "YAW LPF Frequency =", _UNSIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParamsExt.LPF_Freq[ROLL], "ROLL LPF Frequency =", _UNSIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParamsExt.LPF_Freq[PITCH], "PITCH LPF Frequency =", _UNSIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParamsExt.LPF_Freq[YAW], "YAW LPF Frequency =", _UNSIGNED_SHORT_);
 
-    PrintStructElement(generalSBGC, MainParamsExt2.frameIMU_LPF_Freq, "Timelapse Time =", _UNSIGNED_CHAR_);
-    PrintStructElement(generalSBGC, MainParamsExt2.timelapseTime, "Timelapse Time =", _UNSIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParamsExt2.frameIMU_LPF_Freq, "Timelapse Time =", _UNSIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &MainParamsExt2.timelapseTime, "Timelapse Time =", _UNSIGNED_SHORT_);
 
-    PrintStructElement(generalSBGC, MainParamsExt3.motorStartupDelay, "Motor Startup Delay =", _UNSIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &MainParamsExt3.motorStartupDelay, "Motor Startup Delay =", _UNSIGNED_SHORT_);
 
     PrintMessage(generalSBGC, TEXT_SIZE_(" \n"));
-    PrintStructElement(generalSBGC, RealTimeData.frameCamAngle[ROLL], "Roll Current Angle =", _SIGNED_SHORT_);
-    PrintStructElement(generalSBGC, RealTimeData.frameCamAngle[PITCH], "Pitch Current Angle =", _SIGNED_SHORT_);
-    PrintStructElement(generalSBGC, RealTimeData.frameCamAngle[YAW], "Yaw Current Angle =", _SIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &RealTimeData.frameCamAngle[ROLL], "Roll Current Angle =", _SIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &RealTimeData.frameCamAngle[PITCH], "Pitch Current Angle =", _SIGNED_SHORT_);
+    PrintStructElement(generalSBGC, &RealTimeData.frameCamAngle[YAW], "Yaw Current Angle =", _SIGNED_SHORT_);
 
-    PrintStructElement(generalSBGC, RealTimeData.IMU_Temperature, "IMU Temperature =", _SIGNED_CHAR_);
+    PrintStructElement(generalSBGC, &RealTimeData.IMU_Temperature, "IMU Temperature =", _SIGNED_CHAR_);
 
     return generalSBGC->_ParserCurrentStatus;
 }

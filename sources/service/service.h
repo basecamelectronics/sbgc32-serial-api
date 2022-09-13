@@ -113,7 +113,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *										   Constants
  */
 #define		SERVO_OUT_DISABLED		-1
 #define 	MAX_MESSAGE_LENGTH		32

@@ -90,7 +90,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *										   Constants
  */
 /**	@addtogroup	EEPROM_External_Data
  * 	@{
@@ -200,7 +200,7 @@ typedef struct __PACKED__
 			pageOffset,								/*!<  Offset from the beginning, in pages. 1 page = 64 bytes						*/
 			maxSize;
 
-	i8		data [240];								/*!<  Payload data																	*/
+	ui8		data [240];								/*!<  Payload data																	*/
 	/* In case of errors */
 	ui8		errCode;								/*!<  See @ref ErrorCodes_t enumeration												*/
 

@@ -118,7 +118,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 #define     MAX_BUFF_SIZE           256				/*!<  Maximum buffer size for communication with SBGC32								*/
 
-#define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
+#define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32 for
 														  for the @ref SBGC32_DefaultInit function										*/
 #define		SBGC_RX_WAITING			300				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the @ref SBGC32_DefaultInit function										*/
@@ -169,38 +169,38 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 #define 	RC_UNDEF			 	-10000
 
-#define		BIT_0_SET				(1UL << 0)
-#define		BIT_1_SET				(1UL << 1)
-#define		BIT_2_SET				(1UL << 2)
-#define		BIT_3_SET				(1UL << 3)
-#define		BIT_4_SET				(1UL << 4)
-#define		BIT_5_SET				(1UL << 5)
-#define		BIT_6_SET				(1UL << 6)
-#define		BIT_7_SET				(1UL << 7)
-#define		BIT_8_SET				(1UL << 8)
-#define		BIT_9_SET				(1UL << 9)
-#define		BIT_10_SET				(1UL << 10)
-#define		BIT_11_SET				(1UL << 11)
-#define		BIT_12_SET				(1UL << 12)
-#define		BIT_13_SET				(1UL << 13)
-#define		BIT_14_SET				(1UL << 14)
-#define		BIT_15_SET				(1UL << 15)
-#define		BIT_16_SET				(1UL << 16)
-#define		BIT_17_SET				(1UL << 17)
-#define		BIT_18_SET				(1UL << 18)
-#define		BIT_19_SET				(1UL << 19)
-#define		BIT_20_SET				(1UL << 20)
-#define		BIT_21_SET				(1UL << 21)
-#define		BIT_22_SET				(1UL << 22)
-#define		BIT_23_SET				(1UL << 23)
-#define		BIT_24_SET				(1UL << 24)
-#define		BIT_25_SET				(1UL << 25)
-#define		BIT_26_SET				(1UL << 26)
-#define		BIT_27_SET				(1UL << 27)
-#define		BIT_28_SET				(1UL << 28)
-#define		BIT_29_SET				(1UL << 29)
-#define		BIT_30_SET				(1UL << 30)
-#define		BIT_31_SET				(1UL << 31)
+#define		BIT_0_SET				(1U << 0)
+#define		BIT_1_SET				(1U << 1)
+#define		BIT_2_SET				(1U << 2)
+#define		BIT_3_SET				(1U << 3)
+#define		BIT_4_SET				(1U << 4)
+#define		BIT_5_SET				(1U << 5)
+#define		BIT_6_SET				(1U << 6)
+#define		BIT_7_SET				(1U << 7)
+#define		BIT_8_SET				(1U << 8)
+#define		BIT_9_SET				(1U << 9)
+#define		BIT_10_SET				(1U << 10)
+#define		BIT_11_SET				(1U << 11)
+#define		BIT_12_SET				(1U << 12)
+#define		BIT_13_SET				(1U << 13)
+#define		BIT_14_SET				(1U << 14)
+#define		BIT_15_SET				(1U << 15)
+#define		BIT_16_SET				(1U << 16)
+#define		BIT_17_SET				(1U << 17)
+#define		BIT_18_SET				(1U << 18)
+#define		BIT_19_SET				(1U << 19)
+#define		BIT_20_SET				(1U << 20)
+#define		BIT_21_SET				(1U << 21)
+#define		BIT_22_SET				(1U << 22)
+#define		BIT_23_SET				(1U << 23)
+#define		BIT_24_SET				(1U << 24)
+#define		BIT_25_SET				(1U << 25)
+#define		BIT_26_SET				(1U << 26)
+#define		BIT_27_SET				(1U << 27)
+#define		BIT_28_SET				(1U << 28)
+#define		BIT_29_SET				(1U << 29)
+#define		BIT_30_SET				(1U << 30)
+#define		BIT_31_SET				(1U << 31)
 
 #define 	nameof(var)				#var
 #define		countof(arr)			(sizeof((arr)) / sizeof(*(arr)))
@@ -220,8 +220,8 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 									((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
 
 
-/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *										  Main SBGC Service Enumerations
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *					  Main SBGC Service Enumerations
  */
 /**	@addtogroup	Communication
  *	@{
@@ -448,8 +448,8 @@ typedef enum
  */
 
 
-/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											Main SBGC Service Structures
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *						Main SBGC Service Structures
  */
 /**	@addtogroup	General
  *	@{
@@ -1019,11 +1019,9 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
 /**	@addtogroup	Debug
  *	@{
  */
-#ifdef	SBGC_DEBUG_MODE
-	void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length);
-	void PrintStructElement (GeneralSBGC_t *generalSBGC, i32 data, char *str, VarTypes_t vType);
-	ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str);
-#endif
+void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length);
+void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, char *str, VarTypes_t vType);
+ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str);
 /**	@}
  */
 

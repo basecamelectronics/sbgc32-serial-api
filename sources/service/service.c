@@ -636,24 +636,25 @@ TxRxStatus_t SBGC32_PlayBeeper (GeneralSBGC_t *generalSBGC, const BeeperSettings
 }
 
 
-/**	@brief
+/**	@brief	Signs the user's message
  *
  *	@param	*generalSBGC - serial connection descriptor
- *	@param	signType -
- *	@param	*txMessage -
- *	@param	*rxMessage -
+ *	@param	signType - set of keys to be used
+ *	@param	*txMessage - the user's input message
+ *	@param	*rxMessage - signed message
  *
  *	@return Communication status
  */
 TxRxStatus_t SBGC32_SignMessage (GeneralSBGC_t *generalSBGC, ui8 signType, const char txMessage [MAX_MESSAGE_LENGTH], char rxMessage [MAX_MESSAGE_LENGTH])
 {
-	// TODO: Цифровая подпись сообщения ключем лицензии
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_SIGN_MESSAGE);
 	WriteByte(&cmd, signType);
 	WriteBuff(&cmd, txMessage, MAX_MESSAGE_LENGTH, PM_DEFAULT_8BIT);
-	SBGC32_TX_RX(generalSBGC, &cmd, CMD_SIGN_MESSAGE);
-	ReadBuff(&cmd, rxMessage, MAX_MESSAGE_LENGTH, PM_DEFAULT_8BIT);
+
+	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_SIGN_MESSAGE), "Sign Message:") == TX_RX_OK)
+		ReadBuff(&cmd, rxMessage, MAX_MESSAGE_LENGTH, PM_DEFAULT_8BIT);
+
 	return generalSBGC->_ParserCurrentStatus;
 }
 /**	@}

@@ -159,7 +159,7 @@ void UART_DRV_TxCallBack (void *Driver)
 	{
 		DISABLE_UART_CR1_TCIE(drv->uart);  // Disable transmission complete interrupts
 
-		/*  - - - - User Complete Transmit Handler - - - - */
+		/*  - - - - User Transmit-Complete Handler - - - - */
 
 		/* - - - - - - - - - - - - - - - - - - - - - - - - */
 	}
@@ -226,7 +226,7 @@ ui8 UartReceiveByte (void *Driver, ui8 *data)
 
 	if (drv->RxTail == drv->RxHead)
 	{
-		/* - - - - User Complete Receive Handler - - - - - */
+		/* - - - - User Receive-Complete Handler - - - - - */
 
 		/* - - - - - - - - - - - - - - - - - - - - - - - - */
 		return 1;
@@ -259,7 +259,7 @@ void UART_DRV_RxCallBack (void *Driver)
 
 		/* - - - - - - - - - - - - - - - - - - - - - - - - */
 
-		(void)READ_UART_BYTE(drv->uart);  // Prevents overflow error (USART_ISR_ORE)
+		(void)READ_UART_BYTE(drv->uart);  // Prevent overflow error (USART_ISR_ORE)
 
 		if (drv->RxOverflowFlag == 0)  // Set the overflow flag
 			drv->RxOverflowFlag = 1;

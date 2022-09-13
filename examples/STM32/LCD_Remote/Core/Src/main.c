@@ -163,11 +163,11 @@ int main(void)
 
 	#if ((defined BLUETOOTH_DO_SETUP) && (defined BLUETOOTH_CONNECTION))
 
-		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 1);
-		HAL_Delay(200);
+		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 1);  // The HC_05 EN pin became high level
+		DELAY_MS(200);
 		BT_MasterConnect(&SBGC_1);
-		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 0);
-		HAL_Delay(BLUETOOTH_CONNECT_WAITING * 1000);
+		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 0);  // The HC_05 EN pin became low level
+		DELAY_MS(BLUETOOTH_CONNECT_WAITING * 1000);
 
 	#endif
 
@@ -399,8 +399,8 @@ int main(void)
 		/* Request realtime data with the fixed rate */
 		if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.rtReqCmdTimeMs) > REALTIME_DATA_REQUEST_INTERAL_MS)
 		{
-			SBGC32_ReadRealTimeData4(&SBGC_1, &RealTimeData);
-			LCD_RemoteGeneral.rtReqCmdTimeMs = LCD_RemoteGeneral.currentTimeMs;
+			if (SBGC32_ReadRealTimeData4(&SBGC_1, &RealTimeData) == TX_RX_OK)
+				LCD_RemoteGeneral.rtReqCmdTimeMs = LCD_RemoteGeneral.currentTimeMs;
 		}
 
 

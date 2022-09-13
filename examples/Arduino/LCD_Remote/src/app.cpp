@@ -169,10 +169,13 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 
 
 /* Displays a NULL-terminated string */
-void LCD_DebugMessage (char *str, ui8 raw)
+void LCD_DebugMessage (ui8 raw, char *str, ui8 length)
 {
 	lcd.setCursor(0, raw);
-	ui8 pos = lcd.print(str);
+	ui8 pos = 0;
+	while (pos != length)
+		lcd.print(str[pos++]);
+
 	LCD_FillSpace(&pos, LCD_COLS);
 }
 
@@ -191,6 +194,81 @@ void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos)
 		lcd.print(' ');
 		(*cursor_pos)++;
 	}
+}
+
+
+ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug)
+{
+	delay(timeout);
+
+	ui8 size = 0;
+
+	while (!generalSBGC->RxFunc(generalSBGC->Drv, &buff[size]))
+	{
+		size++;
+	}
+
+	if (debug == TRUE__)
+	{
+		if (size != 0)
+		{
+			buff[size - 2] = '\0';
+			LCD_DebugMessage(1, TEXT_SIZE_((char*)buff));
+			delay(500);
+		}
+
+		else
+		{
+			LCD_DebugMessage(1, TEXT_SIZE_((char*)"NO ANSWER"));
+			delay(1000);
+		}
+	}
+
+	return size;
+}
+
+
+void BT_MasterConnect (GeneralSBGC_t *generalSBGC)
+{
+	ui8 buff [BLUETOOTH_BUF_SIZE];
+
+	LCD_DebugMessage(0, TEXT_SIZE_((char*)"BLUETOOTH INIT.."));
+
+	if (SBGC_SERIAL_SPEED != BLUETOOTH_BAUD)  // for SBGC_SERIAL_PORT.begin(SBGC_SERIAL_SPEED) initialization
+		SBGC_SERIAL_PORT.begin(BLUETOOTH_BAUD);
+
+	/* UART speed re-setting (optional) */
+	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"));
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"115200 SPEED..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
+
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"));  // Clear paired devices
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"RMAAD..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+PSWD=", strlen("AT+PSWD="));
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_PIN, strlen(BLUETOOTH_CLIENT_PIN));
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"PIN..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+ROLE=1\r\n", strlen("AT+ROLE=1\r\n"));  // Set 'master' mode
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"ROLE = MASTER..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+CMODE=0\r\n", strlen("AT+CMODE=0\r\n"));  // Connect only to fixed MAC address
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CMODE = 0..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+
+	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+INIT\r\n", strlen("AT+INIT\r\n"));  // Initialize 'SPP'
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"INIT SPP"));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
+
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+LINK=", strlen("AT+LINK="));
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_MAC_ADDR, strlen(BLUETOOTH_CLIENT_MAC_ADDR));
+	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);  // Connect to slave HC-05
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CONNECTION..."));
 }
 
 
@@ -223,9 +301,9 @@ void GetEncoderAngles (InputsInfo_t *inputsInfo)
 
 	ui16 count = 0;
     while (Wire.available())
-    {
+	{   /* prevent [-Wmisleading-indentation] */
         inputsInfo->I2C_Buff[count++] = Wire.read();
-    }
+	}
 
 	inputsInfo->FE_CurrentAngle = (((ui16)inputsInfo->I2C_Buff[0] << 6) & 0x3FC0) | ((ui16)inputsInfo->I2C_Buff[1] & 0x00C0);
 }

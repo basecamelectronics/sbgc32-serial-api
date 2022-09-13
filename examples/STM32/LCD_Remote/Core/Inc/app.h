@@ -128,6 +128,9 @@ extern 		"C" {
 	/*  - - - - - - - - - - - - - - - - - - - - - */
 
 	#define	__I2C_STRUCT		I2C_TypeDef *i2c
+
+	#define I2C_CLEAR_CR2(I2C)	(I2C)->CR2 &= ~((ui32)(I2C_CR2_SADD | I2C_CR2_HEAD10R |\
+								I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_RD_WRN));
 #endif
 
 /*				    ### GPIO ###				  */
@@ -176,7 +179,7 @@ extern 		"C" {
 
 #define		BLUETOOTH_BAUD				115200
 
-//#define		BLUETOOTH_DO_SETUP						// Configure BT module as master role and set PIN. May be done only once.
+//#define		BLUETOOTH_DO_SETUP						// Configure BT module as master role and set PIN. May be done only once
 #define		BLUETOOTH_BUF_SIZE			16			// Size of buffer for service answers from module
 
 #define		BLUETOOTH_CONNECT_WAITING	10			// Units: seconds
@@ -398,7 +401,7 @@ ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo);
 void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
 					RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
 void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
-ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buf, ui16 timeout, Boolean_t debug);
+ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug);
 void BT_MasterConnect (GeneralSBGC_t *generalSBGC);
 
 void InitADC (InputsInfo_t *inputsInfo, __ADC_STRUCT);

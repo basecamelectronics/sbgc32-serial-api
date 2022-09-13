@@ -58,7 +58,8 @@ TxRxStatus_t SBGC32_WriteRegBuffI2C (GeneralSBGC_t *generalSBGC, const I2C_RegBu
 }
 
 
-/**	@brief	Requests reading from any device connected to an I2C line
+/**	@brief	Requests reading from any device
+			connected to an I2C line
  *
  *	@note	Must be set:\n
  *			I2C_RegBuff_t.deviceAddr \n

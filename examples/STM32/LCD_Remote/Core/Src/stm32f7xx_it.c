@@ -213,13 +213,13 @@ void ADC_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC_IRQn 0 */
 
-	/*  - - - - - ADC1 Interrupt Flags Check - - - - - */
+	/* - - - - - ADC1 Interrupt Flags Check - - - - - */
 
 	if (GET_FLAG_ADC_SR_EOC(JOYSTICK_ADC) &&
 		GET_FLAG_ADC_CR1_EOCIE(JOYSTICK_ADC))
 		ADC_DRV_EndConvCallBack(&InputsInfo);
 
-	/* - - - - - - - - - - - - - - - - - - - - - - - - */
+	/*  - - - - - - - - - - - - - - - - - - - - - - - */
 
   /* USER CODE END ADC_IRQn 0 */
   HAL_ADC_IRQHandler(&hadc1);
@@ -235,13 +235,13 @@ void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
 
-	/*  - - - - - TIM2 Interrupt Flags Check - - - - - */
+	/* - - - - - TIM2 Interrupt Flags Check - - - - - */
 
 	if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
 		GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
 		TimerDRV_CallBack(SBGC_1.Drv);
 
-	/* - - - - - - - - - - - - - - - - - - - - - - - - */
+	/*  - - - - - - - - - - - - - - - - - - - - - - - */
 
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
@@ -257,7 +257,7 @@ void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
 
-	/* - - - - - UART1 Interrupt Flags Check - - - - - */
+	/*  - - - - UART1 Interrupt Flags Check - - - - - */
 
 	if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
 		GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
@@ -270,7 +270,7 @@ void USART1_IRQHandler(void)
 	if (GET_FLAG_UART_ISR_ORE(SBGC_SERIAL_PORT))
 		CLEAR_UART_ORE(SBGC_SERIAL_PORT);
 
-	/* - - - - - - - - - - - - - - - - - - - - - - - - */
+	/*  - - - - - - - - - - - - - - - - - - - - - - - */
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);

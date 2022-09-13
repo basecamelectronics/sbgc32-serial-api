@@ -70,8 +70,8 @@ all: main-build
 main-build: SBGC32_LCD_Remote.elf secondary-outputs
 
 # Tool invocations
-SBGC32_LCD_Remote.elf SBGC32_LCD_Remote.map: $(OBJS) $(USER_OBJS) D:\basecam\SBGC32_Library\trunc\examples\STM32\LCD_Remote\STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "SBGC32_LCD_Remote.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\basecam\SBGC32_Library\trunc\examples\STM32\LCD_Remote\STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SBGC32_LCD_Remote.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+SBGC32_LCD_Remote.elf SBGC32_LCD_Remote.map: $(OBJS) $(USER_OBJS) D:\basecam\SBGC32_Library\sbgc32-serial-api\examples\STM32\LCD_Remote\STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "SBGC32_LCD_Remote.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\basecam\SBGC32_Library\sbgc32-serial-api\examples\STM32\LCD_Remote\STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SBGC32_LCD_Remote.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

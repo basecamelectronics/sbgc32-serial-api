@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (10.3-2021.10)
+# Toolchain: ARM_TC
 ################################################################################
 
 -include ../makefile.init
@@ -71,8 +71,8 @@ all: main-build
 main-build: SBGC32_MimicControl.elf secondary-outputs
 
 # Tool invocations
-SBGC32_MimicControl.elf SBGC32_MimicControl.map: $(OBJS) $(USER_OBJS) D:\basecam\SBGC32_Library\trunc\examples\STM32\MimicControl\STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "SBGC32_MimicControl.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\basecam\SBGC32_Library\trunc\examples\STM32\MimicControl\STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SBGC32_MimicControl.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+SBGC32_MimicControl.elf SBGC32_MimicControl.map: $(OBJS) $(USER_OBJS) D:\basecam\SBGC32_Library\sbgc32-serial-api\examples\STM32\MimicControl\STM32F767ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "SBGC32_MimicControl.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\basecam\SBGC32_Library\sbgc32-serial-api\examples\STM32\MimicControl\STM32F767ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SBGC32_MimicControl.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

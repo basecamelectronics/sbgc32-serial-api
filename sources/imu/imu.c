@@ -149,7 +149,7 @@
 /**	@addtogroup	Ext_IMU_Debug_Info
  * 	@{
  */
-/**	@brief	Debugs information for the external IMU sensor
+/**	@brief	Requests debug information for the external IMU sensor
  *
  *	@attention	Firmware: 2.66+
  *

@@ -891,8 +891,8 @@ TxRxStatus_t SBGC32_DefaultInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, Rx
 		if (generalSBGC->_ParserCurrentStatus == TX_RX_OK)
 		{
 			PrintMessage(generalSBGC, TEXT_SIZE_("The system is ready to go!\n"));
-			PrintStructElement(generalSBGC, generalSBGC->_boardVersion, "Board Version: ", _UNSIGNED_CHAR_);
-			PrintStructElement(generalSBGC, generalSBGC->_firmwareVersion, "Firmware Version: ", _UNSIGNED_SHORT_);
+			PrintStructElement(generalSBGC, &generalSBGC->_boardVersion, "Board Version: ", _UNSIGNED_CHAR_);
+			PrintStructElement(generalSBGC, &generalSBGC->_firmwareVersion, "Firmware Version: ", _UNSIGNED_SHORT_);
 			PrintMessage(generalSBGC, TEXT_SIZE_("******************************\n\r"));
 		}
 
@@ -1110,134 +1110,169 @@ ui16 CRC16_Calculate (ui8 *data, ui16 length)
 /**	@addtogroup	Debug
  *	@{
  */
-#ifdef SBGC_DEBUG_MODE
+/**	@brief	Displays debug information
+ *
+ *	@param	*generalSBGC - serial connection descriptor
+ *	@param	*data - printable data
+ *	@param	length - printable data size
+ */
+void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length)
+{
+	generalSBGC->TxDebugFunc(data, length);
+}
 
-	/**	@brief	Displays debug information
-	 *
-	 *	@param	*generalSBGC - serial connection descriptor
-	 *	@param	*data - printable data
-	 *	@param	length - printable data size
-	 */
-	void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length)
+
+/**	@brief	Displays variable
+ *
+ *	@param	*generalSBGC - serial connection descriptor
+ *	@param	*data - printable variable
+ *	@param	*str - debug info string
+ *	@param	vType - type of variable
+ */
+void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, char *str, VarTypes_t vType)
+{
+	char debugStr [50];
+
+	switch (vType)
 	{
-		generalSBGC->TxDebugFunc(data, length);
-	}
-
-
-	/**	@brief	Displays variable
-	 *
-	 *	@param	*generalSBGC - serial connection descriptor
-	 *	@param	*data - printable variable
-	 *	@param	*str - debug info string
-	 *	@param	vType - type of variable
-	 */
-	void PrintStructElement (GeneralSBGC_t *generalSBGC, i32 data, char *str, VarTypes_t vType)
-	{
-		char debugStr [50];
-		ui8 debugStrLength;
-
-		switch (vType)
+		case _UNSIGNED_CHAR_ :
 		{
-			case _UNSIGNED_CHAR_ :
-			case _UNSIGNED_SHORT_ :
-			case _UNSIGNED_INT_ :
+			ui8 dataTemp = *(ui8*)data;
+			sprintf(debugStr, "%s %u\n", str, dataTemp);
 
-				#ifdef _L32__
-					sprintf(debugStr, "%s %u\n", str, (ui32)data);
-				#else
-					sprintf(debugStr, "%s %lu\n", str, (ui32)data);
-				#endif
-
-				break;
-
-			case _SIGNED_CHAR_ :
-			case _SIGNED_SHORT_ :
-			case _SIGNED_INT_ :
-
-				#ifdef _L32__
-					sprintf(debugStr, "%s %i\n", str, data);
-				#else
-					sprintf(debugStr, "%s %li\n", str, data);
-				#endif
-
-				break;
-
-			case _FLOAT_ :
-				sprintf(debugStr, "FLOAT %s %f\n", str, (float)data);
-				break;
-
-			default :
-
-				#ifdef _L32__
-					sprintf(debugStr, "%s %u\n", str, (ui32)data);
-				#else
-					sprintf(debugStr, "%s %lu\n", str, (ui32)data);
-				#endif
-
-				break;
+			break;
 		}
 
-		debugStrLength = strlen(debugStr);
-		PrintMessage(generalSBGC, debugStr, debugStrLength);
-	}
-
-
-	/**	@brief	Converts the parser status to a string
-	 *
-	 *	@param	txRxStatus - status from TX/RX operation
-	 *	@param	*str - writable buffer
-	 *
-	 *	@return	Length of a writable string
-	 */
-	ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str)
-	{
-		switch (txRxStatus)
+		case _UNSIGNED_SHORT_ :
 		{
-			case TX_RX_OK :
-				memcpy(str, TEXT_SIZE_(nameof(TX_RX_OK)));
-				return strlen(nameof(TX_RX_OK));
+			ui16 dataTemp = *(ui16*)data;
+			sprintf(debugStr, "%s %u\n", str, dataTemp);
 
-						case TX_BUFFER_OVERFLOW_ERROR :
-							memcpy(str, TEXT_SIZE_(nameof(TX_BUFFER_OVERFLOW_ERROR)));
-							return strlen(nameof(TX_BUFFER_OVERFLOW_ERROR));
-
-			case RX_START_PARSE :
-				memcpy(str, TEXT_SIZE_(nameof(RX_START_PARSE)));
-				return strlen(nameof(RX_START_PARSE));
-
-						case RX_EMPTY_BUFF_ERROR :
-							memcpy(str, TEXT_SIZE_(nameof(RX_EMPTY_BUFF_ERROR)));
-							return strlen(nameof(RX_EMPTY_BUFF_ERROR));
-
-			case RX_BUFFER_REALTIME_ERROR :
-				memcpy(str, TEXT_SIZE_(nameof(RX_BUFFER_REALTIME_ERROR)));
-				return strlen(nameof(RX_BUFFER_REALTIME_ERROR));
-
-						case RX_HEADER_CHECKSUM_ERROR :
-							memcpy(str, TEXT_SIZE_(nameof(RX_HEADER_CHECKSUM_ERROR)));
-							return strlen(nameof(RX_HEADER_CHECKSUM_ERROR));
-
-			case RX_PAYLOAD_CHECKSUM_ERROR :
-				memcpy(str, TEXT_SIZE_(nameof(RX_PAYLOAD_CHECKSUM_ERROR)));
-				return strlen(nameof(RX_PAYLOAD_CHECKSUM_ERROR));
-
-						case RX_BUFFER_OVERFLOW_ERROR :
-							memcpy(str, TEXT_SIZE_(nameof(RX_BUFFER_OVERFLOW_ERROR)));
-							return strlen(nameof(RX_BUFFER_OVERFLOW_ERROR));
-
-			case RX_TIMEOUT_ERROR :
-				memcpy(str, TEXT_SIZE_(nameof(RX_TIMEOUT_ERROR)));
-				return strlen(nameof(RX_TIMEOUT_ERROR));
-
-						case NOT_SUPPORTED_BY_FIRMWARE :
-							memcpy(str, TEXT_SIZE_(nameof(NOT_SUPPORTED_BY_FIRMWARE)));
-							return strlen(nameof(NOT_SUPPORTED_BY_FIRMWARE));
+			break;
 		}
 
-		return 0;
+		case _UNSIGNED_INT_ :
+		{
+			ui32 dataTemp = *(ui32*)data;
+
+			#ifdef _L32__
+				sprintf(debugStr, "%s %u\n", str, dataTemp);
+			#else
+				sprintf(debugStr, "%s %lu\n", str, dataTemp);
+			#endif
+
+			break;
+		}
+
+		case _SIGNED_CHAR_ :
+		{
+			i8 dataTemp = *(i8*)data;
+			sprintf(debugStr, "%s %i\n", str, dataTemp);
+
+			break;
+		}
+
+		case _SIGNED_SHORT_ :
+		{
+			i16 dataTemp = *(i16*)data;
+			sprintf(debugStr, "%s %i\n", str, dataTemp);
+
+			break;
+		}
+
+		case _SIGNED_INT_ :
+		{
+			i32 dataTemp = *(i32*)data;
+
+			#ifdef _L32__
+				sprintf(debugStr, "%s %i\n", str, dataTemp);
+			#else
+				sprintf(debugStr, "%s %li\n", str, dataTemp);
+			#endif
+
+			break;
+		}
+
+		case _FLOAT_ :
+		{
+			float dataTemp = *(float*)data;
+			sprintf(debugStr, "%s %.3f\n", str, dataTemp);  // .3f is default. May be changed
+
+			break;
+		}
+
+		default :
+		{
+			i32 dataTemp = *(i32*)data;
+
+			#ifdef _L32__
+				sprintf(debugStr, "%s %i\n", str, dataTemp);
+			#else
+				sprintf(debugStr, "%s %li\n", str, dataTemp);
+			#endif
+
+			break;
+		}
 	}
 
-#endif
+	PrintMessage(generalSBGC, TEXT_SIZE_(debugStr));
+}
+
+
+/**	@brief	Converts the parser status to a string
+ *
+ *	@param	txRxStatus - status from TX/RX operation
+ *	@param	*str - writable buffer
+ *
+ *	@return	Length of a writable string
+ */
+ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str)
+{
+	switch (txRxStatus)
+	{
+		case TX_RX_OK :
+			memcpy(str, TEXT_SIZE_(nameof(TX_RX_OK)));
+			return strlen(nameof(TX_RX_OK));
+
+					case TX_BUFFER_OVERFLOW_ERROR :
+						memcpy(str, TEXT_SIZE_(nameof(TX_BUFFER_OVERFLOW_ERROR)));
+						return strlen(nameof(TX_BUFFER_OVERFLOW_ERROR));
+
+		case RX_START_PARSE :
+			memcpy(str, TEXT_SIZE_(nameof(RX_START_PARSE)));
+			return strlen(nameof(RX_START_PARSE));
+
+					case RX_EMPTY_BUFF_ERROR :
+						memcpy(str, TEXT_SIZE_(nameof(RX_EMPTY_BUFF_ERROR)));
+						return strlen(nameof(RX_EMPTY_BUFF_ERROR));
+
+		case RX_BUFFER_REALTIME_ERROR :
+			memcpy(str, TEXT_SIZE_(nameof(RX_BUFFER_REALTIME_ERROR)));
+			return strlen(nameof(RX_BUFFER_REALTIME_ERROR));
+
+					case RX_HEADER_CHECKSUM_ERROR :
+						memcpy(str, TEXT_SIZE_(nameof(RX_HEADER_CHECKSUM_ERROR)));
+						return strlen(nameof(RX_HEADER_CHECKSUM_ERROR));
+
+		case RX_PAYLOAD_CHECKSUM_ERROR :
+			memcpy(str, TEXT_SIZE_(nameof(RX_PAYLOAD_CHECKSUM_ERROR)));
+			return strlen(nameof(RX_PAYLOAD_CHECKSUM_ERROR));
+
+					case RX_BUFFER_OVERFLOW_ERROR :
+						memcpy(str, TEXT_SIZE_(nameof(RX_BUFFER_OVERFLOW_ERROR)));
+						return strlen(nameof(RX_BUFFER_OVERFLOW_ERROR));
+
+		case RX_TIMEOUT_ERROR :
+			memcpy(str, TEXT_SIZE_(nameof(RX_TIMEOUT_ERROR)));
+			return strlen(nameof(RX_TIMEOUT_ERROR));
+
+					case NOT_SUPPORTED_BY_FIRMWARE :
+						memcpy(str, TEXT_SIZE_(nameof(NOT_SUPPORTED_BY_FIRMWARE)));
+						return strlen(nameof(NOT_SUPPORTED_BY_FIRMWARE));
+	}
+
+	return 0;
+}
 /**	@}
  */
 

@@ -71,7 +71,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *								  Macros & Constants
  */
 #define	 	ANGLE_FULL_TURN 		16384
 

@@ -33,12 +33,12 @@
 		<link>
 			<name>STM32_Driver</name>
 			<type>2</type>
-			<location>D:/basecam/SBGC32_Library/trunc/drivers/STM32_Driver</location>
+			<locationURI>PARENT-3-PROJECT_LOC/drivers/STM32_Driver</locationURI>
 		</link>
 		<link>
 			<name>sources</name>
 			<type>2</type>
-			<location>D:/basecam/SBGC32_Library/trunc/sources</location>
+			<locationURI>PARENT-3-PROJECT_LOC/sources</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

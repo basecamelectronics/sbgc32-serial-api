@@ -71,6 +71,23 @@ extern		"C" {
  * 						 Hardware Macros & Constants
  */
 /*				   ### Timer ###				  */
+/**	@verbatim
+
+	Copy this code into the TIMx_IRQHandler()
+	function (if you are use HAL drivers - above
+	the HAL_TIM_IRQHandler(&htimx)) function in
+	the stm32XXxx_it.c file:
+
+	if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
+		GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
+		TimerDRV_CallBack(SBGC32_Device.Drv);
+
+	where the 'SBGC32_Device' is a general SBGC32
+	configurations structure.
+
+	@endverbatim
+ */
+
 #ifdef 		HAL_TIM_MODULE_ENABLED
 	/*  - - - - User Defined Parameters - - - - - */
 	#define INTERNAL_MAIN_TIMER	&htim2				/*!<  HAL User defined timer object. Each SBGC32 device has its own self timer		*/
@@ -97,6 +114,30 @@ extern		"C" {
 #endif
 
 /*				   ### UART ###					  */
+/**	@verbatim
+
+	Copy this code into the USARTx_IRQHandler()
+	function (if you are use HAL drivers - above
+	the HAL_UART_IRQHandler(&huartx)) function in
+	the stm32XXxx_it.c file:
+
+	if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
+		GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
+		UART_DRV_TxCallBack(SBGC32_Device.Drv);
+
+	if (GET_FLAG_UART_ISR_RXNE(SBGC_SERIAL_PORT) &&
+		GET_FLAG_UART_CR1_RXNEIE(SBGC_SERIAL_PORT))
+		UART_DRV_RxCallBack(SBGC32_Device.Drv);
+
+	if (GET_FLAG_UART_ISR_ORE(SBGC_SERIAL_PORT))
+		CLEAR_UART_ORE(SBGC_SERIAL_PORT);
+
+	where the 'SBGC32_Device' is a general SBGC32
+	configurations structure.
+
+	@endverbatim
+ */
+
 #ifdef 		HAL_UART_MODULE_ENABLED
 	/*  - - - - User Defined Parameters - - - - - */
 	#define SBGC_SERIAL_PORT	&huart1				/*!<  HAL User defined UART object. Used to communicate with SBGC32 device 			*/
@@ -108,7 +149,7 @@ extern		"C" {
 	/*			   ### ATTENTION! ###			  */
 	/* If your STM32 device doesn't have TDR and
 	   RDR, please change them to DR */
-	#define	WRITE_UART_BYTE(UART, DATA)		((UART)->Instance->TDR = DATA)
+	#define	WRITE_UART_BYTE(UART, BYTE)		((UART)->Instance->TDR = BYTE)
 	#define READ_UART_BYTE(UART)			(ui8)(READ_BIT((UART)->Instance->RDR, USART_RDR_RDR) & 0xFFU)
 	#define	CLEAR_UART_ORE(UART)			__HAL_UART_CLEAR_FLAG(UART, UART_CLEAR_OREF)
 
@@ -132,8 +173,8 @@ extern		"C" {
 
 	#define __UART_STRUCT		USART_TypeDef *uart
 
-	#define	WRITE_UART_DATA(UART, DATA)		LL_USART_TransmitData8(UART, DATA)
-	#define READ_UART_DATA(UART)			LL_USART_ReceiveData8(UART)
+	#define	WRITE_UART_BYTE(UART, BYTE)		LL_USART_TransmitData8(UART, BYTE)
+	#define READ_UART_BYTE(UART)			LL_USART_ReceiveData8(UART)
 	#define	CLEAR_UART_ORE(UART)			LL_USART_ClearFlag_ORE(UART)
 
 	#define	ENABLE_UART_CR1_TCIE(UART)		LL_USART_EnableIT_TC(UART)
@@ -155,6 +196,12 @@ extern		"C" {
 #define		TX_BUFFER_SIZE			256				/*!<  256 Min --> 65534 Max															*/
 #define		RX_BUFFER_SIZE			256				/*!<  256 Min --> 65534 Max															*/
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifdef 		USE_HAL_DRIVER
+	#define	DELAY_MS(ms)			HAL_Delay(ms)
+#else
+	#define	DELAY_MS(ms)			LL_mDelay(ms)
+#endif
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

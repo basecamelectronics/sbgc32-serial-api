@@ -94,7 +94,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *										   Constants
  */
 /**	Maximum allowed profile name length */
 #define		MAX_PROFILE_NAME_LENGTH	48

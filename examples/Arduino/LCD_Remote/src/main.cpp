@@ -84,6 +84,15 @@ void setup()
 
 	/* - - - - - - - - - High Layer Software Init - - - - - - - - - - */
 
+	#if ((defined BLUETOOTH_DO_SETUP) && (defined BLUETOOTH_CONNECTION))
+
+		/* The HC_05 EN pin became high level */
+		BT_MasterConnect(&SBGC_1);
+		/* The HC_05 EN pin became low level */
+		delay(BLUETOOTH_CONNECT_WAITING * 1000);
+
+	#endif
+
   	Control.controlMode[ROLL] = CtrlM_MODE_ANGLE;
   	Control.controlMode[PITCH] = CtrlM_MODE_ANGLE;
   	Control.controlMode[YAW] = CtrlM_MODE_ANGLE;
@@ -273,6 +282,7 @@ void loop()
 	}
 
 	/*  - - - - - - - - - - Buttons Handling - - - - - - - - - - */
+
 	/* Menu Button */
 	if (ReadButtonState(MENU_BTN_PIN))
 	{
@@ -308,8 +318,8 @@ void loop()
 	/* Request realtime data with the fixed rate */
 	if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.rtReqCmdTimeMs) > REALTIME_DATA_REQUEST_INTERAL_MS)
 	{
-		SBGC32_ReadRealTimeData4(&SBGC_1, &RealTimeData);
-		LCD_RemoteGeneral.rtReqCmdTimeMs = LCD_RemoteGeneral.currentTimeMs;
+		if (SBGC32_ReadRealTimeData4(&SBGC_1, &RealTimeData) == TX_RX_OK)
+			LCD_RemoteGeneral.rtReqCmdTimeMs = LCD_RemoteGeneral.currentTimeMs;
 	}
 
 

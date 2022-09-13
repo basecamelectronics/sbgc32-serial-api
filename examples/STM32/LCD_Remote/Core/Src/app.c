@@ -45,7 +45,7 @@ void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_Remote
 
 	/* If no commands for a long time, set connected state to false */
 	if (LCD_RemoteGeneral->connectFlag && (LCD_RemoteGeneral->currentTimeMs - LCD_RemoteGeneral->rtReqCmdTimeMs) > MAX_WAIT_TIME_MS)
-		LCD_RemoteGeneral->connectFlag = 0; // last_bt_connect_ms = currentTimeMs;
+		LCD_RemoteGeneral->connectFlag = 0;  // last_bt_connect_ms = currentTimeMs;
 }
 
 
@@ -182,25 +182,28 @@ void LCD_DebugMessage (ui8 raw, char *str, ui8 length)
 }
 
 
-ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buf, ui16 timeout, Boolean_t debug)
+ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug)
 {
-	HAL_Delay(timeout);
+	DELAY_MS(timeout);
+
 	ui8 size = 0;
 
-	while (!generalSBGC->RxFunc(generalSBGC->Drv, (ui8*)&buf[size]))
+	while (!generalSBGC->RxFunc(generalSBGC->Drv, (ui8*)&buff[size]))
 		size++;
-
-	buf[size - 2] = '\0';
 
 	if (debug == TRUE__)
 	{
 		if (size != 0)
-			LCD_DebugMessage(1, TEXT_SIZE_((char*)buf));
+		{
+			buff[size - 2] = '\0';
+			LCD_DebugMessage(1, TEXT_SIZE_((char*)buff));
+			DELAY_MS(500);
+		}
 
 		else
 		{
-			LCD_DebugMessage(1, TEXT_SIZE_("NO ANSWER"));
-			HAL_Delay(1000);
+			LCD_DebugMessage(1, TEXT_SIZE_((char*)"NO ANSWER"));
+			DELAY_MS(1000);
 		}
 	}
 
@@ -210,56 +213,65 @@ ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buf, ui16 timeout, Boolean_t
 
 void BT_MasterConnect (GeneralSBGC_t *generalSBGC)
 {
-	ui8 buf [BLUETOOTH_BUF_SIZE];
+	ui8 buff [BLUETOOTH_BUF_SIZE];
 
-	LCD_DebugMessage(0, TEXT_SIZE_("BLUETOOTH INIT.."));
+	LCD_DebugMessage(0, TEXT_SIZE_((char*)"BLUETOOTH INIT.."));
 
-	if ((*SBGC_SERIAL_PORT).Init.BaudRate != BLUETOOTH_BAUD)
-	{
-		(*SBGC_SERIAL_PORT).Init.BaudRate = BLUETOOTH_BAUD;
+	#ifdef HAL_UART_MODULE_ENABLED
 
-		if (HAL_UART_Init(SBGC_SERIAL_PORT) != HAL_OK)
-			Error_Handler();
-	}
+		Driver_t *drv = generalSBGC->Drv;
 
+		if ((*drv->uart).Init.BaudRate != BLUETOOTH_BAUD)
+		{
+			(*drv->uart).Init.BaudRate = BLUETOOTH_BAUD;
+
+			if (HAL_UART_Init(drv->uart) != HAL_OK)
+				Error_Handler();
+		}
+
+	#else
+
+		ui32 periphclk = LL_RCC_GetUSARTClockFreq(LL_RCC_USART1_CLKSOURCE);  // if SBGC_SERIAL_PORT is UART1!
+
+		ui32 USART_Speed = (LL_USART_GetBaudRate(SBGC_SERIAL_PORT, periphclk, LL_USART_OVERSAMPLING_8) / 100) * 100;  // rounding
+
+		if (USART_Speed != BLUETOOTH_BAUD)
+			LL_USART_SetBaudRate(SBGC_SERIAL_PORT, periphclk, LL_USART_OVERSAMPLING_8, BLUETOOTH_BAUD);
+
+	#endif
+
+	/* UART speed re-setting (optional) */
 	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"));
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("115200 SPEED..."));
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__); */
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"115200 SPEED..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
 
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"));  // Clear paired devices
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("RMAAD..."));
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"RMAAD..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
 
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+PSWD=", strlen("AT+PSWD="));
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_PIN, strlen(BLUETOOTH_CLIENT_PIN));
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("PIN..."));
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"PIN..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
 
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+ROLE=1\r\n", strlen("AT+ROLE=1\r\n"));  // Set 'master' mode
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("ROLE = MASTER..."));
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"ROLE = MASTER..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
 
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+CMODE=0\r\n", strlen("AT+CMODE=0\r\n"));  // Connect only to fixed MAC address
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("CMODE = 0..."));
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CMODE = 0..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
 
-//	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+INIT\r\n", strlen("AT+INIT\r\n"));  // Initialize 'SPP'
-//	HAL_Delay(500);
-//	LCD_DebugMessage(1, TEXT_SIZE_("INIT SPP"));
-//	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
+	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+INIT\r\n", strlen("AT+INIT\r\n"));  // Initialize 'SPP'
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"INIT SPP"));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
 
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+LINK=", strlen("AT+LINK="));
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_MAC_ADDR, strlen(BLUETOOTH_CLIENT_MAC_ADDR));
 	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);  // Connect to slave HC-05
-	BT_ReadAnswer(generalSBGC, buf, 500, TRUE__);
-	HAL_Delay(500);
-	LCD_DebugMessage(1, TEXT_SIZE_("CONNECTION..."));
+	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CONNECTION..."));
 }
 
 
@@ -315,12 +327,80 @@ void InitI2C (InputsInfo_t *inputsInfo, __I2C_STRUCT)
 }
 
 
+void WriteI2C_Data (__I2C_STRUCT, ui8 slaveAddr, ui8 *data, ui8 size)
+{
+	#ifdef HAL_I2C_MODULE_ENABLED
+
+		HAL_I2C_Master_Transmit(i2c, slaveAddr, data, size, 10);
+
+	#else
+
+		ui8 count = 0;
+
+		while (LL_I2C_IsActiveFlag_BUSY(i2c));
+
+		LL_I2C_HandleTransfer(i2c, slaveAddr, LL_I2C_ADDRSLAVE_7BIT, size, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_WRITE);
+
+		while (count < size)
+		{
+			while (!LL_I2C_IsActiveFlag_TXIS(i2c));
+
+			LL_I2C_TransmitData8(i2c, data[count]);
+			while (LL_I2C_IsActiveFlag_TCR(i2c));
+
+			count++;
+			LL_I2C_HandleTransfer(i2c, slaveAddr, LL_I2C_ADDRSLAVE_7BIT, size - count, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_NOSTARTSTOP);
+		}
+
+		while (!LL_I2C_IsActiveFlag_STOP(i2c));
+		LL_I2C_ClearFlag_STOP(i2c);
+
+		I2C_CLEAR_CR2(i2c);
+
+	#endif
+}
+
+
+void RequestI2C_Data (__I2C_STRUCT, ui8 slaveAddr, ui8 *data, ui8 size)
+{
+	#ifdef HAL_I2C_MODULE_ENABLED
+
+		HAL_I2C_Master_Receive(i2c, slaveAddr, data, size, 10);
+
+	#else
+
+		while (LL_I2C_IsActiveFlag_BUSY(i2c));
+
+		LL_I2C_HandleTransfer(i2c, slaveAddr, LL_I2C_ADDRSLAVE_7BIT, size, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+
+		ui8 count = 0;
+
+		while (count < size)
+		{
+			while (!LL_I2C_IsActiveFlag_RXNE(i2c));
+
+			data[count] = LL_I2C_ReceiveData8(i2c);
+			while (LL_I2C_IsActiveFlag_TCR(i2c));
+
+			count++;
+			LL_I2C_HandleTransfer(i2c, slaveAddr, LL_I2C_ADDRSLAVE_7BIT, size - count, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_NOSTARTSTOP);
+		}
+
+		while (!LL_I2C_IsActiveFlag_STOP(i2c));
+		LL_I2C_ClearFlag_STOP(i2c);
+
+		I2C_CLEAR_CR2(i2c);
+
+	#endif
+}
+
+
 void GetEncoderAngles (InputsInfo_t *inputsInfo)
 {
 	ui8 regAddr [2] = {ENCODER_ANGLE_REG_MB, ENCODER_ANGLE_REG_LB};
 
-	HAL_I2C_Master_Transmit(ENCODER_I2C, ENCODER_I2C_ADDRES, regAddr, 2, 10);
-	HAL_I2C_Master_Receive(ENCODER_I2C, ENCODER_I2C_ADDRES, inputsInfo->I2C_Buff, 2, 10);
+	WriteI2C_Data(inputsInfo->i2c, ENCODER_I2C_ADDRES, regAddr, 2);
+	RequestI2C_Data(inputsInfo->i2c, ENCODER_I2C_ADDRES, inputsInfo->I2C_Buff, 2);
 
 	inputsInfo->FE_CurrentAngle = (((ui16)inputsInfo->I2C_Buff[0] << 6) & 0x3FC0) | ((ui16)inputsInfo->I2C_Buff[1] & 0x00C0);
 }

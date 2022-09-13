@@ -51,12 +51,7 @@ ui32 GetTimeMs (void *Driver)
  */
 ui8 UartTransmitData (void *Driver, ui8 *data, ui16 size)
 {
-    ui16 count = 0;
-    while (count < size)
-    {
-        SBGC_SERIAL_PORT.write(data[count]);
-        count++;
-    }
+    SBGC_SERIAL_PORT.write(data, size);
 
     SBGC_SERIAL_PORT.flush();
 
@@ -85,7 +80,7 @@ ui16 GetAvailableBytes (void *Driver)
  */
 ui8 UartReceiveByte (void *Driver, ui8 *data)
 { 
-	if (!SBGC_SERIAL_PORT.available())
+	if (SBGC_SERIAL_PORT.available() < 1)
 		return 1;
 
 	*data = SBGC_SERIAL_PORT.read();

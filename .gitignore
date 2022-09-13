@@ -1,9 +1,9 @@
 # Folders
+doxygen/doc/
 examples/Arduino/LCD_RemoteUno/
-SBGC_ArduinoExample/
-SBGC_STM32_Example/
-SBGC32_LinuxExample/
-
+SBGC32_ArduinoDebug/
+SBGC32_STM32_Debug/
+SBGC32_LinuxDebug/
 
 *.launch
 *.bak

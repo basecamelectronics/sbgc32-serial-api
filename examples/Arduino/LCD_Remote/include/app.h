@@ -100,6 +100,26 @@
  * 					              Software Constants
  */
 /*  - - - - - User Defined Parameters - - - - - - */
+/* BLUETOOTH_HC05. Be sure to use the HC-05 module with a KEY pin. This pin should be pulled to 3.3V
+ * If you are using the Bluetooth module, set the SBGC_RX_WAITING to at least 500 ms
+ */
+#define		BLUETOOTH_CONNECTION
+
+/* 12 hex digits: "XXXX,XX,XXXXXX" */
+#define		BLUETOOTH_CLIENT_MAC_ADDR	"0020,10,08CF59"
+
+/* If defined, will search for a device containing this pattern in its name */
+#define		BLUETOOTH_CLIENT_NAME_PTRN	"SBGC"
+
+#define		BLUETOOTH_CLIENT_PIN		"1234"		// PIN code set for connection
+
+#define		BLUETOOTH_BAUD				115200
+
+#define		BLUETOOTH_DO_SETUP						// Configure BT module as master role and set PIN. May be done only once
+#define		BLUETOOTH_BUF_SIZE			16			// Size of buffer for service answers from module
+
+#define		BLUETOOTH_CONNECT_WAITING	10			// Units: seconds
+
 #define		FLYWHEEL_CONTROL
 // #define		JOYSTICK_CONTROL
 
@@ -290,9 +310,12 @@ ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDire
 ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo);
 void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
 					RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
-void LCD_DebugMessage (char *str, ui8 raw);
+void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
 void LCD_PrintProgress (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ui8 cursor_pos);
 void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos);
+
+ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug);
+void BT_MasterConnect (GeneralSBGC_t *generalSBGC);
 
 void ReadADC_Inputs (InputsInfo_t *inputsInfo);
 ui8 ReadButtonState (ui8 pin);

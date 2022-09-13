@@ -105,7 +105,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *											  Macros
+ *										   Constants
  */
 /**	@addtogroup	Debug_Var_3
  * 	@{
