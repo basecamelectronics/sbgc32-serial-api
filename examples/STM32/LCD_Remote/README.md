@@ -1,9 +1,9 @@
 LCD Remote STM32 Example
-==========================================
+========================
 [![Web-site](https://www.basecamelectronics.com/img/logo.basecam.onwhite.png)](https://www.basecamelectronics.com)
 
 This is an example sketch for STM32, that shows how to control
-SimpleBGC-driven gimbal via Serial API. API specifications are available at
+SimpleBGC-driven gimbal via Serial API. API specs are available at
 [SerialAPI](http://www.basecamelectronics.com/serialapi/)
 
 ## Basic functions:

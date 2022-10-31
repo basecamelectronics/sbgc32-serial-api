@@ -89,15 +89,15 @@ void setup()
 
 void loop()
 {
-	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-	/*                     Start Worker Cycle                     */
-	/* __________________________________________________________ */
+	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
+	/* 						  Start Worker Cycle					  */
+	/* ______________________________________________________________ */
 
 	/* Getting current time */
 	currentTime = SBGC_1.GetTimeFunc(SBGC_1.Drv);
 
 
-	/* - - - - - - - - - - Joystick Handling - - - - - - - - - - */
+	/*  - - - - - - - - - - - Joystick Handling - - - - - - - - - - - */
 
 	ReadADC_Inputs(&InputsInfo);
 
@@ -120,7 +120,8 @@ void loop()
 	}
 
 
-	/*  - - - - - - - - - - Buttons Handling - - - - - - - - - - */
+	/* - - - - - - - - - - - - Buttons Handling - - - - - - - - - - - */
+
 	/* Rec Button - for long press */
 	if (ReadButtonState(REC_BTN_PIN))
 	{
@@ -172,5 +173,5 @@ void loop()
 	/* Make a constant sampling time by inserting a delay of 1 ms */
 	while ((SBGC_1.GetTimeFunc(SBGC_1.Drv) - currentTime) < 1);
 
-	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 }

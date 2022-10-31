@@ -78,7 +78,8 @@ extern 		"C" {
 /**	@addtogroup	Adjvar
  * 	@{
  */
-#define 	ADJ_VARS_QANTITY		65				/*!<  Number of adjustable variables for the latest firmware version				*/
+#define 	ADJ_VARS_QANTITY		66				/*!<  Number of adjustable variables for the latest firmware version				*/
+#define		ADJ_VAR_MAX_NAME_LENGTH	30				/*!<  Maximal name length of adjustable variable for debug information				*/
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -156,7 +157,8 @@ typedef enum
 	ADJ_VAR_RC_MODE_ROLL,
 	ADJ_VAR_RC_MODE_PITCH,
 	ADJ_VAR_RC_MODE_YAW,
-	ADJ_VAR_EULER_ORDER
+	ADJ_VAR_EULER_ORDER,
+	ADJ_VAR_FOLLOW_IN_DBAND
 
 }	AdjVarsList_t;
 
@@ -189,7 +191,7 @@ typedef struct
 
 	#ifdef	SBGC_DEBUG_MODE
 
-		char		name [30];						/*!<  Adjustable variable name														*/
+		char		name [ADJ_VAR_MAX_NAME_LENGTH];	/*!<  Adjustable variable name														*/
 
 	#endif
 
@@ -215,7 +217,7 @@ typedef struct
 	{
 		const AdjVarsList_t	ID;						/*!<  Adjustable variable ID  														*/
 
-		const char	name [30];						/*!<  Adjustable variable name														*/
+		char		name [ADJ_VAR_MAX_NAME_LENGTH];	/*!<  Adjustable variable name														*/
 
 		const i32	minValue,						/*!<  Adjustable variable minimal value												*/
 					maxValue;						/*!<  Adjustable variable maximal value												*/
@@ -346,6 +348,7 @@ typedef struct __PACKED__
 /**	@addtogroup	Adjvar_Values
  * 	@{
  */
+void InitAdjVar (AdjVarsGeneral_t *adjVarsGeneral, const AdjVarsDebugInfo_t *adjVarReference);
 void EditAdjVarValue (AdjVarsGeneral_t *adjVarsGeneral, i32 value);
 TxRxStatus_t SBGC32_SetAdjVarValues (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_t *adjVarsGeneral, ui8 adjVarQuan, ConfirmationState_t *confirmationState);
 TxRxStatus_t SBGC32_GetAdjVarValue (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_t *adjVarsGeneral);

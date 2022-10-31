@@ -285,9 +285,12 @@ typedef struct __PACKED__
  *
  *	@note	<b><i>Parameters:</i></b>
  *
+ *			Firmware: 2.69b5+, <mode>
+ *			parameter can be ui16
+ *
  *			CMD_AHRS_HELPER
  *
- *			TX/RX 2/24 bytes
+ *			TX/RX (1 or 2)/24 bytes
  *
  *			Current attitude in vector form
  *
@@ -295,7 +298,9 @@ typedef struct __PACKED__
  */
 typedef struct __PACKED__
 {
-	ui16 	mode;									/*!<  See @ref AHRS_HelperModeDir_t, @ref AHRS_HelperModeLoc_t,
+	ui16 	mode;									/*!<  Must be ui8 (1-byte size), if the firmware of the SimpleBGC controller is
+														  below than 2.69b5.
+														  See @ref AHRS_HelperModeDir_t, @ref AHRS_HelperModeLoc_t,
 														  @ref AHRS_HelperModeCorr_t, @ref AHRS_HelperModeTr_t,
 														  @ref AHRS_HelperModeRef_t and @ref AHRS_HelperModeOther_t enumerations		*/
 

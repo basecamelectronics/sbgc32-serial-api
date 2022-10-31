@@ -80,10 +80,10 @@
 #define 	SERIAL3_RX_PIN			15
 
 #define     SBGC_SERIAL_PORT        Serial2
-#define     DEBUG_SERIAL_PORT       Serial3
+#define     DEBUG_SERIAL_PORT       Serial
 
 #define     SBGC_SERIAL_SPEED       115200
-#define     DEBUG_SERIAL_SPEED      115200
+#define     DEBUG_SERIAL_SPEED      9600
 
 ui32 GetTimeMs (void *Driver);
 

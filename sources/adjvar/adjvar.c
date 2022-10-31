@@ -102,6 +102,7 @@
 	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_MODE_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
 	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_MODE_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
 	},{ ADJ_VAR_BLOCK(ADJ_VAR_EULER_ORDER), 				0, 			255,		_UNSIGNED_CHAR_
+	},{ ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_IN_DBAND), 			0, 			255,		_UNSIGNED_CHAR_
 
 	}};
 	/**	@}
@@ -182,6 +183,27 @@
 /**	@addtogroup	Adjvar_Values
  * 	@{
  */
+
+#ifdef	SBGC_DEBUG_MODE
+
+	/**	@brief	Needed to change the values of adjustable variables
+	 *
+	 *	@param 	*adjVarsGeneral - general adjustable variables structure
+	 *	@param	*adjVarReference - field of auxiliary
+	 			adjustable variables array
+	 */
+	void InitAdjVar (AdjVarsGeneral_t *adjVarsGeneral, const AdjVarsDebugInfo_t *adjVarReference)
+	{
+		adjVarsGeneral->ID = adjVarReference->ID;
+		memcpy(adjVarsGeneral->name, adjVarReference->name, ADJ_VAR_MAX_NAME_LENGTH);
+		adjVarsGeneral->minValue = adjVarReference->minValue;
+		adjVarsGeneral->maxValue = adjVarReference->maxValue;
+		adjVarsGeneral->varType = adjVarReference->varType;
+	}
+
+#endif
+
+
 /**	@brief	Needed to change the values of adjustable variables
  *
  *	@attention	Please only use this function to change
@@ -338,7 +360,9 @@ TxRxStatus_t SBGC32_SaveAdjVarToEEPROM (GeneralSBGC_t *generalSBGC, AdjVarsGener
 	SBGC32_TX(generalSBGC, &cmd);
 	SBGC32_CheckConfirmation(generalSBGC, confirmationState, cmd.commandID);
 
-	adjVarsGeneral->saveFlag = SAVED;
+	if (adjVarsGeneral->saveFlag != SAVED)
+		adjVarsGeneral->saveFlag = SAVED;
+
 	return generalSBGC->_ParserCurrentStatus;
 }
 
@@ -369,7 +393,8 @@ TxRxStatus_t SBGC32_SaveAdjVarsToEEPROM (GeneralSBGC_t *generalSBGC, AdjVarsGene
 
 	if (confirmationState->cmdID == CMD_SAVE_PARAMS_3)
 		FOR_(i, adjVarQuan)
-			adjVarsGeneral[i].saveFlag = SAVED;
+			if (adjVarsGeneral[i].saveFlag != SAVED)
+				adjVarsGeneral[i].saveFlag = SAVED;
 
 	return generalSBGC->_ParserCurrentStatus;
 }
@@ -389,6 +414,7 @@ TxRxStatus_t SBGC32_SaveAllActiveAdjVarsToEEPROM (GeneralSBGC_t *generalSBGC, Co
 {
 	SBGC32_SendEmptyCommand(generalSBGC, CMD_SAVE_PARAMS_3);
 	SBGC32_CheckConfirmation(generalSBGC, confirmationState, CMD_SAVE_PARAMS_3);
+
 	return generalSBGC->_ParserCurrentStatus;
 }
 /**	@}

@@ -107,6 +107,22 @@ extern 		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *										   Constants
  */
+/**	@addtogroup	Data_Stream_Interval
+ * 	@{
+ */
+#define		SIZEOF_EVENT			4				/*!<  May be expanded by extra parameters in future versions. sizeof(Event_t)		*/
+/**	@}
+ */
+
+
+/**	@addtogroup	Realtime_Data_3_4
+ * 	@{
+ */
+#define		SIZEOF_REALTIME_DATA_3	63				/*!<  or offsetof_(&realTimeData->frameCamAngle[0], &realTimeData)					*/
+/**	@}
+ */
+
+
 /**	@addtogroup	Debug_Var_3
  * 	@{
  */
@@ -152,7 +168,8 @@ typedef enum
 /**	@addtogroup	Realtime_Data_Custom
  *	@{
  */
-/**	@note @ref 	SBGC32_RealTimeDataCustom, 3 arg
+/**	@note @ref 	SBGC32_RealTimeDataCustom, 3 arg\n
+ * 				Can be combined with each other
  */
 typedef enum
 {
@@ -532,7 +549,7 @@ typedef struct __PACKED__
  *			CMD_REALTIME_DATA_3
  *			CMD_REALTIME_DATA_4
  *
- *			RX 63 (124) bytes
+ *			RX 63 (_3) or 124 (_4) bytes
  *
  *			Receive real-time data as simple
  *			or extended formats
@@ -737,10 +754,11 @@ typedef struct
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  * 								 Function Prototypes
  */
-/**	@addtogroup	Data_Stream_Interval Data Stream Interval
+/**	@addtogroup	Data_Stream_Interval
  * 	@{
  */
 TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInterval_t *dataStreamInterval, ConfirmationState_t *confirmationState);
+TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Commands_t cmdID);
 /**	@}
  */
 

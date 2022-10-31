@@ -1,5 +1,5 @@
 LCD Remote Arduino Example
-==========================================
+==========================
 [![Web-site](https://www.basecamelectronics.com/img/logo.basecam.onwhite.png)](https://www.basecamelectronics.com)
 
 This is an example sketch for Arduino, that shows how to control
@@ -54,4 +54,3 @@ SimpleBGC-driven gimbal via Serial API. API specs are available at
 - Assign desired actions to the "Menu" button in the "Service" tab
 
 *Note: Project has been built with PlatformIO framework*
-

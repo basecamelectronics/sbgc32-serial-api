@@ -96,12 +96,7 @@ ui8 UartReceiveByte (void *Driver, ui8 *data)
  */
 void UartTransmitDebugData (char *data, ui16 length)
 {
-    ui16 count = 0;
-    while (count < length)
-    {
-        DEBUG_SERIAL_PORT.write(data[count]);
-        count++;
-    }
+    DEBUG_SERIAL_PORT.write(data, length);
 
     DEBUG_SERIAL_PORT.flush();
 }

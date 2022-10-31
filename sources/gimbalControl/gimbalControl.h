@@ -78,6 +78,8 @@ extern 		"C" {
 /*	Conversion from degree/sec to units
 	that command understand */
 #define		SPEED_SCALE  			(1.0f / 0.1220740379f)
+#define		SPEED_TO_VALUE(val)		((val) * SPEED_SCALE)
+
 #define 	DEGREE_ANGLE_SCALE 		((float)ANGLE_FULL_TURN / 360.0f)
 #define 	ANGLE_DEGREE_SCALE 		(360.0f / (float)ANGLE_FULL_TURN)
 

@@ -120,7 +120,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 #define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32 for
 														  for the @ref SBGC32_DefaultInit function										*/
-#define		SBGC_RX_WAITING			300				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
+#define		SBGC_RX_WAITING			2000			/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the @ref SBGC32_DefaultInit function										*/
 #define		SBGC_STARTUP_DELAY		3000			/*!<  Units: milliseconds. System startup delay parameter							*/
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
@@ -204,7 +204,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 #define 	nameof(var)				#var
 #define		countof(arr)			(sizeof((arr)) / sizeof(*(arr)))
-#define		offsetof_(pStart, pEnd)	(((void*)&(pEnd)) - ((void*)&(pStart)))
+#define		offsetof_(pEnd, pStart)	(((ui8*)(pEnd)) - ((ui8*)(pStart)))
 
 #define 	DATA_BLOCK(arr)			{sizeof((arr)), countof((arr))}
 #define 	VAR_BLOCK(var)			{sizeof((var)), 1}
@@ -381,6 +381,8 @@ typedef enum
 typedef enum
 {
 	PM_DEFAULT_8BIT					= 0,
+	PM_DEFAULT_16BIT,
+	PM_DEFAULT_32BIT,
 
 	PM_CONTROL,										/*!<  See @ref Control_ParserStructDB												*/
 	PM_CONTROL_CONFIG,								/*!<  See @ref ControlConfig_ParserStructDB											*/
@@ -975,6 +977,7 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 /**	@addtogroup	Parser_Memory
  *	@{
  */
+ui8 ConvertWithPM (void *pDestination, const void *pSample, ui8 size, ParserMap_t parserMap);
 void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap);
 void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap);
 void ToLittleEndian (const void *value, ui8 *payload, ui8 size);
@@ -1020,8 +1023,40 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
  *	@{
  */
 void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length);
-void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, char *str, VarTypes_t vType);
+void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, const char *str, VarTypes_t vType);
 ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str);
+
+
+/**	@brief	Transforms the board version variable to string
+ *
+ *	@param	boardVer - BoardInfo_t.boardVer
+ *	@param	*pBuff - buffer to write
+ */
+static inline void FormatBoardVersion (ui8 boardVer, char* pBuff)
+{
+	ui8 majorVer = boardVer / 10;
+	ui8 minorVer = boardVer % 10;
+	sprintf(pBuff, "%u.%u", majorVer, minorVer);
+}
+
+
+/**	@brief	Transforms the firmware version variable to string
+ *
+ *	@param	firmwareVer - BoardInfo_t.firmwareVer
+ *	@param	*pBuff - buffer to write
+ */
+static inline void FormatFirmwareVersion (ui16 firmwareVer, char* pBuff)
+{
+	ui8 majorVer = firmwareVer / 1000;
+	ui8 minorVer = (firmwareVer % 1000) / 10;
+	ui8 betaVer = firmwareVer % 10;
+
+	if (betaVer != 0)
+		sprintf(pBuff, "%u.%ub%u", majorVer, minorVer, betaVer);
+
+	else
+		sprintf(pBuff, "%u.%u", majorVer, minorVer);
+}
 /**	@}
  */
 

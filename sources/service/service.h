@@ -755,27 +755,6 @@ typedef struct __PACKED__
  */
 
 
-static inline void FormatBoardVersion (ui8 boardVer, char* pBuff)
-{
-	double boardVersion = boardVer / 10.0;
-	sprintf(pBuff, "%.1lf", boardVersion);
-}
-
-
-static inline void FormatFirmwareVersion (ui16 firmwareVer, char* pBuff)
-{
-	ui8 majorVer = firmwareVer / 1000;
-	ui8 minorVer = (firmwareVer % 1000) / 10;
-	ui8 betaVer = firmwareVer % 10;
-
-	if (betaVer != 0)
-		sprintf(pBuff, "%u.%ub%u", majorVer, minorVer, betaVer);
-
-	else
-		sprintf(pBuff, "%u.%u", majorVer, minorVer);
-}
-
-
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  * 								 Function Prototypes
  */

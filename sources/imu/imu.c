@@ -268,11 +268,15 @@ TxRxStatus_t SBGC32_CorrectionGyro (GeneralSBGC_t *generalSBGC, const GyroCorrec
  */
 /**	@brief	Send or request attitude of the IMU sensor
  *
+ *	@attention	The AHRS_Helper_t.mode parameter must be
+ *				1-byte size (ui8) when working with SimpleBGC
+ *				controllers in which the firmware is below 2.69b5
+ *
  *	@note	Parameter AHRS_Helper_t.mode is very
  *			important for this command\n
- *			For more, see the CMD_AHRS_HELPER in the
+ *			For more, see the CMD_AHRS_HELPER command description in the
  *			<a href=https://www.basecamelectronics.com/serialapi/>
- * 			SimpleBGC32 Serial API protocol specification</a>
+ * 			SimpleBGC32 Serial API protocol specification</a>\n
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*AHRS_Helper - structure for data exchange
@@ -293,6 +297,8 @@ TxRxStatus_t SBGC32_CallAHRS_Helper (GeneralSBGC_t *generalSBGC, AHRS_Helper_t *
 		AHRS_Helper->H_Vect[AXIS_X] = ReadLong(&cmd);
 		AHRS_Helper->H_Vect[AXIS_Y] = ReadLong(&cmd);
 		AHRS_Helper->H_Vect[AXIS_Z] = ReadLong(&cmd);
+
+		/* or FOR_(i, 6) ReadLong(&cmd); */
 	}
 
 	return generalSBGC->_ParserCurrentStatus;

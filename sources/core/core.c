@@ -270,8 +270,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 				availableBytes = generalSBGC->AvailableBytesFunc(generalSBGC->Drv);
 
 				if ((availableBytes >= 3) && (availableBytes != RX_BUFFER_OVERFLOW_FLAG))
-					FOR_(i, 3)
-						generalSBGC->RxFunc(generalSBGC->Drv, &headBuff[i]);
+					FOR_(i, 3) generalSBGC->RxFunc(generalSBGC->Drv, &headBuff[i]);
 
 				else
 				{
@@ -299,8 +298,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 				availableBytes = generalSBGC->AvailableBytesFunc(generalSBGC->Drv);
 
 				if ((availableBytes >= headBuff[1] + checksumSize) && (availableBytes != RX_BUFFER_OVERFLOW_FLAG))
-					FOR_(i, headBuff[1] + checksumSize)
-						generalSBGC->RxFunc(generalSBGC->Drv, &complexBuff[i + 3]);  // Offset from header space
+					FOR_(i, headBuff[1] + checksumSize) generalSBGC->RxFunc(generalSBGC->Drv, &complexBuff[i + 3]);  // Offset from header space
 
 				else
 				{
@@ -334,7 +332,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 				}
 
 				/* Data passed all checks. Filling the serialCommand struct */
-				serialCommand->commandID = headBuff[0];
+				serialCommand->commandID = (SBGC_Commands_t)headBuff[0];
 				memcpy(serialCommand->payload, &complexBuff[3], headBuff[1]);
 				serialCommand->payloadSize = headBuff[1];
 
@@ -394,6 +392,26 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 /**	@addtogroup	Parser_Memory
  *	@{
  */
+/**	@brief	Common data-endian convertation function
+ *
+ *	@param	*pDestination - where data will be written
+ *	@param	*pSample - write data
+ *	@param	size - data size
+ *	@param	parserMap - data type required for correct parsing
+ *
+ *	@return	size of written data
+ */
+ui8 ConvertWithPM (void *pDestination, const void *pSample, ui8 size, ParserMap_t parserMap)
+{
+	if (size == 0)
+		return 0;
+
+	memcpy(pDestination, pSample, size);
+	SwapBytesInStruct((ui8*)pDestination, size, parserMap);
+	return size;
+}
+
+
 /**	@brief	Writes a data buffer to a SerialCommand's payload buffer
  *
  * 	@param	*cmd - writable SerialCommand
@@ -403,12 +421,10 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
  */
 void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap)
 {
-	if (cmd->payloadSize <= MAX_BUFF_SIZE - size)
-	{
-		memcpy(&cmd->payload[cmd->payloadSize], buff, size);
-		SwapBytesInStruct(cmd->payload, size, parserMap);
-		cmd->payloadSize += size;
-	}
+	if (cmd->payloadSize > MAX_BUFF_SIZE - size)
+		return;  // data will not fit
+	
+	cmd->payloadSize += ConvertWithPM(&cmd->payload[cmd->payloadSize], buff, size, parserMap);
 }
 
 
@@ -421,13 +437,12 @@ void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t pa
  */
 void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap)
 {
-    if (size <= (MAX_BUFF_SIZE - cmd->readPos))
-    {
-		SwapBytesInStruct(cmd->payload, size, parserMap);
-		memcpy(buff, &cmd->payload[cmd->readPos], size);
-		cmd->readPos += size;
-    }
+	if (size > (MAX_BUFF_SIZE - cmd->readPos))
+		return;  // data will not fit
+	
+	cmd->readPos += ConvertWithPM(buff, &cmd->payload[cmd->readPos], size, parserMap);
 }
+
 
 /**	@brief	Rearranges data depending on the
  * 			organization of system memory
@@ -440,7 +455,27 @@ void SwapBytesInStruct (ui8 *structure, ui8 size, ParserMap_t parserMap)
 {
 	#ifdef SYS_BIG_ENDIAN
 
-		if (parserMap == PM_DEFAULT_8BIT) return;
+		if (parserMap == PM_DEFAULT_8BIT)
+			return;
+
+		else if (parserMap == PM_DEFAULT_16BIT)
+		{
+			for (ui8 i = 0; i < size; i += 2)
+				SwapMemoryContent(&structure[i], &structure[i + 1]);
+
+			return;
+		}
+
+		else if (parserMap == PM_DEFAULT_32BIT)
+		{
+			for (ui8 i = 0; i < size; i += 4)
+			{
+				SwapMemoryContent(&structure[i], &structure[i + 3]);
+				SwapMemoryContent(&structure[i + 1], &structure[i + 2]);
+			}
+
+			return;
+		}
 
 		const ParserBlock_t *arrDB;
 		ui8 arrDB_ElementsCount;
@@ -592,7 +627,7 @@ void SwapBytesInStruct (ui8 *structure, ui8 size, ParserMap_t parserMap)
 				arrDB_ElementsCount = Motor4_Control_ParserStructDB_Size;
 				break;
 
-										case PM_DEFAULT_8BIT :  // Prevents [-Wswitch] warnings
+										case PM_DEFAULT_8BIT :  // Prevents [-Wswitch] warning
 											return;
 		}
 
@@ -613,14 +648,16 @@ void SwapBytesInStruct (ui8 *structure, ui8 size, ParserMap_t parserMap)
 
 					case 2 :
 						SwapMemoryContent((structure + currentOffsetAddr), (structure + currentOffsetAddr + 1));
-						(void)__builtin_bswap16(structure[currentOffsetAddr]);
+						/* or (void)__builtin_bswap16(structure[currentOffsetAddr]); */
+
 						currentOffsetAddr += 2;
 						break;
 
 					case 4 :
 						SwapMemoryContent((structure + currentOffsetAddr), (structure + currentOffsetAddr + 3));
 						SwapMemoryContent((structure + currentOffsetAddr + 1), (structure + currentOffsetAddr + 2));
-						(void)__builtin_bswap32(structure[currentOffsetAddr]);
+						/* or (void)__builtin_bswap32(structure[currentOffsetAddr]); */
+
 						currentOffsetAddr += 4;
 						break;
 				}
@@ -885,14 +922,24 @@ TxRxStatus_t SBGC32_DefaultInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, Rx
 
 	#ifdef SBGC_DEBUG_MODE
 
+	    char boardVersionStr [4];
+  		char firmwareVersionStr [7];
+
+		FormatBoardVersion(generalSBGC->_boardVersion, boardVersionStr);
+   		FormatFirmwareVersion(generalSBGC->_firmwareVersion, firmwareVersionStr);
+
 		PrintMessage(generalSBGC, TEXT_SIZE_(" \n"));
 		PrintMessage(generalSBGC, TEXT_SIZE_("******************************\n"));
 
 		if (generalSBGC->_ParserCurrentStatus == TX_RX_OK)
 		{
 			PrintMessage(generalSBGC, TEXT_SIZE_("The system is ready to go!\n"));
-			PrintStructElement(generalSBGC, &generalSBGC->_boardVersion, "Board Version: ", _UNSIGNED_CHAR_);
-			PrintStructElement(generalSBGC, &generalSBGC->_firmwareVersion, "Firmware Version: ", _UNSIGNED_SHORT_);
+			PrintMessage(generalSBGC, TEXT_SIZE_((char*)"Board Version: "));
+			PrintMessage(generalSBGC, TEXT_SIZE_(boardVersionStr));
+			PrintMessage(generalSBGC, TEXT_SIZE_((char*)" \n"));
+			PrintMessage(generalSBGC, TEXT_SIZE_((char*)"Firmware Version: "));
+			PrintMessage(generalSBGC, TEXT_SIZE_(firmwareVersionStr));
+			PrintMessage(generalSBGC, TEXT_SIZE_((char*)" \n"));
 			PrintMessage(generalSBGC, TEXT_SIZE_("******************************\n\r"));
 		}
 
@@ -1129,7 +1176,7 @@ void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length)
  *	@param	*str - debug info string
  *	@param	vType - type of variable
  */
-void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, char *str, VarTypes_t vType)
+void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, const char *str, VarTypes_t vType)
 {
 	char debugStr [50];
 

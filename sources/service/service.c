@@ -540,7 +540,9 @@ TxRxStatus_t SBGC32_ReadStateVars (GeneralSBGC_t *generalSBGC, StateVars_t *stat
  */
 void SBGC32_ParseEventCmd (SerialCommand_t *cmd, Event_t *event)
 {
-	cmd->readPos = 0;
+	if (cmd->readPos != 0)
+		cmd->readPos = 0;
+
 	ReadBuff(cmd, event, sizeof(Event_t), PM_DEFAULT_8BIT);
 }
 
@@ -627,8 +629,7 @@ TxRxStatus_t SBGC32_PlayBeeper (GeneralSBGC_t *generalSBGC, const BeeperSettings
 	WriteEmptyBuff(&cmd, 8);  // reserved[8]
 
     if (beeperSettings->mode == BM_BEEPER_MODE_CUSTOM_MELODY)
-    	FOR_(i, beeperSettings->notesQuan)
-    		WriteWord(&cmd, beeperSettings->notesFreqHz[i]);
+    	FOR_(i, beeperSettings->notesQuan) WriteWord(&cmd, beeperSettings->notesFreqHz[i]);
 
     SBGC32_TX(generalSBGC, &cmd);
     /* no need confirmation */

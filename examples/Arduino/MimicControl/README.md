@@ -1,5 +1,5 @@
 Mimic Control Arduino Example
-==========================================
+=============================
 [![Web-site](https://www.basecamelectronics.com/img/logo.basecam.onwhite.png)](https://www.basecamelectronics.com)
 
 This is an example sketch for Arduino, that shows how to control

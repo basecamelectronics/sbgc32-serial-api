@@ -143,15 +143,15 @@ void setup()
 void loop()
 {
 
-	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-	/*                     Start Worker Cycle                     */
-	/* __________________________________________________________ */
+	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
+	/* 						Start Worker Cycle						  */
+	/* ______________________________________________________________ */
 
 	/* Getting current time */
 	LCD_RemoteGeneral.currentTimeMs = SBGC_1.GetTimeFunc(SBGC_1.Drv);
 
 
-	/*  - - - - - - - - - Controllers Handler - - - - - - - - - - */
+	/*  - - - - - - - - - - Controllers Handler - - - - - - - - - - - */
 
 	if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.controlPause > MOTORS_ON_CONTROL_PAUSE) &&
 		(LCD_RemoteGeneral.motorsCurrentState == MOTORS_ON))
@@ -222,7 +222,7 @@ void loop()
 		#endif
 	}
 
-	/* - - - - - - - - - - Knob Encoder Handler - - - - - - - - - */
+	/* - - - - - - - - - - - Knob Encoder Handler - - - - - - - - - - */
 
 	if (InputsInfo.KE_CurrentValue != 0)
 	{
@@ -235,7 +235,7 @@ void loop()
 	}
 
 
-	/* - - - - - - - - - - - Menu Handler - - - - - - - - - - - - */
+	/* - - - - - - - - - - - - Menu Handler - - - - - - - - - - - - - */
 
 	/* Process navigation */
 	if (DebounceNavigationButton(&LCD_RemoteGeneral, ReadNavigationButtonState(&InputsInfo)))
@@ -281,7 +281,7 @@ void loop()
 		LCD_RemoteGeneral.updateDisplayFlag = DISPLAY_NOT_UPDATED;
 	}
 
-	/*  - - - - - - - - - - Buttons Handling - - - - - - - - - - */
+	/*  - - - - - - - - - - - Buttons Handling - - - - - - - - - - - */
 
 	/* Menu Button */
 	if (ReadButtonState(MENU_BTN_PIN))
@@ -305,13 +305,13 @@ void loop()
 		InputsInfo.menuBtn = BTN_RELEASED;
 
 
-	/* - - - - - - - - - AdjVarsGeneral Handler - - - - - - - - - */
+	/* - - - - - - - - - - AdjVarsGeneral Handler - - - - - - - - - - */
 
 	/* Send the value of updated adjvars to the board */
 	SBGC32_SetAdjVarValues(&SBGC_1, AdjVarsGeneral, LCD_RemoteGeneral.adjVarQuan, &Confirm);
 
 
-	/* - - - - - - - - - - - SBGC Handler - - - - - - - - - - - - */
+	/* - - - - - - - - - - - - SBGC Handler - - - - - - - - - - - - - */
 
 	ProcessHandler(&SBGC_1, &LCD_RemoteGeneral, &RealTimeData, AdjVarsGeneral);
 
@@ -323,14 +323,14 @@ void loop()
 	}
 
 
-	/* - - - - - - - - - - Display Updating - - - - - - - - - - - */
+	/* - - - - - - - - - - - Display Updating - - - - - - - - - - - - */
 
 	/* Low-rate tasks */
 	if (((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.lowRateTimeMs) > LOW_RATE_TASK_INTERVAL ||
 			LCD_RemoteGeneral.updateDisplayFlag) && !LCD_RemoteGeneral.updateDisplayFlagEnable)
 		UpdateDisplay(&SBGC_1, &LCD_RemoteGeneral, &RealTimeData, AdjVarsGeneral);  // Update LCD to display animation and state
 
-	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 }
 
 

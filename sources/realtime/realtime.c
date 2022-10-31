@@ -207,14 +207,17 @@
 /**	@addtogroup	Data_Stream_Interval
  * 	@{
  */
-/**	@brief	Register or update data stream
+/**	@brief	Registers or updates a data stream
  *
- *	@note	Firmware: 2.60+\n
- *			Commands sent by the controller with
- *			the fixed rate without request
+ *	@attention	Firmware: 2.60+\n
+ *				Commands sent by the controller with
+ *				the fixed rate without request
  *
  *	@note	Firmware: 2.65+\n
  *			...or based on events
+ *
+ *	@ref	SBGC32_ParseDataStream function
+ *			for parse the requested data
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*dataStreamInterval - structure with prepared
@@ -232,6 +235,81 @@ TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInt
 	SBGC32_CheckConfirmation(generalSBGC, confirmationState, cmd.commandID);
 	return generalSBGC->_ParserCurrentStatus;
 }
+
+
+/**	@brief	Parses the requested data stream
+ *
+ *  @ref	SBGC32_RequestDataStream function
+ *			for request a data stream
+ *
+ * 	@param 	*generalSBGC - serial connection descriptor
+ *	@param	*dataStreamStruct - one of the relevant
+ *			structs to the cmdID parameter
+ *	@param	cmdID - sent in the DataStreamInterval_t.cmdID
+ *			parameter, for which a response is expected
+ *
+ *	@return Communication status
+ */
+TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Commands_t cmdID)
+{
+	SerialCommand_t cmd;
+	if (CheckReceipt(generalSBGC, SBGC32_RX(generalSBGC, &cmd, generalSBGC->rxTimeout), "Data Stream:") == TX_RX_OK)
+	{
+		switch (cmdID)
+		{
+			case CMD_REALTIME_DATA_3 :
+			{
+				/* dataStreamStruct = &RealTimeData_t struct for reading */
+				ReadBuff(&cmd, dataStreamStruct, SIZEOF_REALTIME_DATA_3, PM_REALTIME_DATA_3);
+				break;
+			}
+
+						case CMD_REALTIME_DATA_4 :
+						{
+							/* dataStreamStruct = &RealTimeData_t struct for reading */
+							ReadBuff(&cmd, dataStreamStruct, sizeof(RealTimeData_t), PM_REALTIME_DATA_4);
+							break;
+						}
+
+			case CMD_REALTIME_DATA_CUSTOM :
+			{
+				/* This case will not work correctly in the big endian systems.
+				   You may repair <PM_DEFAULT_8BIT> value to custom, corresponding to the requested data.
+
+				   Also, you can get the parsed data to custom data structure and then transfer it to the
+				   RealTimeDataCustom_t struct. This method can be used, when you need to get
+				   separated data arrays.
+
+				   Anyway it will began with ui16 timestampMs value.
+				   dataStreamStruct = &RealTimeDataCustom_t struct for reading */
+				ReadBuff(&cmd, dataStreamStruct, cmd.payloadSize, PM_DEFAULT_8BIT);
+				break;
+			}
+
+						case CMD_AHRS_HELPER :
+						{
+							/* dataStreamStruct = &RealTimeData_t->Z_Vect[0] field for reading */
+							ReadBuff(&cmd, dataStreamStruct, cmd.payloadSize, PM_DEFAULT_8BIT);
+							FOR_(i, 6) ReadLong(&cmd);
+							break;
+						}
+
+			case CMD_EVENT :
+			{
+				if (cmd.readPos != 0)
+					cmd.readPos = 0;
+
+				ReadBuff(&cmd, dataStreamStruct, SIZEOF_EVENT, PM_DEFAULT_8BIT);
+				break;
+			}
+
+						default :
+							break;
+		}
+	}
+
+	return generalSBGC->_ParserCurrentStatus;
+}
 /**	@}
  */
 
@@ -239,7 +317,7 @@ TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInt
 /**	@addtogroup	Realtime_Data_Custom
  * 	@{
  */
-/**	@brief	Request configurable realtime data
+/**	@brief	Requests configurable realtime data
  *
  *	@attention	Firmware: 2.60+
  *
@@ -247,19 +325,19 @@ TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInt
  * 	@param 	*realTimeDataCustom - structure for storing
  * 			any pieces of real-time data
  * 	@param 	flags - variable containing the required flags:\n
- *				bit0: 	IMU_Angles [3]\n
- *				bit1: 	targetAngles [3]\n
- *				bit2: 	targetSpeed [3]\n
- *				bit3: 	frameCamAngle [3]\n
- *				bit4: 	gyroData [3]\n
- *				bit5: 	RC_Data [6]\n
- *				bit6:	Z_Vector [3], H_Vector [3]\n
- *				bit7: 	RC_Channels [18]\n
- *				bit8: 	ACC_Data [3]\n
- *				bit9: 	motor4_Control data structure\n
- *				bit10: 	AHRS_DebugInfo data structure\n
- *				bit11: 	encoderRaw24 [3][3]\n
- *				bit12: 	IMU_AnglesRad [3]
+ *				bit0: 		IMU_Angles [3]				RTDCF_IMU_ANGLES\n
+ *				bit1: 		targetAngles [3]			RTDCF_TARGET_ANGLES\n
+ *				bit2: 		targetSpeed [3]				RTDCF_TARGET_SPEED\n
+ *				bit3: 		frameCamAngle [3]			RTDCF_STATOR_ROTOR_ANGLE\n
+ *				bit4: 		gyroData [3]				RTDCF_GYRO_DATA\n
+ *				bit5: 		RC_Data [6]					RTDCF_RC_DATA\n
+ *				bit6:		Z_Vector [3], H_Vector [3]	RTDCF_Z_VECTOR_H_VECTOR\n
+ *				bit7: 		RC_Channels [18]			RTDCF_RC_CHANNELS\n
+ *				bit8: 		ACC_Data [3]				RTDCF_ACC_DATA\n
+ *				bit9: 		motor4_Control struct		RTDCF_MOTOR4_CONTROL\n
+ *				bit10: 		AHRS_DebugInfo struct		RTDCF_AHRS_DEBUG_INFO\n
+ *				bit11: 		encoderRaw24 [3][3]			RTDCF_ENCODER_RAW24\n
+ *				bit12: 		IMU_AnglesRad [3]			RTDCF_IMU_ANGLES_RAD
  *
  *	@return Communication status
  */
@@ -276,7 +354,7 @@ TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealT
 
 	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_REALTIME_DATA_CUSTOM), "RealTime Data Custom:") == TX_RX_OK)
 	{
-		SkipBytes(&cmd, 2);  // ui16 timestampMs offset
+		realTimeDataCustom->timestampMs = ReadWord(&cmd);
 
 		/* Data Parsing */
 		FOR_(i, 32)
@@ -333,8 +411,7 @@ TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealT
 					break;
 
 							case RTDCF_RC_CHANNELS :
-								FOR_(k, 18)
-								realTimeDataCustom->RC_Channels[i] = ReadWord(&cmd);
+								FOR_(k, 18) realTimeDataCustom->RC_Channels[i] = ReadWord(&cmd);
 								break;
 
 				case RTDCF_ACC_DATA :
@@ -388,10 +465,10 @@ TxRxStatus_t SBGC32_ReadRealTimeData3 (GeneralSBGC_t *generalSBGC, RealTimeData_
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_REALTIME_DATA_3);
-	ui8 realTime3_Size = offsetof_(realTimeData->frameCamAngle[0], *realTimeData);
 
 	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_REALTIME_DATA_3), "Real-Time Data 3:") == TX_RX_OK)
-		ReadBuff(&cmd, realTimeData, realTime3_Size, PM_REALTIME_DATA_3);
+		ReadBuff(&cmd, realTimeData, SIZEOF_REALTIME_DATA_3, PM_REALTIME_DATA_3);
+		/* or offsetof_(realTimeData->frameCamAngle, realTimeData); */
 
 	return generalSBGC->_ParserCurrentStatus;
 }
