@@ -5,3 +5,5 @@ Demo Launch Arduino Example
 This is an example sketch for Arduino, that shows how to control
 SimpleBGC-driven gimbal via Serial API. API specs are available at
 [SerialAPI](http://www.basecamelectronics.com/serialapi/)
+
+*Note: Project has been built with PlatformIO framework*
