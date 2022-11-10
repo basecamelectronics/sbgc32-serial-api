@@ -120,7 +120,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 #define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32 for
 														  for the @ref SBGC32_DefaultInit function										*/
-#define		SBGC_RX_WAITING			2000			/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
+#define		SBGC_RX_WAITING			300				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the @ref SBGC32_DefaultInit function										*/
 #define		SBGC_STARTUP_DELAY		3000			/*!<  Units: milliseconds. System startup delay parameter							*/
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
@@ -348,6 +348,9 @@ typedef enum
 	RX_PAYLOAD_CHECKSUM_ERROR,
 	RX_BUFFER_OVERFLOW_ERROR,
 	RX_TIMEOUT_ERROR,
+
+	EXPECTED_CMD_ERROR,
+
 	NOT_SUPPORTED_BY_FIRMWARE
 
 }	TxRxStatus_t;
@@ -977,7 +980,7 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 /**	@addtogroup	Parser_Memory
  *	@{
  */
-ui8 ConvertWithPM (void *pDestination, const void *pSample, ui8 size, ParserMap_t parserMap);
+ui8 ConvertWithPM (void *pDestination, const void *pSource, ui8 size, ParserMap_t parserMap);
 void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap);
 void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap);
 void ToLittleEndian (const void *value, ui8 *payload, ui8 size);

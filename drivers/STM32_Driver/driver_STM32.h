@@ -70,6 +70,17 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  * 						 Hardware Macros & Constants
  */
+/*  - - - - - User Defined Parameters - - - - - - */
+#define		STM32_HAL_NVIC_UART						/*!<  UART driver works with NVIC through HAL										*/
+//#define		STM32_LL_NVIC_UART						/*!<  UART driver works with NVIC through LL										*/
+//#define		STM32_HAL_DMA_UART						/*!<  UART driver works with DMA through HAL										*/
+//#define		STM32_LL_DMA_UART						/*!<  UART driver works with DMA through LL											*/
+
+#define		STM32_HAL_TIMER							/*!<  Timer driver works with NVIC through HAL										*/
+//#define		STM32_LL_TIMER							/*!<  Timer driver works with NVIC through LL										*/
+/*  - - - - - - - - - - - - - - - - - - - - - - - */
+
+
 /*				   ### Timer ###				  */
 /**	@verbatim
 
@@ -88,7 +99,7 @@ extern		"C" {
 	@endverbatim
  */
 
-#ifdef 		HAL_TIM_MODULE_ENABLED
+#if defined (STM32_HAL_TIMER)
 	/*  - - - - User Defined Parameters - - - - - */
 	#define INTERNAL_MAIN_TIMER	&htim2				/*!<  HAL User defined timer object. Each SBGC32 device has its own self timer		*/
 	/*  - - - - - - - - - - - - - - - - - - - - - */
@@ -99,7 +110,8 @@ extern		"C" {
 
 	#define	GET_FLAG_TIM_SR_UIF(TIM)		__HAL_TIM_GET_FLAG(TIM, TIM_FLAG_UPDATE)
 	#define	GET_FLAG_TIM_DIER_UIE(TIM)		__HAL_TIM_GET_IT_SOURCE(TIM, TIM_FLAG_UPDATE)
-#else		/* LL_TIM */
+
+#elif defined (STM32_LL_TIMER)
 	/*  - - - - User Defined Parameters - - - - - */
 	#define INTERNAL_MAIN_TIMER TIM2				/*!<  LL User defined timer object. Each SBGC32 device has its own self timer		*/
 	/*  - - - - - - - - - - - - - - - - - - - - - */
@@ -115,6 +127,9 @@ extern		"C" {
 
 /*				   ### UART ###					  */
 /**	@verbatim
+
+	*** UART by means of NVIC: ***
+	==============================
 
 	Copy this code into the USARTx_IRQHandler()
 	function (if you are use HAL drivers - above
@@ -135,10 +150,33 @@ extern		"C" {
 	where the 'SBGC32_Device' is a general SBGC32
 	configurations structure.
 
+
+	*** UART by means of DMA with LL: ***
+	=====================================
+
+	Copy this code into the DMAx_Streamx_IRQHandler()
+	functions in the stm32XXxx_it.c file:
+
+	if (GET_FLAG_DMA_HISR_TC_TX)
+		CLEAR_DMA_TC_TX;
+
+	- for DMA UART Tx channel.
+
+	if (GET_FLAG_DMA_HISR_TC_RX)
+		CLEAR_DMA_TC_RX;
+
+	- for DMA UART Rx channel.
+
+	Note: Be careful with CubeMX code generator.
+	It may to create the MX_DMA_Init() function under
+	the MX_USARTx_Init() function and then you will be
+	need to lift it above. Otherwise this program
+	will not work
+
 	@endverbatim
  */
 
-#ifdef 		HAL_UART_MODULE_ENABLED
+#if defined (STM32_HAL_NVIC_UART)
 	/*  - - - - User Defined Parameters - - - - - */
 	#define SBGC_SERIAL_PORT	&huart1				/*!<  HAL User defined UART object. Used to communicate with SBGC32 device 			*/
 	#define DEBUG_SERIAL_PORT	&huart2				/*!<  HAL User defined UART object. Used to print debug data						*/
@@ -165,7 +203,8 @@ extern		"C" {
 	#define	GET_FLAG_UART_ISR_RXNE(UART)	__HAL_UART_GET_FLAG(UART, UART_FLAG_RXNE)
 	#define	GET_FLAG_UART_CR1_RXNEIE(UART)	__HAL_UART_GET_IT_SOURCE(UART, UART_IT_RXNE)
 	#define	GET_FLAG_UART_ISR_ORE(UART)		__HAL_UART_GET_FLAG(UART, UART_FLAG_ORE)
-#else		/* LL_UART */
+
+#elif defined (STM32_LL_NVIC_UART)
 	/*  - - - - User Defined Parameters - - - - - */
 	#define SBGC_SERIAL_PORT    USART1				/*!<  LL User defined UART object. Used to communicate with SBGC32 device 			*/
 	#define DEBUG_SERIAL_PORT   USART2				/*!<  LL User defined UART object. Used to print debug data							*/
@@ -189,17 +228,61 @@ extern		"C" {
 	#define	GET_FLAG_UART_ISR_RXNE(UART)	LL_USART_IsActiveFlag_RXNE(UART)
 	#define	GET_FLAG_UART_CR1_RXNEIE(UART)	LL_USART_IsEnabledIT_RXNE(UART)
 	#define	GET_FLAG_UART_ISR_ORE(UART)		LL_USART_IsActiveFlag_ORE(UART)
+
+#elif defined (STM32_HAL_DMA_UART)
+	/*  - - - - User Defined Parameters - - - - - */
+	#define SBGC_SERIAL_PORT	&huart1				/*!<  HAL User defined UART object. Used to communicate with SBGC32 device 			*/
+	#define DEBUG_SERIAL_PORT	&huart2				/*!<  HAL User defined UART object. Used to print debug data						*/
+
+	/** LL User defined DMA object. Used to communicate with SBGC32 device */
+	#define	DMA_UART_RX			(SBGC_SERIAL_PORT)->hdmarx
+	/*  - - - - - - - - - - - - - - - - - - - - - */
+
+	#define	__UART_STRUCT		UART_HandleTypeDef *uart
+
+	#define	GET_DMA_RX_COUNTER(DMAX)		__HAL_DMA_GET_COUNTER(DMAX)
+
+#elif defined (STM32_LL_DMA_UART)
+	/*  - - - - User Defined Parameters - - - - - */
+	#define SBGC_SERIAL_PORT    USART1				/*!<  LL User defined UART object. Used to communicate with SBGC32 device 			*/
+	#define DEBUG_SERIAL_PORT   USART2				/*!<  LL User defined UART object. Used to print debug data							*/
+
+	#define	DMA_UART_TX			DMA2				/*!<  LL User defined DMA object. Used to communicate with SBGC32 device 			*/
+	#define	DMA_UART_RX			DMA2				/*!<  LL User defined DMA object. Used to communicate with SBGC32 device 			*/
+	#define	DMA_UART_TX_STREAM	LL_DMA_STREAM_7		/*!<  LL User defined DMA channel object. Used to communicate with SBGC32 device 	*/
+	#define	DMA_UART_RX_STREAM	LL_DMA_STREAM_2		/*!<  LL User defined DMA channel object. Used to communicate with SBGC32 device 	*/
+
+	/** Appointed in accordance with DMA_UART_TX_STREAM channel (TCx) */
+	#define	CLEAR_DMA_TC_TX		LL_DMA_ClearFlag_TC7(DMA_UART_TX)
+
+	/** Appointed in accordance with DMA_UART_RX_STREAM channel (TCx) */
+	#define	CLEAR_DMA_TC_RX		LL_DMA_ClearFlag_TC2(DMA_UART_RX)
+
+	/** Appointed in accordance with DMA_UART_TX_STREAM channel (TCx) */
+	#define	GET_FLAG_DMA_HISR_TC_TX			LL_DMA_IsActiveFlag_TC7(DMA_UART_TX)
+
+	/** Appointed in accordance with DMA_UART_RX_STREAM channel (TCx) */
+	#define	GET_FLAG_DMA_HISR_TC_RX			LL_DMA_IsActiveFlag_TC2(DMA_UART_RX)
+	/*  - - - - - - - - - - - - - - - - - - - - - */
+
+	#define __UART_STRUCT		USART_TypeDef *uart
+
+	#define	GET_DMA_RX_COUNTER(DMAX)		LL_DMA_GetDataLength(DMAX, DMA_UART_RX_STREAM)
 #endif
 
-/*				   ### Other ###				  */
-/*  - - - - - User Defined Parameters - - - - - - */
-#define		TX_BUFFER_SIZE			256				/*!<  256 Min --> 65534 Max															*/
-#define		RX_BUFFER_SIZE			256				/*!<  256 Min --> 65534 Max															*/
-/*  - - - - - - - - - - - - - - - - - - - - - - - */
+#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART) || defined (STM32_LL_DMA_UART)
+	/*				 ### Other ###				  */
+	/*  - - - - User Defined Parameters - - - - - */
+	#define		TX_BUFFER_SIZE			256			/*!<  256 Min --> 65534 Max															*/
+#endif
 
-#ifdef 		USE_HAL_DRIVER
+	#define		RX_BUFFER_SIZE			256			/*!<  256 Min --> 65534 Max															*/
+	/*  - - - - - - - - - - - - - - - - - - - - - */
+
+
+#if defined (USE_HAL_DRIVER)
 	#define	DELAY_MS(ms)			HAL_Delay(ms)
-#else
+#elif defined (USE_FULL_LL_DRIVER)
 	#define	DELAY_MS(ms)			LL_mDelay(ms)
 #endif
 
@@ -217,9 +300,13 @@ typedef struct
 	__TIMER_STRUCT;									/*!<  Timer object																	*/
 
 	/* UART */
-	ui8		TxBuffer [TX_BUFFER_SIZE];				/*!<  UART Tx ring buffer															*/
-	ui16	TxTail;									/*!<  UART Tx ring buffer tail point												*/
-	ui16	TxHead;									/*!<  UART Tx ring buffer head point												*/
+	#if defined(STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART) || defined (STM32_LL_DMA_UART)
+
+		ui8		TxBuffer [TX_BUFFER_SIZE];			/*!<  UART Tx ring buffer															*/
+		ui16	TxTail;								/*!<  UART Tx ring buffer tail point. Not used in DMA LL mode						*/
+		ui16	TxHead;								/*!<  UART Tx ring buffer head point. Not used in DMA LL mode						*/
+
+	#endif
 
 	ui8		RxBuffer [RX_BUFFER_SIZE];				/*!<  UART Rx ring buffer															*/
 	ui16	RxTail;									/*!<  UART Rx ring buffer tail point												*/
@@ -240,12 +327,20 @@ ui32 GetTimeMs (void *Driver);
 void TimerDRV_CallBack (void *Driver);
 
 ui8 UartTransmitData (void *Driver, ui8 *data, ui16 size);
-void UART_DRV_TxCallBack (void *Driver);
+
+#if defined(STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	void UART_DRV_TxCallBack (void *Driver);
+#endif
+
 void ClearTxBuff (void *Driver);
 
 ui16 GetAvailableBytes (void *Driver);
 ui8 UartReceiveByte (void *Driver, ui8 *data);
-void UART_DRV_RxCallBack (void *Driver);
+
+#if defined(STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	void UART_DRV_RxCallBack (void *Driver);
+#endif
+
 void ClearRxBuff (void *Driver);
 
 void UartTransmitDebugData (char *data, ui16 length);

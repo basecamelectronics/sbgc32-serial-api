@@ -45,12 +45,50 @@ void DriverInit (void *Driver, __UART_STRUCT, __TIMER_STRUCT)
 
 	drv->uart = uart;
 
-	ClearTxBuff(drv);
+	#ifndef STM32_HAL_DMA_UART
+		ClearTxBuff(drv);
+	#endif
+
 	ClearRxBuff(drv);
 
-	DISABLE_UART_CR1_TCIE(drv->uart);
-	ENABLE_UART_CR1_RXNEIE(drv->uart);
-	DISABLE_UART_CR1_IDLEIE(drv->uart);
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
+
+		DISABLE_UART_CR1_TCIE(drv->uart);
+		ENABLE_UART_CR1_RXNEIE(drv->uart);
+		DISABLE_UART_CR1_IDLEIE(drv->uart);
+
+	#elif defined (STM32_HAL_DMA_UART)
+	/* UART HAL DMA executable code */
+
+		HAL_UART_Receive_DMA(drv->uart, drv->RxBuffer, RX_BUFFER_SIZE);
+
+	#elif defined (STM32_LL_DMA_UART)
+	/* UART LL DMA executable code */
+
+		/* Tx Init */
+		LL_USART_EnableDMAReq_TX(SBGC_SERIAL_PORT);
+		LL_DMA_EnableIT_TC(DMA_UART_TX, DMA_UART_TX_STREAM);
+
+		LL_DMA_ConfigAddresses(DMA_UART_TX, DMA_UART_TX_STREAM,
+							   (ui32)drv->TxBuffer,
+							   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_TRANSMIT),
+							   LL_DMA_GetDataTransferDirection(DMA_UART_TX, DMA_UART_TX_STREAM));
+
+		/* Rx Init */
+		LL_USART_EnableDMAReq_RX(SBGC_SERIAL_PORT);
+		LL_DMA_EnableIT_TC(DMA_UART_RX, DMA_UART_RX_STREAM);
+
+		LL_DMA_ConfigAddresses(DMA_UART_RX, DMA_UART_RX_STREAM,
+							   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_RECEIVE),
+							   (ui32)drv->RxBuffer,
+							   LL_DMA_GetDataTransferDirection(DMA_UART_RX, DMA_UART_RX_STREAM));
+
+		LL_DMA_DisableStream(DMA_UART_RX, DMA_UART_RX_STREAM);
+		LL_DMA_SetDataLength(DMA_UART_RX, DMA_UART_RX_STREAM, RX_BUFFER_SIZE);
+		LL_DMA_EnableStream(DMA_UART_RX, DMA_UART_RX_STREAM);
+
+	#endif
 
 
 	START_TIMER(drv->tim);
@@ -105,65 +143,92 @@ ui8 UartTransmitData (void *Driver, ui8 *data, ui16 size)
 {
 	Driver_t *drv = (Driver_t*)Driver;
 
-	/* Free space check */
-	ui16 txHead = drv->TxHead;
-	ui16 txTail = drv->TxTail;
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
 
-	ui16 count = 0;
-	while (txHead != txTail)
-	{
-		if (!txHead)
-			txHead = TX_BUFFER_SIZE;
+		/* Free space check */
+		ui16 txHead = drv->TxHead;
+		ui16 txTail = drv->TxTail;
 
-		txHead--;
-		count++;
-	}
+		ui16 count = 0;
+		while (txHead != txTail)
+		{
+			if (!txHead)
+				txHead = TX_BUFFER_SIZE;
 
-	if (TX_BUFFER_SIZE - count < size)
-	{
-		/* - - - - User TxBuffer Overflow Handler - - - - -*/
+			txHead--;
+			count++;
+		}
 
-		/* - - - - - - - - - - - - - - - - - - - - - - - - */
-		return 1;
-	}
+		if (TX_BUFFER_SIZE - count < size)
+		{
+			/* - - - - User TxBuffer Overflow Handler - - - - -*/
 
-	count = 0;
-	while (count < size)
-	{
-		drv->TxBuffer[drv->TxHead++] = data[count++];
+			/* - - - - - - - - - - - - - - - - - - - - - - - - */
+			return 1;
+		}
 
-		if (drv->TxHead >= TX_BUFFER_SIZE)
-			drv->TxHead = 0;
-	}
+		count = 0;
+		while (count < size)
+		{
+			drv->TxBuffer[drv->TxHead++] = data[count++];
 
-	ENABLE_UART_CR1_TCIE(drv->uart);  // Enable transfer completion interrupts
+			if (drv->TxHead >= TX_BUFFER_SIZE)
+				drv->TxHead = 0;
+		}
 
-	return 0;
+		ENABLE_UART_CR1_TCIE(drv->uart);  // Enable transfer completion interrupts
+
+		return 0;
+
+	#elif defined (STM32_HAL_DMA_UART)
+	/* UART DMA executable code */
+
+		HAL_UART_Transmit_DMA(drv->uart, data, size);
+
+		return 0;
+
+	#elif defined (STM32_LL_DMA_UART)
+
+		memcpy(drv->TxBuffer, data, size);
+
+		LL_DMA_DisableStream(DMA_UART_TX, DMA_UART_TX_STREAM);
+		LL_DMA_SetDataLength(DMA_UART_TX, DMA_UART_TX_STREAM, size);
+		LL_DMA_EnableStream(DMA_UART_TX, DMA_UART_TX_STREAM);
+
+		return 0;
+
+	#endif
 }
 
 
-/**	@brief	UART transfer completion interrupts handler
- *
- *	@param	*Driver - main hardware driver object
- */
-void UART_DRV_TxCallBack (void *Driver)
-{
-	Driver_t *drv = (Driver_t*)Driver;
+#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+/* UART Interrupts executable code */
 
-	WRITE_UART_BYTE(drv->uart, drv->TxBuffer[drv->TxTail++] & (ui32)0xFF);
-
-	if (drv->TxTail == TX_BUFFER_SIZE)
-		drv->TxTail = 0;
-
-	if (drv->TxTail == drv->TxHead)
+	/**	@brief	UART transfer completion interrupts handler
+	 *
+	 *	@param	*Driver - main hardware driver object
+	 */
+	void UART_DRV_TxCallBack (void *Driver)
 	{
-		DISABLE_UART_CR1_TCIE(drv->uart);  // Disable transmission complete interrupts
+		Driver_t *drv = (Driver_t*)Driver;
 
-		/*  - - - - User Transmit-Complete Handler - - - - */
+		WRITE_UART_BYTE(drv->uart, drv->TxBuffer[drv->TxTail++] & (ui32)0xFF);
 
-		/* - - - - - - - - - - - - - - - - - - - - - - - - */
+		if (drv->TxTail == TX_BUFFER_SIZE)
+			drv->TxTail = 0;
+
+		if (drv->TxTail == drv->TxHead)
+		{
+			DISABLE_UART_CR1_TCIE(drv->uart);  // Disable transmission complete interrupts
+
+			/*  - - - - User Transmit-Complete Handler - - - - */
+
+			/* - - - - - - - - - - - - - - - - - - - - - - - - */
+		}
 	}
-}
+
+#endif
 
 
 /**	@brief	Service Tx buffer cleaner
@@ -172,11 +237,25 @@ void UART_DRV_TxCallBack (void *Driver)
  */
 void ClearTxBuff (void *Driver)
 {
-	Driver_t *drv = (Driver_t*)Driver;
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
 
-	memset(drv->TxBuffer, 0, TX_BUFFER_SIZE);
-	drv->TxTail = 0;
-	drv->TxHead = 0;
+		Driver_t *drv = (Driver_t*)Driver;
+
+		memset(drv->TxBuffer, 0, TX_BUFFER_SIZE);
+		drv->TxTail = 0;
+		drv->TxHead = 0;
+
+	#elif defined (STM32_LL_DMA_UART)
+	/* UART LL DMA executable code */
+
+		Driver_t *drv = (Driver_t*)Driver;
+
+		memset(drv->TxBuffer, 0, TX_BUFFER_SIZE);
+		drv->TxTail = 0;
+		drv->TxHead = 0;
+
+	#endif
 }
 
 
@@ -193,23 +272,34 @@ ui16 GetAvailableBytes (void *Driver)
 {
 	Driver_t *drv = (Driver_t*)Driver;
 
-	if (drv->RxOverflowFlag)
-		return 0xFFFF;
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
 
-	ui16 rxHead = drv->RxHead;
-	ui16 rxTail = drv->RxTail;
+		if (drv->RxOverflowFlag)
+			return 0xFFFF;
 
-	ui16 count = 0;
-	while (rxHead != rxTail)
-	{
-		if (!rxHead)
-			rxHead = RX_BUFFER_SIZE;
+		ui16 rxHead = drv->RxHead;
+		ui16 rxTail = drv->RxTail;
 
-		rxHead--;
-		count++;
-	}
+		ui16 count = 0;
+		while (rxHead != rxTail)
+		{
+			if (!rxHead)
+				rxHead = RX_BUFFER_SIZE;
 
-	return count;
+			rxHead--;
+			count++;
+		}
+
+		return count;
+
+	#elif defined (STM32_HAL_DMA_UART) || defined (STM32_LL_DMA_UART)
+	/* UART DMA executable code */
+
+		drv->RxHead = RX_BUFFER_SIZE - GET_DMA_RX_COUNTER(DMA_UART_RX);
+		return (drv->RxHead - drv->RxTail) & (RX_BUFFER_SIZE - 1);
+
+	#endif
 }
 
 
@@ -224,54 +314,80 @@ ui8 UartReceiveByte (void *Driver, ui8 *data)
 {
 	Driver_t *drv = (Driver_t*)Driver;
 
-	if (drv->RxTail == drv->RxHead)
-	{
-		/* - - - - User Receive-Complete Handler - - - - - */
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
 
-		/* - - - - - - - - - - - - - - - - - - - - - - - - */
-		return 1;
-	}
+		if (drv->RxTail == drv->RxHead)
+		{
+			/* - - - - User Receive-Complete Handler - - - - - */
 
-	*data = drv->RxBuffer[drv->RxTail++];
+			/* - - - - - - - - - - - - - - - - - - - - - - - - */
+			return 1;
+		}
 
-	if (drv->RxTail >= RX_BUFFER_SIZE)
-	   drv->RxTail = 0;
+		*data = drv->RxBuffer[drv->RxTail++];
 
-	if (drv->RxOverflowFlag == 1)  // Reset the overflow flag
-		drv->RxOverflowFlag = 0;
+		if (drv->RxTail >= RX_BUFFER_SIZE)
+		   drv->RxTail = 0;
 
-	return 0;	// Rx ring buffer isn't empty
+		if (drv->RxOverflowFlag == 1)  // Reset the overflow flag
+			drv->RxOverflowFlag = 0;
+
+		return 0;  // Rx ring buffer isn't empty
+
+	#elif defined (STM32_HAL_DMA_UART) || defined (STM32_LL_DMA_UART)
+	/* UART DMA executable code */
+
+		if (GetAvailableBytes(drv) == 0)
+			return 1;
+
+		*data = drv->RxBuffer[drv->RxTail];
+
+		if (drv->RxTail != drv->RxHead)
+		{
+			drv->RxTail++;
+			drv->RxTail &= (RX_BUFFER_SIZE - 1);
+		}
+
+		return 0;
+
+	#endif
 }
 
 
-/**	@brief	UART receive completion interrupts handler
- *
- *	@param	*Driver - main hardware driver object
- */
-void UART_DRV_RxCallBack (void *Driver)
-{
-	Driver_t *drv = (Driver_t*)Driver;
+#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+/* UART Interrupts executable code */
 
-	if ((drv->RxHead - drv->RxTail == RX_BUFFER_SIZE - 1) ||
-		(drv->RxTail - drv->RxHead == 1))
+	/**	@brief	UART receive completion interrupts handler
+	 *
+	 *	@param	*Driver - main hardware driver object
+	 */
+	void UART_DRV_RxCallBack (void *Driver)
 	{
-		/*  - - - - User RxBuffer Overflow Handler - - - - */
+		Driver_t *drv = (Driver_t*)Driver;
 
-		/* - - - - - - - - - - - - - - - - - - - - - - - - */
+		if ((drv->RxHead - drv->RxTail == RX_BUFFER_SIZE - 1) ||
+			(drv->RxTail - drv->RxHead == 1))
+		{
+			/*  - - - - User RxBuffer Overflow Handler - - - - */
 
-		(void)READ_UART_BYTE(drv->uart);  // Prevent overflow error (USART_ISR_ORE)
+			/* - - - - - - - - - - - - - - - - - - - - - - - - */
 
-		if (drv->RxOverflowFlag == 0)  // Set the overflow flag
-			drv->RxOverflowFlag = 1;
+			(void)READ_UART_BYTE(drv->uart);  // Prevent overflow error (USART_ISR_ORE)
 
-		return;
+			if (drv->RxOverflowFlag == 0)  // Set the overflow flag
+				drv->RxOverflowFlag = 1;
+
+			return;
+		}
+
+		drv->RxBuffer[drv->RxHead++] = READ_UART_BYTE(drv->uart);
+
+		if (drv->RxHead >= RX_BUFFER_SIZE)
+			drv->RxHead = 0;
 	}
 
-	drv->RxBuffer[drv->RxHead++] = READ_UART_BYTE(drv->uart);
-
-	if (drv->RxHead >= RX_BUFFER_SIZE)
-		drv->RxHead = 0;
-}
+#endif
 
 
 /**	@brief	Service Rx buffer cleaner
@@ -282,37 +398,44 @@ void ClearRxBuff (void *Driver)
 {
 	Driver_t *drv = (Driver_t*)Driver;
 
-	memset(drv->RxBuffer, 0, RX_BUFFER_SIZE);
-	drv->RxTail = 0;
-	drv->RxHead = 0;
-	drv->RxOverflowFlag = 0;
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_LL_NVIC_UART)
+	/* UART Interrupts executable code */
+
+		memset(drv->RxBuffer, 0, RX_BUFFER_SIZE);
+		drv->RxTail = 0;
+		drv->RxHead = 0;
+		drv->RxOverflowFlag = 0;
+
+	#elif defined (STM32_HAL_DMA_UART) || defined (STM32_LL_DMA_UART)
+	/* UART DMA executable code */
+
+		memset(drv->RxBuffer, 0, RX_BUFFER_SIZE);
+		drv->RxTail = 0;
+		drv->RxHead = 0;
+		drv->RxOverflowFlag = 0;
+
+	#endif
 }
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *														 Debug Functions
  */
-#ifdef HAL_UART_MODULE_ENABLED
+/**	@brief	Sends debug data
+ *
+ *	@param	*data - debug data
+ *	@param	length - size of debug data
+ */
+void UartTransmitDebugData (char *data, ui16 length)
+{
+	#if defined (STM32_HAL_NVIC_UART) || defined (STM32_HAL_DMA_UART)
+	/* UART HAL executable code */
 
-	/**	@brief	Sends debug data
-	 *
-	 *	@param	*data - debug data
-	 *	@param	length - size of debug data
-	 */
-	void UartTransmitDebugData (char *data, ui16 length)
-	{
 		HAL_UART_Transmit(DEBUG_SERIAL_PORT, (ui8*)data, length, 100);
-	}
 
-#else
+	#elif defined (STM32_LL_NVIC_UART) || defined (STM32_LL_DMA_UART)
+	/* UART LL executable code */
 
-	/**	@brief	Sends debug data
-	 *
-	 *	@param	*data - debug data
-	 *	@param	length - size of debug data
-	 */
-	void UartTransmitDebugData (char *data, ui16 length)
-	{
 		ui16 count = 0;
 		while (count < length)
 		{
@@ -321,9 +444,9 @@ void ClearRxBuff (void *Driver)
 
 			LL_USART_TransmitData8(DEBUG_SERIAL_PORT, data[count++]);
 		}
-	}
 
-#endif
+	#endif
+}
 /**	@}
  */
 

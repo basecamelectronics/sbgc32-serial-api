@@ -278,7 +278,8 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 					break;
 				}
 
-				if ((headBuff[0] + headBuff[1]) % 256 != headBuff[2])  // % 256 necessary needed here
+				if (((headBuff[0] + headBuff[1]) % 256 != headBuff[2]) ||
+					  headBuff[0] == 0)
 				{
 					lastParserError = RX_HEADER_CHECKSUM_ERROR;
 					parserState = STATE_RESYNC;
@@ -375,10 +376,16 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 
 			else if (lastParserStatus == TX_RX_OK &&
 					(serialCommand->commandID != cmdID))
+			{
 				generalSBGC->_missedCommandCount++;
+				return EXPECTED_CMD_ERROR;
+			}
 
 			if (generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime >= generalSBGC->txrxTimeout)
+			{
+				generalSBGC->_missedCommandCount++;
 				return lastParserStatus;  // or return RX_TIMEOUT_ERROR;
+			}
 		}
 	}
 }
@@ -392,7 +399,7 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 /**	@addtogroup	Parser_Memory
  *	@{
  */
-/**	@brief	Common data-endian convertation function
+/**	@brief	Common data-endian converting function
  *
  *	@param	*pDestination - where data will be written
  *	@param	*pSample - write data
@@ -401,12 +408,12 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
  *
  *	@return	size of written data
  */
-ui8 ConvertWithPM (void *pDestination, const void *pSample, ui8 size, ParserMap_t parserMap)
+ui8 ConvertWithPM (void *pDestination, const void *pSource, ui8 size, ParserMap_t parserMap)
 {
 	if (size == 0)
 		return 0;
 
-	memcpy(pDestination, pSample, size);
+	memcpy(pDestination, pSource, size);
 	SwapBytesInStruct((ui8*)pDestination, size, parserMap);
 	return size;
 }
@@ -1313,9 +1320,13 @@ ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str)
 			memcpy(str, TEXT_SIZE_(nameof(RX_TIMEOUT_ERROR)));
 			return strlen(nameof(RX_TIMEOUT_ERROR));
 
-					case NOT_SUPPORTED_BY_FIRMWARE :
-						memcpy(str, TEXT_SIZE_(nameof(NOT_SUPPORTED_BY_FIRMWARE)));
-						return strlen(nameof(NOT_SUPPORTED_BY_FIRMWARE));
+					case EXPECTED_CMD_ERROR :
+						memcpy(str, TEXT_SIZE_(nameof(EXPECTED_CMD_ERROR)));
+						return strlen(nameof(EXPECTED_CMD_ERROR));
+
+		case NOT_SUPPORTED_BY_FIRMWARE :
+			memcpy(str, TEXT_SIZE_(nameof(NOT_SUPPORTED_BY_FIRMWARE)));
+			return strlen(nameof(NOT_SUPPORTED_BY_FIRMWARE));
 	}
 
 	return 0;

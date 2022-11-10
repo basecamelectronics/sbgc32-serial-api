@@ -109,7 +109,7 @@ specification](https://www.basecamelectronics.com/serialapi/).
 	#include "driver_Arduino.h"
 	#include "core.h"
 	
-	GeneralSBGC_t SBGC_1;
+	GeneralSBGC_t SBGC32_Device;
 	
 	void setup ()
 	{
@@ -118,7 +118,7 @@ specification](https://www.basecamelectronics.com/serialapi/).
 		
 		pinMode(SERIAL2_RX_PIN, INPUT_PULLUP);
 
-		SBGC32_DefaultInit(&SBGC_1, UartTransmitData, UartReceiveByte, GetAvailableBytes,
+		SBGC32_DefaultInit(&SBGC32_Device, UartTransmitData, UartReceiveByte, GetAvailableBytes,
 				UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);			   	
 	}
 
@@ -129,13 +129,11 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 	int main (void)
 	{
-		SBGC_1.Drv = malloc(sizeof(Driver_t));
-		DriverInit(SBGC_1.Drv, SBGC_SERIAL_PORT);
+		SBGC32_Device.Drv = malloc(sizeof(Driver_t));
+		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT);
 
-		SBGC32_DefaultInit(&SBGC_1, PortTransmitData, PortReceiveByte, GetAvailableBytes,
+		SBGC32_DefaultInit(&SBGC32_Device, PortTransmitData, PortReceiveByte, GetAvailableBytes,
 				PrintDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
-
-		while (1);
 	}
 
 
@@ -146,20 +144,18 @@ specification](https://www.basecamelectronics.com/serialapi/).
 	#include "driver_STM32.h"
 	#include "core.h"
 	
-	GeneralSBGC_t SBGC_1;
+	GeneralSBGC_t SBGC32_Device;
 	
 	int main (void)
 	{
-		USART1_Init();
-		USART2_Init();
+		USARTx_Init();
+		USARTy_Init();
 	
-		SBGC_1.Drv = malloc(sizeof(Driver_t));
-		DriverInit(SBGC_1.Drv, SBGC_SERIAL_PORT, INTERNAL_MAIN_TIMER);
+		SBGC32_Device.Drv = malloc(sizeof(Driver_t));
+		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT, INTERNAL_MAIN_TIMER);
 
-		SBGC32_DefaultInit(&SBGC_1, UartTransmitData, UartReceiveByte, GetAvailableBytes,
+		SBGC32_DefaultInit(&SBGC32_Device, UartTransmitData, UartReceiveByte, GetAvailableBytes,
 				UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
-
-		while (1);
 	}
 	
 *stm32f7xx_it.c :*
@@ -167,31 +163,47 @@ specification](https://www.basecamelectronics.com/serialapi/).
 	#include "driver_STM32.h"
 	#include "core.h"
 	
-	extern GeneralSBGC_t SBGC_1;
+	extern GeneralSBGC_t SBGC32_Device;
 	
-	void TIM2_IRQHandler (void)
+	void TIMx_IRQHandler (void)
 	{
 		if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
 		    GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
-			TimerDRV_CallBack(SBGC_1.Drv);
+			TimerDRV_CallBack(SBGC32_Device.Drv);
 
 		HAL_TIM_IRQHandler(INTERNAL_MAIN_TIMER);
 	}
+
+	*if UART works by means of NVIC:*
 	
-	void USART1_IRQHandler (void)
+	void USARTx_IRQHandler (void)
 	{
 		if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
 			GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
-			UART_DRV_TxCallBack(SBGC_1.Drv);
+			UART_DRV_TxCallBack(SBGC32_Device.Drv);
 
 		if (GET_FLAG_UART_ISR_RXNE(SBGC_SERIAL_PORT) &&
 			GET_FLAG_UART_CR1_RXNEIE(SBGC_SERIAL_PORT))
-			UART_DRV_RxCallBack(SBGC_1.Drv);
+			UART_DRV_RxCallBack(SBGC32_Device.Drv);
 
 		if (GET_FLAG_UART_ISR_ORE(SBGC_SERIAL_PORT))
 			CLEAR_UART_ORE(SBGC_SERIAL_PORT);
 
 		HAL_UART_IRQHandler(SBGC_SERIAL_PORT);
+	}
+
+	*if UART works by means of DMA with LL:*
+
+	void DMAx_Streamx_IRQHandler (void)
+	{
+		if (GET_FLAG_DMA_HISR_TC_TX)
+			CLEAR_DMA_TC_TX;
+	}
+
+	void DMAx_Streamx_IRQHandler (void)
+	{
+		if (GET_FLAG_DMA_HISR_TC_RX)
+			CLEAR_DMA_TC_RX;
 	}
 
 *Notes:*
