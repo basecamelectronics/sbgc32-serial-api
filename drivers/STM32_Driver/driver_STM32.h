@@ -72,12 +72,12 @@ extern		"C" {
  */
 /*  - - - - - User Defined Parameters - - - - - - */
 #define		STM32_HAL_NVIC_UART						/*!<  UART driver works with NVIC through HAL										*/
-//#define		STM32_LL_NVIC_UART						/*!<  UART driver works with NVIC through LL										*/
-//#define		STM32_HAL_DMA_UART						/*!<  UART driver works with DMA through HAL										*/
-//#define		STM32_LL_DMA_UART						/*!<  UART driver works with DMA through LL											*/
+/* #define		STM32_LL_NVIC_UART */				/*!<  UART driver works with NVIC through LL										*/
+/* #define		STM32_HAL_DMA_UART */				/*!<  UART driver works with DMA through HAL										*/
+/* #define		STM32_LL_DMA_UART */				/*!<  UART driver works with DMA through LL											*/
 
 #define		STM32_HAL_TIMER							/*!<  Timer driver works with NVIC through HAL										*/
-//#define		STM32_LL_TIMER							/*!<  Timer driver works with NVIC through LL										*/
+/* #define		STM32_LL_TIMER */					/*!<  Timer driver works with NVIC through LL										*/
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
 
 
