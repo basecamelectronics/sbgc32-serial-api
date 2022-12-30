@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,7 +71,7 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *								  Macros & Constants
+ *								Macros and Constants
  */
 #define	 	ANGLE_FULL_TURN 		16384
 
@@ -144,7 +144,7 @@ typedef enum
 	CtrlF_CONTROL_FLAG_HIGH_RES_SPEED
 									= BIT_7_SET
 
-}	ControlFlags_t;
+}	ControlFlag_t;
 
 /** @brief	Used as a mask to extract the
  * 			Control mode value from
@@ -167,9 +167,9 @@ static inline ControlMode_t GetControlMode (ui8 value)
  *
  * 	@return	Control flag
  */
-static inline ControlFlags_t GetControlFlag (ui8 value)
+static inline ControlFlag_t GetControlFlag (ui8 value)
 {
-	return (ControlFlags_t)(value & 0b11110000);
+	return (ControlFlag_t)(value & 0b11110000);
 }
 /**	@}
  */
@@ -190,7 +190,7 @@ typedef enum
 	RTCCF_CONTROL_CONFIG_FLAG_NO_CONFIRM
 									= BIT_0_SET
 
-}	RealTimeControlConfigFlags_t;
+}	RealTimeControlConfigFlag_t;
 /**	@}
  */
 
@@ -227,7 +227,7 @@ typedef struct __PACKED__
 typedef struct __PACKED__
 {
 	/* frw. ver. 2.55b5+ */
-    ui8     controlMode [3];						/*!<  See @ref ControlMode_t and @ref ControlFlags_t enumerations					*/
+    ui8     controlMode [3];						/*!<  See @ref ControlMode_t and @ref ControlFlag_t enumerations					*/
 
     AxisC_t	AxisC [3];								/*!<  ROLL : PITCH : YAW															*/
 
@@ -280,7 +280,7 @@ typedef struct __PACKED__
     AxisCC_t	AxisCC [3];							/*!<  ROLL : PITCH : YAW															*/
 
     ui8     RC_ExpoRate;                            /*!<  0 --> 100. Default value is taken from the "RC_EXPO_RATE" GUI parameter		*/
-    ui16    flags;                                  /*!<  See @ref RealTimeControlConfigFlags_t enumeration								*/
+    ui16    flags;                                  /*!<  See @ref RealTimeControlConfigFlag_t enumeration								*/
     ui8     reserved2 [10];
 
 }           ControlConfig_t;

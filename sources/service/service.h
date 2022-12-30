@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -137,7 +137,7 @@ typedef enum
 	SF1_INIT_STEP2_DONE 			= BIT_3_SET,
 	SF1_STARTUP_AUTO_ROUTINE_DONE 	= BIT_4_SET
 
-}	StateFlags1_t;
+}	StateFlag1_t;
 
 
 /**	@note	BoardInfo_t.boardFeatures
@@ -161,7 +161,7 @@ typedef enum
 	BF_ACC_AUTO_CALIB 				= BIT_14_SET,
 	BF_BIG_FLASH	 				= BIT_15_SET 	// Firmware needs 256Kb of FLASH
 
-}	BoardFeatures_t;
+}	BoardFeature_t;
 
 
 /**	@note	BoardInfo_t.connectionFlag
@@ -186,7 +186,7 @@ typedef enum
 	BFE_REACTION 					= BIT_6_SET,
 	BFE_ENCODER_LUT 				= BIT_7_SET
 
-}	BoardFeaturesExt_t;
+}	BoardFeatureExt_t;
 
 
 /**	@note	BoardInfo3_t.profileSetSlots
@@ -240,7 +240,7 @@ typedef enum
 	APIDCF_AUTO_PID_CFG_ALL_PROFILES
 									= BIT_6_SET
 
-}	AutoPID_CfgFlags_t;
+}	AutoPID_CfgFlag_t;
 
 
 /**	@note	AutoPID_2_t.action
@@ -258,14 +258,14 @@ typedef enum
 
 /**	@note	AxisAPID2_t.axisFlag
  *
- *	Can be combined with @ref AutoPID_2_AxisNotchFilters_t
+ *	Can be combined with @ref AutoPID_2_AxisNotchFilter_t
  */
 typedef enum
 {
 	APID2AF_AXIS_IS_ENABLED			= BIT_0_SET,
 	APID2AF_TUNE_LPF				= BIT_1_SET
 
-}	AutoPID_2_AxisFlags_t;
+}	AutoPID_2_AxisFlag_t;
 
 /**	@note	AxisAPID2_t.axisFlag
  *
@@ -278,7 +278,7 @@ typedef enum
 	APID2AF_NOTCH_FILTER_TUNE_2		= 2,
 	APID2AF_NOTCH_FILTER_TUNE_3		= 3
 
-}	AutoPID_2_AxisNotchFilters_t;
+}	AutoPID_2_AxisNotchFilter_t;
 
 /**	@brief	Used as a function of joining
  * 			AutoPID_2 axis flags and AutoPID_2 axis
@@ -289,7 +289,7 @@ typedef enum
  *
  *	@return	Packed value to AxisAPID2_t.axisFlag
  */
-static inline ui8 PackAPID_AxisFlag (AutoPID_2_AxisFlags_t flag, AutoPID_2_AxisNotchFilters_t filter)
+static inline ui8 PackAPID_AxisFlag (AutoPID_2_AxisFlag_t flag, AutoPID_2_AxisNotchFilter_t filter)
 {
 	return (flag & 0b00000011) | ((filter << 2) & 0b00001100);
 }
@@ -307,7 +307,7 @@ typedef enum
 	/* bit 3 - reserved */
 	APID2GF_AUTOSAVE				= BIT_4_SET
 
-}	AutoPID_2_GeneralFlags_t;
+}	AutoPID_2_GeneralFlag_t;
 
 
 /**	@note	AutoPID_2_t.startupCfg
@@ -466,7 +466,7 @@ typedef struct __PACKED__
 {
 	ui8		boardVer;								/*!<  Multiplied by 10																*/
 	ui16	firmwareVer;							/*!<  Split into decimal digits X.XX.X												*/
-	ui8		stateFlags1;							/*!<  See @ref StateFlags1_t enumeration											*/
+	ui8		stateFlags1;							/*!<  See @ref StateFlag1_t enumeration												*/
 	ui16	boardFeatures;							/*!<  See @ref BoardFeatures_t enumeration											*/
 	ui8		connectionFlag;							/*!<  See @ref ConnectionFlag_t enumeration											*/
 	ui32	FRW_ExtraID;							/*!<  Used for specific builds only													*/
@@ -534,7 +534,7 @@ typedef struct __PACKED__
 typedef struct __PACKED__
 {
 	ui8		profileID,								/*!<  See @ref AutoPID_Profile_t enumeration										*/
-			cfgFlags,								/*!<  See @ref AutoPID_CfgFlags_t enumeration										*/
+			cfgFlags,								/*!<  See @ref AutoPID_CfgFlag_t enumeration										*/
 			Gain_VS_Stability,						/*!<  0 --> 255																		*/
 			momentum,								/*!<  0 --> 255																		*/
 			action,									/*!<  0 - start tuning																*/
@@ -549,7 +549,7 @@ typedef struct __PACKED__
  */
 typedef struct __PACKED__
 {
-	ui8		axisFlag,								/*!<  See @ref AutoPID_2_AxisFlags_t and @ref AutoPID_2_AxisNotchFilters_t
+	ui8		axisFlag,								/*!<  See @ref AutoPID_2_AxisFlag_t and @ref AutoPID_2_AxisNotchFilter_t
 														  enumerations																	*/
 			gain,									/*!<  0 --> 255. Stability vs performance ratio										*/
 			stimulus,								/*!<  0 --> 255. Stimulus signal strength											*/
@@ -583,7 +583,7 @@ typedef struct __PACKED__
 
 	AxisAPID2_t	AxisAPID2 [3];						/*!<  ROLL : PITCH : YAW															*/
 
-	ui16	generalFlags;							/*!<  See @ref AutoPID_2_GeneralFlags_t enumeration									*/
+	ui16	generalFlags;							/*!<  See @ref AutoPID_2_GeneralFlag_t enumeration									*/
 	ui8		startupCfg;								/*!<  See @ref AutoPID_2_StartupCfg enumeration										*/
 	ui8		reserved3 [22];
 
@@ -740,7 +740,7 @@ typedef struct __PACKED__
  */
 typedef struct __PACKED__
 {
-	ui16	mode;									/*!<  See @ref BeeperModes_t enumeration											*/
+	ui16	mode;									/*!<  See @ref BeeperMode_t enumeration												*/
 
 	ui8		noteLength,								/*!<  Units: 8ms samples. The duration of each note in custom melody mode			*/
 			decayFactor,							/*!<  Set the envelope "attack-decay" after each pause, that makes sound
@@ -819,7 +819,7 @@ void SBGC32_ParseScriptDebugInfoCmd (SerialCommand_t *cmd, ScriptDebugInfo_t *sc
  */
 void SBGC32_ParseEventCmd (SerialCommand_t *cmd, Event_t *event);
 TxRxStatus_t SBGC32_SetTriggerPin (GeneralSBGC_t *generalSBGC, TriggerPinID_t pinID, PinState_t state, ConfirmationState_t *confirmationState);
-TxRxStatus_t SBGC32_ExecuteMenu (GeneralSBGC_t *generalSBGC, MenuCommands_t cmdID, ConfirmationState_t *confirmationState);
+TxRxStatus_t SBGC32_ExecuteMenu (GeneralSBGC_t *generalSBGC, MenuCommand_t cmdID, ConfirmationState_t *confirmationState);
 TxRxStatus_t SBGC32_SetServoOut (GeneralSBGC_t *generalSBGC, const i16 servoTime [8]);
 TxRxStatus_t SBGC32_PlayBeeper (GeneralSBGC_t *generalSBGC, const BeeperSettings_t *beeperSettings);
 TxRxStatus_t SBGC32_SignMessage (GeneralSBGC_t *generalSBGC, ui8 signType, const char txMessage [MAX_MESSAGE_LENGTH], char rxMessage [MAX_MESSAGE_LENGTH]);

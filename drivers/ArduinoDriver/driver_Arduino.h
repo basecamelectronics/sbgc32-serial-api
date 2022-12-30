@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,6 +85,12 @@
 #define     SBGC_SERIAL_SPEED       115200
 #define     DEBUG_SERIAL_SPEED      9600
 
+
+#define		DELAY_MS_(ms)			delay(ms)				
+
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ * 								 Function Prototypes
+ */
 ui32 GetTimeMs (void *Driver);
 
 ui8 UartTransmitData (void *Driver, ui8 *data, ui16 size);

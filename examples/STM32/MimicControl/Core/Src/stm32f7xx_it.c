@@ -239,8 +239,8 @@ void TIM2_IRQHandler(void)
 
 	/*  - - - - - TIM2 Interrupt Flags Check - - - - - */
 
-	if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
-		GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
+	if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
+		GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
 		TimerDRV_CallBack(SBGC_1.Drv);
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -281,4 +281,3 @@ void USART1_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-

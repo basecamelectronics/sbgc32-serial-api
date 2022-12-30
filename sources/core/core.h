@@ -10,7 +10,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,10 +49,6 @@
  *  @ingroup	Core
  *  	@brief	Common Module
  *
- *  @defgroup	Other_External Other External Objects
- *  @ingroup	Core
- *  	@brief	Other External Objects Module
- *
  *  @defgroup	Verification Verification Functions
  *  @ingroup	Core
  *  	@brief	Verification Functions Module
@@ -61,6 +57,10 @@
  *
  *				### CMD_CONFIRM
  *				### CMD_ERROR
+ *
+ *	@defgroup	Other_External Other External Objects
+ *  @ingroup	Core
+ *  	@brief	Other External Objects Module
  *
  *  @defgroup	Debug Debug Functions
  *  @ingroup	Core
@@ -77,48 +77,39 @@ extern 		"C" {
 #endif
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-#include    "string.h"
-#include    "stdio.h"
-#include    "stdlib.h"
+#include	"adjunct.h"
 
 
-/* - - - - - - - Type definitions - - - - - - - - */
-
-#ifndef		SHORT_TYPE_NAMES
-#define		SHORT_TYPE_NAMES
-	#if defined	__x86_64__
-		#define	_long__
-		#define	_L32__
-	#else
-		#define	_long__				long
-	#endif
-
-	typedef	unsigned char			ui8;
-	typedef	unsigned short			ui16;
-	typedef _long__ unsigned int	ui32;
-
-	typedef	signed char				i8;
-	typedef	short signed int		i16;
-	typedef	_long__ signed int		i32;
-#endif
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *					 LL Communication Function Types
+ */
+/* Note : If you want to create your gimbal
+ * communication driver, create it based on
+ * these function type templates:
+ */
+typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
 typedef     ui8 					(*TxFunc_t)(void *Driver, ui8 *data, ui16 size);
 typedef     ui8 					(*RxFunc_t)(void *Driver, ui8 *data);
 typedef		ui16					(*AvailableBytesFunc_t)(void *Driver);
+
 typedef     void 					(*TxDebugFunc_t)(char *data, ui16 length);
 
-typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 
-
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *								Macros and Constants
+ */
 /*  - - - - - User Defined Parameters - - - - - - */
-/*				  ### General ###				  */
-/* #define		SYS_BIG_ENDIAN */					/*!<  Memory organization of target-control device.
-	 	 	 	 	 	 	 	 	 	 	 	 	 	  LITTLE ENDIAN if the SYS_BIG_ENDIAN macro is commented out					*/
-#define		SBGC_DEBUG_MODE							/*!<  Debug mode flag for handling detailed system information						*/
+#define		SYS_BIG_ENDIAN			SET_OFF			/*!<  Memory organization of target-control device.
+	 	 	 	 	 	 	 	 	 	 	 	 	 	  LITTLE ENDIAN if the SYS_BIG_ENDIAN macro is set off							*/
+#define		SBGC_DEBUG_MODE			SET_ON			/*!<  Debug mode flag for handling detailed system information						*/
 
-#define     MAX_BUFF_SIZE           256				/*!<  Maximum buffer size for communication with SBGC32								*/
+#define     MAX_BUFF_SIZE           256				/*!<  256 is recommended value. Maximum buffer size for communication with SBGC32	*/
 
-#define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32 for
+#define		UNEXP_CMD_BUFFER_SIZE	512				/*!<  0 Min (command buffering is disabled) --> 65535 Max.
+														  Buffer size for received unexpected serial commands							*/
+
+#define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the @ref SBGC32_DefaultInit function										*/
 #define		SBGC_RX_WAITING			300				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the @ref SBGC32_DefaultInit function										*/
@@ -140,7 +131,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 /*  - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*  - - - - - - - Other Constants - - - - - - - - */
-#define		RX_BUFFER_OVERFLOW_FLAG	0xFFFF
+#define		RX_BUFFER_OVERFLOW_FLAG	0xFFFFU
 
 #define     PR1_START_CHARACTER     0x3EU			/*!<  '>'																			*/
 #define     PR2_START_CHARACTER     0x24U           /*!<  '$'																			*/
@@ -168,56 +159,7 @@ typedef		ui32					(*GetTimeFunc_t)(void *Driver);
 #define		RC_MAX_VAL 				500
 
 #define 	RC_UNDEF			 	-10000
-
-#define		BIT_0_SET				(1U << 0)
-#define		BIT_1_SET				(1U << 1)
-#define		BIT_2_SET				(1U << 2)
-#define		BIT_3_SET				(1U << 3)
-#define		BIT_4_SET				(1U << 4)
-#define		BIT_5_SET				(1U << 5)
-#define		BIT_6_SET				(1U << 6)
-#define		BIT_7_SET				(1U << 7)
-#define		BIT_8_SET				(1U << 8)
-#define		BIT_9_SET				(1U << 9)
-#define		BIT_10_SET				(1U << 10)
-#define		BIT_11_SET				(1U << 11)
-#define		BIT_12_SET				(1U << 12)
-#define		BIT_13_SET				(1U << 13)
-#define		BIT_14_SET				(1U << 14)
-#define		BIT_15_SET				(1U << 15)
-#define		BIT_16_SET				(1U << 16)
-#define		BIT_17_SET				(1U << 17)
-#define		BIT_18_SET				(1U << 18)
-#define		BIT_19_SET				(1U << 19)
-#define		BIT_20_SET				(1U << 20)
-#define		BIT_21_SET				(1U << 21)
-#define		BIT_22_SET				(1U << 22)
-#define		BIT_23_SET				(1U << 23)
-#define		BIT_24_SET				(1U << 24)
-#define		BIT_25_SET				(1U << 25)
-#define		BIT_26_SET				(1U << 26)
-#define		BIT_27_SET				(1U << 27)
-#define		BIT_28_SET				(1U << 28)
-#define		BIT_29_SET				(1U << 29)
-#define		BIT_30_SET				(1U << 30)
-#define		BIT_31_SET				(1U << 31)
-
-#define 	nameof(var)				#var
-#define		countof(arr)			(sizeof((arr)) / sizeof(*(arr)))
-#define		offsetof_(pEnd, pStart)	(((ui8*)(pEnd)) - ((ui8*)(pStart)))
-
-#define 	DATA_BLOCK(arr)			{sizeof((arr)), countof((arr))}
-#define 	VAR_BLOCK(var)			{sizeof((var)), 1}
-#define		ADJ_VAR_BLOCK(av)		av, nameof(av)
-
-#define 	FOR_(name, count)		for (i32 name = 0; name < (count); name++)
-
-#define		__PACKED__				__attribute__((packed))
-
-#define		TEXT_SIZE_(text)		text, (strlen(text))
-
-#define		CONSTRAINT(val, min, max)\
-									((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
+/*  - - - - - - - - - - - - - - - - - - - - - - - */
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -332,14 +274,14 @@ typedef enum
 	CMD_DEBUG_VARS_3                = 254,
 	CMD_ERROR                       = 255
 
-}	SBGC_Commands_t;
+}	SBGC_Command_t;
 
 
 typedef enum
 {
 	TX_RX_OK						= 0,
 
-	TX_BUFFER_OVERFLOW_ERROR,
+	RX_BUFFERED_COMMAND,
 
 	RX_START_PARSE,
 	RX_EMPTY_BUFF_ERROR,
@@ -349,7 +291,7 @@ typedef enum
 	RX_BUFFER_OVERFLOW_ERROR,
 	RX_TIMEOUT_ERROR,
 
-	EXPECTED_CMD_ERROR,
+	TX_BUFFER_OVERFLOW_ERROR,
 
 	NOT_SUPPORTED_BY_FIRMWARE
 
@@ -373,7 +315,7 @@ typedef enum
 	STATE_CHECK_HEADER,
 	STATE_CHECK_PAYLOAD
 
-}	ParserStates_t;
+}	ParserState_t;
 /**	@}
  */
 
@@ -422,33 +364,17 @@ typedef enum
  */
 
 
-/**	@addtogroup	Common
+/**	@addtogroup	Verification
  *	@{
  */
 typedef enum
 {
-	_DUMMY_ 						= 0,			// It's not a type
+	CONFIRMATION_OK					= 0,
 
-    _UNSIGNED_CHAR_,
-    _SIGNED_CHAR_,
+	CONFIRMATION_ERROR,
+	CONFIRMATION_TIMEOUT
 
-    _UNSIGNED_SHORT_,
-    _SIGNED_SHORT_,
-
-    _UNSIGNED_INT_,
-    _SIGNED_INT_,
-
-    _FLOAT_
-
-}   VarTypes_t;
-
-
-typedef enum
-{
-	FALSE__ 						= 0,
-	TRUE__ 							= 1
-
-}	Boolean_t;
+}	ConfirmationStatus_t;
 /**	@}
  */
 
@@ -463,7 +389,7 @@ typedef enum
  */
 typedef struct
 {
-	void 					*Drv;					/*!<  Main hardware driver object.
+	void 					*Drv;					/*!<  Main hardware driver object for STM32 and Linux OS.
 	 	 	 	 	 	 	 	 	 	 	 	 	 	  Fully initialized with a Driver_Init function									*/
 	TxFunc_t				TxFunc;					/*!<  Pointer to user-defined data buffer transfer function							*/
 	RxFunc_t				RxFunc;					/*!<  Pointer to a user-defined function to receive one byte of data				*/
@@ -481,17 +407,25 @@ typedef struct
 							txrxTimeout;			/*!<  The maximum timeout value for receiving a response to a SerialCommand request	*/
 
 	/* Private variables */							// 	  Values are not allowed to be manually modified by the user!
-	ui16	_txErrorsCount;							/*!<  Counter of unsuccessful attempts to send SerialCommands						*/
-	ui16	_rxErrorsCount;							/*!<  Parser error counter when receiving a SerialCommands							*/
-
-	ui16	_missedCommandCount;					/*!<  Counter of skipped commands by RxParser										*/
-
-	TxRxStatus_t	_ParserCurrentStatus;			/*!<  The current state of the input SerialCommand parser							*/
-
 	ui8 	_boardVersion;							/*!<  PCB version of this device													*/
 	ui16	_firmwareVersion;						/*!<  Firmware version of this device												*/
 
-}			GeneralSBGC_t;
+	ui16	_txErrorsCount;							/*!<  Counter of unsuccessful attempts to send SerialCommands						*/
+	ui16	_rxErrorsCount;							/*!<  Parser error counter when receiving a SerialCommands							*/
+
+	ui8		_unexpectedCommandsBuff
+			[UNEXP_CMD_BUFFER_SIZE];				/*!<  Unexpected commands data buffer. Storage format:
+			 	 	 	 	 	 	 	 	 	 	 	  ui8 commandID || ui8 payloadSize || ui8 payload[payloadSize]					*/
+	ui16	_unexpectedCommandsBuffTail,			/*!<  Tail point of unexpected commands data buffer									*/
+			_unexpectedCommandsBuffHead;			/*!<  Head point of unexpected commands data buffer									*/
+
+	ui16	_missedCommandCount;					/*!<  Counter of skipped commands by Rx parser										*/
+
+	TxRxStatus_t			_ParserCurrentStatus;	/*!<  The current state of the input SerialCommand parser							*/
+
+	ConfirmationStatus_t	_confirmationStatus;	/*!<  System response according CMD_CONFIRM command									*/
+
+}	GeneralSBGC_t;
 /**	@}
  */
 
@@ -504,10 +438,10 @@ typedef struct
  */
 typedef struct
 {
-	SBGC_Commands_t	commandID;						/*!<  Identifier of the SerialCommand												*/
-    			ui8	payload [MAX_BUFF_SIZE];		/*!<  SerialCommand's payload buffer												*/
-    			ui8	payloadSize;					/*!<  Payload size of the SerialCommand												*/
-    			ui8	readPos;						/*!<  The current reading position of the SerialCommand								*/
+	SBGC_Command_t commandID;						/*!<  Identifier of the SerialCommand												*/
+    		   ui8 payload [MAX_BUFF_SIZE];			/*!<  SerialCommand's payload buffer												*/
+    		   ui8 payloadSize;						/*!<  Payload size of the SerialCommand												*/
+    		   ui8 readPos;							/*!<  The current reading position of the SerialCommand								*/
 
 }				SerialCommand_t;
 /**	@}
@@ -627,7 +561,7 @@ typedef enum
 	/** only for MainParamsExt2_t.startupAction */
 	MENU_BUTTON_IS_PRESSED			= BIT_7_SET
 
-}	MenuCommands_t;
+}	MenuCommand_t;
 
 
 /**	@note	ConfirmationState_t.errCode \n
@@ -657,8 +591,8 @@ typedef enum
  */
 typedef enum
 {
-	IMU_TYPE_CURRENTLY_ACTIVE		= 0,			/*!<  Only for CMD_SELECT_IMU_3 in extended format. See @ref SBGC32_SelectIMU_3		*/
-
+	IMU_TYPE_CURRENTLY_ACTIVE		= 0,			/*!<  Only for CMD_SELECT_IMU_3 in extended format
+	 	 	 	 	 	 	 	 	 	 	 	 	 	  See @ref SBGC32_SelectIMU_3 function											*/
 	IMU_TYPE_MAIN					= 1,
 	IMU_TYPE_FRAME					= 2
 
@@ -777,7 +711,7 @@ typedef enum
 
 	BM_BEEPER_MODE_CUSTOM_MELODY	= BIT_15_SET
 
-}	BeeperModes_t;
+}	BeeperMode_t;
 
 
 /**	@note	AHRS_DebugInfo_t.mainIMU_RefSrc \n
@@ -972,7 +906,7 @@ typedef struct __PACKED__
  */
 TxRxStatus_t SBGC32_TX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand);
 TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, ui32 timeout);
-TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, SBGC_Commands_t cmdID);
+TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, SBGC_Command_t cmdID);
 /**	@}
  */
 
@@ -995,7 +929,7 @@ void WriteLong (SerialCommand_t *cmd, const ui32 dword);
 ui32 ReadLong (SerialCommand_t *cmd);
 void WriteEmptyBuff (SerialCommand_t *cmd, ui8 size);
 void SkipBytes (SerialCommand_t *cmd, ui8 size);
-void InitCmdWrite (SerialCommand_t *cmd, SBGC_Commands_t cmdID);
+void InitCmdWrite (SerialCommand_t *cmd, SBGC_Command_t cmdID);
 /**	@}
  */
 
@@ -1003,7 +937,7 @@ void InitCmdWrite (SerialCommand_t *cmd, SBGC_Commands_t cmdID);
 /**	@addtogroup	Common
  *	@{
  */
-TxRxStatus_t SBGC32_SendEmptyCommand (GeneralSBGC_t *generalSBGC, SBGC_Commands_t cmdID);
+TxRxStatus_t SBGC32_SendEmptyCommand (GeneralSBGC_t *generalSBGC, SBGC_Command_t cmdID);
 TxRxStatus_t SBGC32_DefaultInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, RxFunc_t RxFunc,
 								 AvailableBytesFunc_t AvailableBytesFunc, TxDebugFunc_t TxDebugFunc,
 								 GetTimeFunc_t GetTimeFunc, SBGC_ProtocolVersion_t protocolVersion);
@@ -1014,7 +948,7 @@ TxRxStatus_t SBGC32_DefaultInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, Rx
 /**	@addtogroup	Verification
  *	@{
  */
-TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, ConfirmationState_t *confirmationState, SBGC_Commands_t cmdID);
+TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, ConfirmationState_t *confirmationState, SBGC_Command_t cmdID);
 ui8 Modulo256_Calculate (ui8 *data, ui16 length);
 ui16 CRC16_Calculate (ui8 *data, ui16 length);
 TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatus, char *message);
@@ -1026,7 +960,7 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
  *	@{
  */
 void PrintMessage (GeneralSBGC_t *generalSBGC, char *data, ui16 length);
-void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, const char *str, VarTypes_t vType);
+void PrintStructElement (GeneralSBGC_t *generalSBGC, void *data, const char *str, VarType_t vType);
 ui8 ConvertErrorToString (TxRxStatus_t txRxStatus, char *str);
 
 

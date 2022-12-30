@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,13 +73,15 @@ extern 		"C" {
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *										   Constants
+ *								Macros and Constants
  */
 /**	@addtogroup	Adjvar
  * 	@{
  */
 #define 	ADJ_VARS_QANTITY		66				/*!<  Number of adjustable variables for the latest firmware version				*/
 #define		ADJ_VAR_MAX_NAME_LENGTH	30				/*!<  Maximal name length of adjustable variable for debug information				*/
+
+#define		ADJ_VAR_BLOCK_(av)		av, nameof_(av)
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -189,7 +191,7 @@ typedef struct
 {
 	AdjVarsList_t	ID;								/*!<  Adjustable variable ID  														*/
 
-	#ifdef	SBGC_DEBUG_MODE
+	#if	(SBGC_DEBUG_MODE)
 
 		char		name [ADJ_VAR_MAX_NAME_LENGTH];	/*!<  Adjustable variable name														*/
 
@@ -198,7 +200,7 @@ typedef struct
 	i16				minValue,						/*!<  Adjustable variable minimal value												*/
 					maxValue;						/*!<  Adjustable variable maximal value												*/
 
-	VarTypes_t	 	varType;						/*!<  Type of adjustable variable  													*/
+	VarType_t	 	varType;						/*!<  Type of adjustable variable  													*/
 
 	i32		 		value;							/*!<  Adjustable variable value  													*/
 
@@ -208,7 +210,7 @@ typedef struct
 }					AdjVarsGeneral_t;
 
 
-#ifdef	SBGC_DEBUG_MODE
+#if (SBGC_DEBUG_MODE)
 
 	/**	@brief	Adjustable variables
 	 * 			debug info structure
@@ -222,7 +224,7 @@ typedef struct
 		const i32	minValue,						/*!<  Adjustable variable minimal value												*/
 					maxValue;						/*!<  Adjustable variable maximal value												*/
 
-		const VarTypes_t	varType;				/*!<  Type of adjustable variable  													*/
+		const VarType_t		varType;				/*!<  Type of adjustable variable  													*/
 
 	}				AdjVarsDebugInfo_t;
 	/**	@}
@@ -348,7 +350,9 @@ typedef struct __PACKED__
 /**	@addtogroup	Adjvar_Values
  * 	@{
  */
-void InitAdjVar (AdjVarsGeneral_t *adjVarsGeneral, const AdjVarsDebugInfo_t *adjVarReference);
+#if (SBGC_DEBUG_MODE)
+	void InitAdjVar (AdjVarsGeneral_t *adjVarsGeneral, const AdjVarsDebugInfo_t *adjVarReference);
+#endif
 void EditAdjVarValue (AdjVarsGeneral_t *adjVarsGeneral, i32 value);
 TxRxStatus_t SBGC32_SetAdjVarValues (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_t *adjVarsGeneral, ui8 adjVarQuan, ConfirmationState_t *confirmationState);
 TxRxStatus_t SBGC32_GetAdjVarValue (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_t *adjVarsGeneral);

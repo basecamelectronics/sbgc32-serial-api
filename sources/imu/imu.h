@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -211,7 +211,7 @@ typedef enum
 	/** frw. ver. 2.62b7+ */
 	HDF_FRAME_HEADING				= BIT_7_SET
 
-}	HelperDataFlags_t;
+}	HelperDataFlag_t;
 /**	@}
  */
 
@@ -361,7 +361,7 @@ typedef struct __PACKED__
 			frameAnglePitch;						/*!<  Units: 0.02197265625 degree. Pass zero values to not use this information		*/
 
 	/* + Extended format (frw. ver. 2.60+) */
-	ui8		flags;									/*!<  See @ref HelperDataFlags_t enumeration										*/
+	ui8		flags;									/*!<  See @ref HelperDataFlag_t enumeration											*/
 	i16		frameSpeed [3];							/*!<  Units: 0.06103701895 degree/sec. Frw. ver. 2.62b7+							*/
 	i16		frameHeading;							/*!<  -16384 --> 16384. Units: 0.02197265625 degree									*/
 	ui8		reserved;

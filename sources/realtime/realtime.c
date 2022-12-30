@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "realtime.h"
 
 
-#ifdef	SYS_BIG_ENDIAN
+#if (SYS_BIG_ENDIAN)
 
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *								Parser Big Endian Mapping Structures
@@ -42,14 +42,14 @@
 
 	const ParserBlock_t DataStreamInterval_ParserStructDB [] =
 	{
-		VAR_BLOCK(dataStreamInterval_ParserStruct.cmdID),
-		VAR_BLOCK(dataStreamInterval_ParserStruct.intervalMs),
-		DATA_BLOCK(dataStreamInterval_ParserStruct.config),
-		VAR_BLOCK(dataStreamInterval_ParserStruct.syncToData),
-		DATA_BLOCK(dataStreamInterval_ParserStruct.reserved),
+		VAR_BLOCK_(dataStreamInterval_ParserStruct.cmdID),
+		VAR_BLOCK_(dataStreamInterval_ParserStruct.intervalMs),
+		DATA_BLOCK_(dataStreamInterval_ParserStruct.config),
+		VAR_BLOCK_(dataStreamInterval_ParserStruct.syncToData),
+		DATA_BLOCK_(dataStreamInterval_ParserStruct.reserved),
 	};
 
-	const ui8 DataStreamInterval_ParserStructDB_Size = countof(DataStreamInterval_ParserStructDB);
+	const ui8 DataStreamInterval_ParserStructDB_Size = countof_(DataStreamInterval_ParserStructDB);
 	/**	@}
 	 */
 
@@ -66,83 +66,83 @@
 
 	const ParserBlock_t RealTimeData3_ParserStructDB [] =
 	{
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_X].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_X].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Y].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Y].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Z].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Z].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.serialErrCnt),
-		VAR_BLOCK(realTimeData_ParserStruct.systemError),
-		VAR_BLOCK(realTimeData_ParserStruct.systemSubError),
-		DATA_BLOCK(realTimeData_ParserStruct.reserved),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_ROLL),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_PITCH),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_YAW),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_Cmd),
-		VAR_BLOCK(realTimeData_ParserStruct.ExtFC_ROLL),
-		VAR_BLOCK(realTimeData_ParserStruct.ExtFC_PITCH),
-		DATA_BLOCK(realTimeData_ParserStruct.IMU_Angle),
-		DATA_BLOCK(realTimeData_ParserStruct.frameIMU_Angle),
-		DATA_BLOCK(realTimeData_ParserStruct.targetAngle),
-		VAR_BLOCK(realTimeData_ParserStruct.cycleTime),
-		VAR_BLOCK(realTimeData_ParserStruct.I2C_ErrorCount),
-		VAR_BLOCK(realTimeData_ParserStruct.errorCode),
-		VAR_BLOCK(realTimeData_ParserStruct.batLevel),
-		VAR_BLOCK(realTimeData_ParserStruct.RT_DataFlags),
-		VAR_BLOCK(realTimeData_ParserStruct.curIMU),
-		VAR_BLOCK(realTimeData_ParserStruct.curProfile),
-		DATA_BLOCK(realTimeData_ParserStruct.motorPower),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_X].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_X].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Y].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Y].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Z].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Z].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.serialErrCnt),
+		VAR_BLOCK_(realTimeData_ParserStruct.systemError),
+		VAR_BLOCK_(realTimeData_ParserStruct.systemSubError),
+		DATA_BLOCK_(realTimeData_ParserStruct.reserved),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_ROLL),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_PITCH),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_YAW),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_Cmd),
+		VAR_BLOCK_(realTimeData_ParserStruct.ExtFC_ROLL),
+		VAR_BLOCK_(realTimeData_ParserStruct.ExtFC_PITCH),
+		DATA_BLOCK_(realTimeData_ParserStruct.IMU_Angle),
+		DATA_BLOCK_(realTimeData_ParserStruct.frameIMU_Angle),
+		DATA_BLOCK_(realTimeData_ParserStruct.targetAngle),
+		VAR_BLOCK_(realTimeData_ParserStruct.cycleTime),
+		VAR_BLOCK_(realTimeData_ParserStruct.I2C_ErrorCount),
+		VAR_BLOCK_(realTimeData_ParserStruct.errorCode),
+		VAR_BLOCK_(realTimeData_ParserStruct.batLevel),
+		VAR_BLOCK_(realTimeData_ParserStruct.RT_DataFlags),
+		VAR_BLOCK_(realTimeData_ParserStruct.curIMU),
+		VAR_BLOCK_(realTimeData_ParserStruct.curProfile),
+		DATA_BLOCK_(realTimeData_ParserStruct.motorPower),
 	};
 
-	const ui8 RealTimeData3_ParserStructDB_Size = countof(RealTimeData3_ParserStructDB);
+	const ui8 RealTimeData3_ParserStructDB_Size = countof_(RealTimeData3_ParserStructDB);
 
 
 	const ParserBlock_t RealTimeData4_ParserStructDB [] =
 	{
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_X].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_X].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Y].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Y].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Z].ACC_Data),
-		VAR_BLOCK(realTimeData_ParserStruct.AxisRTD[AXIS_Z].gyroData),
-		VAR_BLOCK(realTimeData_ParserStruct.serialErrCnt),
-		VAR_BLOCK(realTimeData_ParserStruct.systemError),
-		VAR_BLOCK(realTimeData_ParserStruct.systemSubError),
-		DATA_BLOCK(realTimeData_ParserStruct.reserved),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_ROLL),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_PITCH),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_YAW),
-		VAR_BLOCK(realTimeData_ParserStruct.RC_Cmd),
-		VAR_BLOCK(realTimeData_ParserStruct.ExtFC_ROLL),
-		VAR_BLOCK(realTimeData_ParserStruct.ExtFC_PITCH),
-		DATA_BLOCK(realTimeData_ParserStruct.IMU_Angle),
-		DATA_BLOCK(realTimeData_ParserStruct.frameIMU_Angle),
-		DATA_BLOCK(realTimeData_ParserStruct.targetAngle),
-		VAR_BLOCK(realTimeData_ParserStruct.cycleTime),
-		VAR_BLOCK(realTimeData_ParserStruct.I2C_ErrorCount),
-		VAR_BLOCK(realTimeData_ParserStruct.errorCode),
-		VAR_BLOCK(realTimeData_ParserStruct.batLevel),
-		VAR_BLOCK(realTimeData_ParserStruct.RT_DataFlags),
-		VAR_BLOCK(realTimeData_ParserStruct.curIMU),
-		VAR_BLOCK(realTimeData_ParserStruct.curProfile),
-		DATA_BLOCK(realTimeData_ParserStruct.motorPower),
-		DATA_BLOCK(realTimeData_ParserStruct.frameCamAngle),
-		VAR_BLOCK(realTimeData_ParserStruct.reserved1),
-		DATA_BLOCK(realTimeData_ParserStruct.balanceError),
-		VAR_BLOCK(realTimeData_ParserStruct.current),
-		DATA_BLOCK(realTimeData_ParserStruct.magData),
-		VAR_BLOCK(realTimeData_ParserStruct.IMU_Temperature),
-		VAR_BLOCK(realTimeData_ParserStruct.frameIMU_Temperature),
-		VAR_BLOCK(realTimeData_ParserStruct.IMU_G_Err),
-		VAR_BLOCK(realTimeData_ParserStruct.IMU_H_Err),
-		DATA_BLOCK(realTimeData_ParserStruct.motorOut),
-		VAR_BLOCK(realTimeData_ParserStruct.calibMode),
-		VAR_BLOCK(realTimeData_ParserStruct.CAN_IMU_ExtSensErr),
-		DATA_BLOCK(realTimeData_ParserStruct.reserved2),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_X].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_X].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Y].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Y].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Z].ACC_Data),
+		VAR_BLOCK_(realTimeData_ParserStruct.AxisRTD[AXIS_Z].gyroData),
+		VAR_BLOCK_(realTimeData_ParserStruct.serialErrCnt),
+		VAR_BLOCK_(realTimeData_ParserStruct.systemError),
+		VAR_BLOCK_(realTimeData_ParserStruct.systemSubError),
+		DATA_BLOCK_(realTimeData_ParserStruct.reserved),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_ROLL),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_PITCH),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_YAW),
+		VAR_BLOCK_(realTimeData_ParserStruct.RC_Cmd),
+		VAR_BLOCK_(realTimeData_ParserStruct.ExtFC_ROLL),
+		VAR_BLOCK_(realTimeData_ParserStruct.ExtFC_PITCH),
+		DATA_BLOCK_(realTimeData_ParserStruct.IMU_Angle),
+		DATA_BLOCK_(realTimeData_ParserStruct.frameIMU_Angle),
+		DATA_BLOCK_(realTimeData_ParserStruct.targetAngle),
+		VAR_BLOCK_(realTimeData_ParserStruct.cycleTime),
+		VAR_BLOCK_(realTimeData_ParserStruct.I2C_ErrorCount),
+		VAR_BLOCK_(realTimeData_ParserStruct.errorCode),
+		VAR_BLOCK_(realTimeData_ParserStruct.batLevel),
+		VAR_BLOCK_(realTimeData_ParserStruct.RT_DataFlags),
+		VAR_BLOCK_(realTimeData_ParserStruct.curIMU),
+		VAR_BLOCK_(realTimeData_ParserStruct.curProfile),
+		DATA_BLOCK_(realTimeData_ParserStruct.motorPower),
+		DATA_BLOCK_(realTimeData_ParserStruct.frameCamAngle),
+		VAR_BLOCK_(realTimeData_ParserStruct.reserved1),
+		DATA_BLOCK_(realTimeData_ParserStruct.balanceError),
+		VAR_BLOCK_(realTimeData_ParserStruct.current),
+		DATA_BLOCK_(realTimeData_ParserStruct.magData),
+		VAR_BLOCK_(realTimeData_ParserStruct.IMU_Temperature),
+		VAR_BLOCK_(realTimeData_ParserStruct.frameIMU_Temperature),
+		VAR_BLOCK_(realTimeData_ParserStruct.IMU_G_Err),
+		VAR_BLOCK_(realTimeData_ParserStruct.IMU_H_Err),
+		DATA_BLOCK_(realTimeData_ParserStruct.motorOut),
+		VAR_BLOCK_(realTimeData_ParserStruct.calibMode),
+		VAR_BLOCK_(realTimeData_ParserStruct.CAN_IMU_ExtSensErr),
+		DATA_BLOCK_(realTimeData_ParserStruct.reserved2),
 	};
 
-	const ui8 RealTimeData4_ParserStructDB_Size = countof(RealTimeData4_ParserStructDB);
+	const ui8 RealTimeData4_ParserStructDB_Size = countof_(RealTimeData4_ParserStructDB);
 	/**	@}
 	 */
 
@@ -158,18 +158,18 @@
 
 	const ParserBlock_t GetAngles_ParserStructDB [] =
 	{
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[ROLL].IMU_Angle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[ROLL].targetAngle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[ROLL].targetSpeed),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[PITCH].IMU_Angle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[PITCH].targetAngle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[PITCH].targetSpeed),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[YAW].IMU_Angle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[YAW].targetAngle),
-		VAR_BLOCK(getAngles_ParserStruct.AxisGA[YAW].targetSpeed),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[ROLL].IMU_Angle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[ROLL].targetAngle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[ROLL].targetSpeed),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[PITCH].IMU_Angle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[PITCH].targetAngle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[PITCH].targetSpeed),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[YAW].IMU_Angle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[YAW].targetAngle),
+		VAR_BLOCK_(getAngles_ParserStruct.AxisGA[YAW].targetSpeed),
 	};
 
-	const ui8 GetAngles_ParserStructDB_Size = countof(GetAngles_ParserStructDB);
+	const ui8 GetAngles_ParserStructDB_Size = countof_(GetAngles_ParserStructDB);
 
 
 	/** @brief	Sample for Big Endian Mapping
@@ -180,21 +180,21 @@
 
 	const ParserBlock_t GetAnglesExt_ParserStructDB [] =
 	{
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[ROLL].IMU_Angle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[ROLL].targetAngle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[ROLL].frameCamAngle),
-		DATA_BLOCK(getAnglesExt_ParserStruct.AxisGAE[ROLL].reserved),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[PITCH].IMU_Angle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[PITCH].targetAngle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[PITCH].frameCamAngle),
-		DATA_BLOCK(getAnglesExt_ParserStruct.AxisGAE[PITCH].reserved),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[YAW].IMU_Angle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[YAW].targetAngle),
-		VAR_BLOCK(getAnglesExt_ParserStruct.AxisGAE[YAW].frameCamAngle),
-		DATA_BLOCK(getAnglesExt_ParserStruct.AxisGAE[YAW].reserved),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[ROLL].IMU_Angle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[ROLL].targetAngle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[ROLL].frameCamAngle),
+		DATA_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[ROLL].reserved),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[PITCH].IMU_Angle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[PITCH].targetAngle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[PITCH].frameCamAngle),
+		DATA_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[PITCH].reserved),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[YAW].IMU_Angle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[YAW].targetAngle),
+		VAR_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[YAW].frameCamAngle),
+		DATA_BLOCK_(getAnglesExt_ParserStruct.AxisGAE[YAW].reserved),
 	};
 
-	const ui8 GetAnglesExt_ParserStructDB_Size = countof(GetAnglesExt_ParserStructDB);
+	const ui8 GetAnglesExt_ParserStructDB_Size = countof_(GetAnglesExt_ParserStructDB);
 	/**	@}
 	 */
 
@@ -250,7 +250,7 @@ TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInt
  *
  *	@return Communication status
  */
-TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Commands_t cmdID)
+TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Command_t cmdID)
 {
 	SerialCommand_t cmd;
 	if (CheckReceipt(generalSBGC, SBGC32_RX(generalSBGC, &cmd, generalSBGC->rxTimeout), "Data Stream:") == TX_RX_OK)
@@ -274,7 +274,7 @@ TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStrea
 			case CMD_REALTIME_DATA_CUSTOM :
 			{
 				/* This case will not work correctly in the big endian systems.
-				   You may repair <PM_DEFAULT_8BIT> value to custom, corresponding to the requested data.
+				   You must repair <PM_DEFAULT_8BIT> value to custom, corresponding to the requested data.
 
 				   Also, you can get the parsed data to custom data structure and then transfer it to the
 				   RealTimeDataCustom_t struct. This method can be used, when you need to get
@@ -290,7 +290,7 @@ TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStrea
 						{
 							/* dataStreamStruct = &RealTimeData_t->Z_Vect[0] field for reading */
 							ReadBuff(&cmd, dataStreamStruct, cmd.payloadSize, PM_DEFAULT_8BIT);
-							FOR_(i, 6) ReadLong(&cmd);
+							for (ui8 i = 0; i < 6; i++) ReadLong(&cmd);
 							break;
 						}
 
@@ -341,10 +341,14 @@ TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStrea
  *
  *	@return Communication status
  */
-TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealTimeDataCustom_t *realTimeDataCustom, RealTimeDataCustomFlags_t flags)
+TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealTimeDataCustom_t *realTimeDataCustom, RealTimeDataCustomFlag_t flags)
 {
-	if (generalSBGC->_firmwareVersion < 2600)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2600)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	ui32 checkFlag = 0;
 	SerialCommand_t cmd;
@@ -357,7 +361,7 @@ TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealT
 		realTimeDataCustom->timestampMs = ReadWord(&cmd);
 
 		/* Data Parsing */
-		FOR_(i, 32)
+		for (ui8 i = 0; i < 32; i++)
 		{
 			checkFlag = flags & (1 << i);
 			switch (checkFlag)
@@ -411,7 +415,8 @@ TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealT
 					break;
 
 							case RTDCF_RC_CHANNELS :
-								FOR_(k, 18) realTimeDataCustom->RC_Channels[i] = ReadWord(&cmd);
+								for (ui8 k = 0; k < 18; k++)
+									realTimeDataCustom->RC_Channels[i] = ReadWord(&cmd);
 								break;
 
 				case RTDCF_ACC_DATA :
@@ -554,15 +559,16 @@ TxRxStatus_t SBGC32_GetAnglesExt (GeneralSBGC_t *generalSBGC, GetAnglesExt_t *ge
  *
  * 	@return Communication status
  */
-TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_Inputs, InitCfgFlags_t cfgFlags, ui8 srcQuan)
+TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_Inputs, InitCfgFlag_t cfgFlags, ui8 srcQuan)
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_READ_RC_INPUTS);
 	WriteWord(&cmd, cfgFlags);
-	FOR_(i, srcQuan) WriteByte(&cmd, RC_Inputs[i].RC_Src);
+	for (ui8 i = 0; i < srcQuan; i++) WriteByte(&cmd, RC_Inputs[i].RC_Src);
 
 	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_READ_RC_INPUTS), "RC Inputs:") == TX_RX_OK)
-		FOR_(i, srcQuan) RC_Inputs[i].RC_Val = ReadWord(&cmd);
+		for (ui8 i = 0; i < srcQuan; i++)
+			RC_Inputs[i].RC_Val = ReadWord(&cmd);
 
 	return generalSBGC->_ParserCurrentStatus;
 }
@@ -588,7 +594,8 @@ TxRxStatus_t SBGC32_RequestDebugVarInfo3 (GeneralSBGC_t *generalSBGC, DebugVars3
 	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_DEBUG_VARS_INFO_3), "Debug Var Info:") == TX_RX_OK)
 	{
 		debugVars3->varNum = ReadByte(&cmd);
-		FOR_(i, debugVars3->varNum)
+
+		for (ui8 i = 0; i < debugVars3->varNum; i++)
 		{
 			debugVars3->DebugVar[i].varNameLength = ReadByte(&cmd);
 			ReadBuff(&cmd, &debugVars3->DebugVar[i].varName, debugVars3->DebugVar[i].varNameLength, PM_DEFAULT_8BIT);
@@ -619,7 +626,7 @@ TxRxStatus_t SBGC32_RequestDebugVarValue3 (GeneralSBGC_t *generalSBGC, DebugVars
 
 	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_DEBUG_VARS_3), "Debug Var Value:") == TX_RX_OK)
 	{
-		FOR_(i, debugVars3->varNum)
+		for (ui8 i = 0; i < debugVars3->varNum; i++)
 		{
 			switch (debugVars3->DebugVar[i].varType & 0b00001111)
 			{
@@ -669,7 +676,7 @@ TxRxStatus_t SBGC32_RequestDebugVarValue3 (GeneralSBGC_t *generalSBGC, DebugVars
  *
  * 	@return Communication status
  */
-TxRxStatus_t SBGC32_SelectIMU_3 (GeneralSBGC_t *generalSBGC, IMU_Type_t IMU_Type, SelectIMU_Actions_t action,
+TxRxStatus_t SBGC32_SelectIMU_3 (GeneralSBGC_t *generalSBGC, IMU_Type_t IMU_Type, SelectIMU_Action_t action,
 								 ui16 timeMs, ConfirmationState_t *confirmationState)
 {
 	SerialCommand_t cmd;

@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,15 +89,14 @@
 extern 		"C" {
 #endif
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
-
 #include 	"../core/core.h"
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *										   Constants
  */
-/**	Maximum allowed profile name length */
-#define		MAX_PROFILE_NAME_LENGTH	48
+#define		PROFILES_QUANTITY		5
+#define		MAX_PROFILE_NAME_LENGTH	48				/*!<  Maximum allowed profile name length											*/
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -307,7 +306,7 @@ static inline RC_MixFC_Target_t GetRC_MixFC_Target (ui8 value)
  */
 static inline ui8 PackRC_MixFC (ui8 rate, RC_MixFC_Target_t target)
 {
-	return CONSTRAINT(rate, 0, 63) | ((target << 6) & 0b11000000);
+	return constrain_(rate, 0, 63) | ((target << 6) & 0b11000000);
 }
 
 
@@ -421,7 +420,7 @@ typedef enum
 	/** frw. ver. 2.66+ */
 	GF1_IS_UPSIDE_DOWN 				= BIT_13_SET
 
-}	GeneralFlags1_t;
+}	GeneralFlag1_t;
 
 
 /**	@note	MainParams3_t.profileFlags1
@@ -545,7 +544,7 @@ typedef enum
 	ET_SKIP_DETECTION 				= BIT_4_SET,
 	ET_ENCODER_IS_GEARED 			= BIT_7_SET
 
-}	EncoderFlags_t;
+}	EncoderFlag_t;
 
 /**	@brief	Used as a mask to extract the
  * 			encoder type value from
@@ -623,7 +622,7 @@ typedef enum
 	MAVCF_FLAG_DEBUG				= BIT_5_SET,
 	MAVCF_FLAG_RC 					= BIT_6_SET,
 
-}	MAV_CfgFlags_t;
+}	MAV_CfgFlag_t;
 
 
 /**	@note	MainParamsExt2_t.autoPID_Cfg
@@ -668,7 +667,7 @@ typedef enum
 	GF2_FLAG2_DISABLE_POWER_MANAGER	= BIT_14_SET,
 	GF2_ALLOW_FRAME_IMU_AS_MAIN 	= BIT_15_SET
 
-}	GeneralFlags2_t;
+}	GeneralFlag2_t;
 
 
 /**	@note	MainParamsExt2_t.stabAxis
@@ -751,7 +750,7 @@ typedef enum
 	FPCF_FORCE_POSITION_FLAG_FINE_ADJUST
 									= BIT_7_SET
 
-}	ForcePositionCfgFlags_t;
+}	ForcePositionCfgFlag_t;
 
 /**	@brief	Used as a mask to extract the
  * 			force position config snap value from
@@ -774,9 +773,9 @@ static inline ForcePositionCfgSnap_t GetForcePositionCfgSnap (ui8 value)
  *
  *	@return	Force position config flags
  */
-static inline ForcePositionCfgFlags_t GetForcePositionCfgFlags (ui8 value)
+static inline ForcePositionCfgFlag_t GetForcePositionCfgFlags (ui8 value)
 {
-	return (ForcePositionCfgFlags_t)(value & 0b11110000);
+	return (ForcePositionCfgFlag_t)(value & 0b11110000);
 }
 
 
@@ -1017,7 +1016,7 @@ typedef enum
 	/** frw.ver. 2.68b7+ */
 	EIMUF_EXT_IMU_FLAG_GYRO_CORR	= BIT_7_SET
 
-}	ExtIMU_Flags_t;
+}	ExtIMU_Flag_t;
 
 
 /**	@note	MainParamsExt3_t.powerCtrlCfg
@@ -1093,7 +1092,7 @@ typedef enum
 	PF2_LOW_ANGLE_PRIOR_YAW			= BIT_3_SET,
 	PF2_HEADING_TRIPOD_MODE 		= BIT_4_SET
 
-}	ProfileFlags2_t;
+}	ProfileFlag2_t;
 
 
 /**	@note	MainParamsExt3_t.generalFlags3
@@ -1105,7 +1104,7 @@ typedef enum
 	GF3_ENC_LUT_EN_YAW 				= BIT_2_SET,
 	GF3_MAVLINK_YAW_ABSOLUTE 		= BIT_3_SET
 
-}	GeneralFlags3_t;
+}	GeneralFlag3_t;
 /**	@}
  */
 
@@ -1270,8 +1269,8 @@ typedef struct __PACKED__
     ui8     adaptivePID_Rate;                       /*!<  1 --> 255  																	*/
     ui8     adaptivePID_RecoveryFactor;             /*!<  0 --> 10  																	*/
     ui8     followLPF [3];                          /*!<  0 --> 15  																	*/
-    ui16    generalFlags1;                          /*!<  See @ref GeneralFlags1_t enumeration 		 									*/
-    ui16    profileFlags1;                          /*!<  See @ref ProfileFlags1_t enumeration 	 										*/
+    ui16    generalFlags1;                          /*!<  See @ref GeneralFlag1_t enumeration 		 									*/
+    ui16    profileFlags1;                          /*!<  See @ref ProfileFlag1_t enumeration 	 										*/
     ui8     spektrumMode;                           /*!<  See @ref SpectrumMode_t enumeration											*/
     ui8     orderOfAxes;                            /*!<  See @ref OrderOfAxes_t enumeration	 										*/
     ui8     EulerOrder;                             /*!<  See @ref EulerOrder_t enumeration		 										*/
@@ -1340,7 +1339,7 @@ typedef struct __PACKED__
 
     ui8     beeperVolume;                           /*!<  0 --> 255  																	*/
     ui16    encoderGearRatio [3];                   /*!<  Units: 0.001																	*/
-    ui8     encoderType [3];						/*!<  See @ref EncoderType_t and @ref EncoderFlags_t enumerations					*/
+    ui8     encoderType [3];						/*!<  See @ref EncoderType_t and @ref EncoderFlag_t enumerations					*/
     ui8     encoderCfg [3];							/*!<  See @ref EncoderCfg_t enumeration												*/
     ui8     outerP [3];                             /*!<  0 --> 255  																	*/
     ui8     outerI [3];                             /*!<  0 --> 255  																	*/
@@ -1373,7 +1372,7 @@ typedef struct __PACKED__
     ui8		MAV_Src,                            	/*!<  See @ref MAV_Src_t enumeration												*/
             MAV_SysID,                          	/*!<  0 --> 255																		*/
             MAV_CompID,                         	/*!<  0 --> 255																		*/
-            MAV_CfgFlags,                       	/*!<  See @ref MAV_CfgFlags_t enumeration											*/
+            MAV_CfgFlags,                       	/*!<  See @ref MAV_CfgFlag_t enumeration											*/
             MAV_Reserved [4];
 
 }           MAV_CMPE_Channel_t;
@@ -1436,7 +1435,7 @@ typedef struct __PACKED__
     i16     frameCamAngleMin [3],                   /*!<  ...																			*/
             frameCamAngleMax [3];                   /*!<  Units: 1 degree. Frw. ver. 2.61+												*/
 
-    ui16    generalFlags2;                          /*!<  See @ref GeneralFlags2_t enumeration											*/
+    ui16    generalFlags2;                          /*!<  See @ref GeneralFlag2_t enumeration											*/
     ui8     autoSpeed;                              /*!<  1 --> 255. Frw. ver. 2.61+													*/
     ui8     autoACC_Limiter;                        /*!<  1 --> 255. Units: 5 degrees/sec². Frw. ver. 2.61+								*/
     i16     IMU_OrientationCorr [3];                /*!<  Units: 0.01 degrees. Frw. ver. 2.61+											*/
@@ -1455,7 +1454,7 @@ typedef struct __PACKED__
     ui8     startupAction [4];						/*!<  See @ref MenuCommands_t enumeration											*/
     ui8     startupActionSrc [2][4];				/*!<  See @ref RC_MapSourceType_t and @ref RC_MapSource_t enumerations				*/
     i8      startupActionThreshold [2][4];			/*!<  Threshold for RC signal on a given source, multiplied by 10					*/
-    ui8     forcePositionCfg [3];                   /*!<  See @ref ForcePositionCfgSnap_t and @ref ForcePositionCfgFlags_t enumerations	*/
+    ui8     forcePositionCfg [3];                   /*!<  See @ref ForcePositionCfgSnap_t and @ref ForcePositionCfgFlag_t enumerations	*/
 
     StepSignalN_t	StepSignalN [6];				/*!<  0 --> 5																		*/
 
@@ -1510,7 +1509,7 @@ typedef struct __PACKED__
     ui8     extIMU_Port;                            /*!<  See @ref ExtIMU_Port_t enumeration											*/
     ui8     extIMU_Position;                        /*!<  See @ref ExtIMU_Position_t enumeration										*/
     ui8     extIMU_Orientation;                     /*!<  See @ref ExtIMU_Orientation_t enumeration										*/
-    ui16    extIMU_Flags;                           /*!<  See @ref ExtIMU_Flags_t enumeration. Frw.ver. 2.68b7+							*/
+    ui16    extIMU_Flags;                           /*!<  See @ref ExtIMU_Flag_t enumeration. Frw.ver. 2.68b7+							*/
     ui8     extIMU_Reserved [12];
     ui8     softLimitWidth [3];                     /*!<  1 --> 255. Units: 0.1 degrees. Width of the software limits
     													  defined by the FRAME_CAM_ANGLE_MIN, FRAME_CAM_ANGLE_MAX						*/
@@ -1524,9 +1523,9 @@ typedef struct __PACKED__
     													  [4...7] - reserved  															*/
     ui8     reserved2 [3];
     ui8     CAN_IMU_ExtSensType;					/*!<  See @ref CAN_IMU_ExtSensType_t enumeration									*/
-    ui16    profileFlags2;                          /*!<  See @ref ProfileFlags2_t enumeration											*/
+    ui16    profileFlags2;                          /*!<  See @ref ProfileFlag2_t enumeration											*/
     ui8     reserved3 [3];
-    ui32    generalFlags3;                          /*!<  See @ref GeneralFlags3_t enumeration											*/
+    ui32    generalFlags3;                          /*!<  See @ref GeneralFlag3_t enumeration											*/
     i16     followOffsetExt [3];                    /*!<  -16384 --> 16384. Units: 0.02197265625 degree. Frw. ver. 2.70+				*/
     ui16    motorStartupDelay;                      /*!<  Units: ms																		*/
     ui8     reserved4 [140];

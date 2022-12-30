@@ -45,6 +45,8 @@ Files Description
 
 - calib/calib.h - Calibration commands header file
 
+- core/adjunct.h - Header common help-code file
+
 - core/core.h - Header file of the core for the custom usage SBGC32 Library
 
 - eeprom/eeprom.h - EEPROM module header file
@@ -83,11 +85,15 @@ Files Description
 
 **Headers (.h):**
 
-- ArduinoDriver/driver_Arduino.h - STM32 driver header file
+- ArduinoDriver/driver_Arduino.h - Arduino driver header file
 
-- LinuxDriver/driver_Linux.h - STM32 driver header file
+- LinuxDriver/driver_Linux.h - Linux driver header file
 
 - STM32_Driver/driver_STM32.h - STM32 driver header file
+
+- STM32_Driver/MCU_Config.h - STM32 MCU configurations header file
+
+- STM32_Driver/stm32_it.h - STM32 interrupts header file
 
 **Sources (.c):**
 
@@ -96,6 +102,8 @@ Files Description
 - LinuxDriver/driver_Linux.c - Linux driver source file
 
 - STM32_Driver/driver_STM32.c - STM32 driver source file
+
+- STM32_Driver/stm32_it.c - STM32 interrupts source file
 
 How to use this library
 -----------------------
@@ -149,33 +157,33 @@ specification](https://www.basecamelectronics.com/serialapi/).
 	int main (void)
 	{
 		USARTx_Init();
-		USARTy_Init();
+		USARTx_Init();
 	
 		SBGC32_Device.Drv = malloc(sizeof(Driver_t));
-		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT, INTERNAL_MAIN_TIMER);
+		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
 
 		SBGC32_DefaultInit(&SBGC32_Device, UartTransmitData, UartReceiveByte, GetAvailableBytes,
 				UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
 	}
 	
-*stm32f7xx_it.c :*
+*if your application uses CubeMX - stm32fxxx_it.c :*
 
 	#include "driver_STM32.h"
 	#include "core.h"
 	
 	extern GeneralSBGC_t SBGC32_Device;
-	
+
+	// if your application works without FreeRTOS:
 	void TIMx_IRQHandler (void)
 	{
-		if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
-		    GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
+		if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
+		    GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
 			TimerDRV_CallBack(SBGC32_Device.Drv);
 
-		HAL_TIM_IRQHandler(INTERNAL_MAIN_TIMER);
+		HAL_TIM_IRQHandler(SBGC_REFERENCE_TIMER);
 	}
 
-	*if UART works by means of NVIC:*
-	
+	// if UART works by means of NVIC:
 	void USARTx_IRQHandler (void)
 	{
 		if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
@@ -192,8 +200,7 @@ specification](https://www.basecamelectronics.com/serialapi/).
 		HAL_UART_IRQHandler(SBGC_SERIAL_PORT);
 	}
 
-	*if UART works by means of DMA with LL:*
-
+	// if UART works by means of DMA with LL:
 	void DMAx_Streamx_IRQHandler (void)
 	{
 		if (GET_FLAG_DMA_HISR_TC_TX)
@@ -208,7 +215,11 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 *Notes:*
 
-*- The default speed of SimpleBGC32 devices is 115200 bits per second.*
+*- All general library settings are placed in the "core.h" file under "User Defined Parameters" comment;*
+
+*- All general drivers settings are placed in the "driver_xx.h" files under "User Defined Parameters" comment;*
+
+*- The default speed of SimpleBGC32 devices is 115200 bits per second;*
 
 *- Initialize the **DebugData** functions with **NULL** if you don't want to use debug mode;*
 
@@ -216,13 +227,15 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 *- If you want to create your gimbal communication driver, create it based on the necessary functions defined in the GeneralSBGC_t structure;*
 
-*- Starting to work with the gimbal using Arduino don't forget to check the **SERIAL_TX_BUFFER_SIZE** and **SERIAL_RX_BUFFER_SIZE** constants.
-Strongly recommend increasing this value to 256;*
+*- Starting to work with the gimbal using Arduino don't forget to check the **SERIAL_TX_BUFFER_SIZE** and **SERIAL_RX_BUFFER_SIZE** constants
+in "HardwareSerial.h" file. Strongly recommend increasing this value to 256;*
 
 *- When SBGC32 device connected with Linux device you need to set **choose mode** for this connection to **read, write, and executable** 
 using the terminal (sudo chmod a+rwx /dev/ttyUSBx);*
 
-*- The communication driver for STM32 devices supports HAL and LL libraries;*
+*- The communication driver for STM32 devices supports HAL and LL libraries. Common software settings are made in the "MCU_Config.h" file.
+Special settings are made in the "driver_STM32.h" file in the relevant sections. If your application doesn't use CubeMX utility,
+it is recommended to explore all the configurable driver parameters;*
 
 ### Data handling ###
 
@@ -239,3 +252,11 @@ in this structure. Confirmation of correct data reception is a returned status v
 
 The rest of the details are contained in the descriptions inside the library itself. Also, you can generate project documentation
 using doxyfile in the /doxygen folder.
+
+ ### Feedback ###
+
+If you have any questions about using this library, you can ask for help at:
+
+support@basecamelectronics.com
+
+qsivey@gmail.com

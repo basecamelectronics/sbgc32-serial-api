@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "imu.h"
 
 
-#ifdef	SYS_BIG_ENDIAN
+#if (SYS_BIG_ENDIAN)
 
 	extern AHRS_DebugInfo_t AHRS_DebugInfo_ParserStruct;
 
@@ -42,23 +42,23 @@
 
 	const ParserBlock_t ExtIMU_DebugInfo_ParserStructDB [] =
 	{
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.mainIMU_RefSrc),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.frameIMU_RefSrc),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.mainIMU_Z_RefErr),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.mainIMU_H_RefErr),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.frameIMU_Z_RefErr),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.frameIMU_H_RefErr),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.extIMU_Status),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.extIMU_PacketsReceivedCnt),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.extIMU_ParseErrCnt),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.extCorrH_Ref),
-		VAR_BLOCK(AHRS_DebugInfo_ParserStruct.extCorrZ_Ref),
-		DATA_BLOCK(AHRS_DebugInfo_ParserStruct.reserved),
-		DATA_BLOCK(extIMU_DebugInfo_ParserStruct.DCM),
-		DATA_BLOCK(extIMU_DebugInfo_ParserStruct.ACC_Body),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.mainIMU_RefSrc),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.frameIMU_RefSrc),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.mainIMU_Z_RefErr),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.mainIMU_H_RefErr),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.frameIMU_Z_RefErr),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.frameIMU_H_RefErr),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.extIMU_Status),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.extIMU_PacketsReceivedCnt),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.extIMU_ParseErrCnt),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.extCorrH_Ref),
+		VAR_BLOCK_(AHRS_DebugInfo_ParserStruct.extCorrZ_Ref),
+		DATA_BLOCK_(AHRS_DebugInfo_ParserStruct.reserved),
+		DATA_BLOCK_(extIMU_DebugInfo_ParserStruct.DCM),
+		DATA_BLOCK_(extIMU_DebugInfo_ParserStruct.ACC_Body),
 	};
 
-	const ui8 ExtIMU_DebugInfo_ParserStructDB_Size = countof(ExtIMU_DebugInfo_ParserStructDB);
+	const ui8 ExtIMU_DebugInfo_ParserStructDB_Size = countof_(ExtIMU_DebugInfo_ParserStructDB);
 	/**	@}
 	 */
 
@@ -74,12 +74,12 @@
 
 	const ParserBlock_t GyroCorrection_ParserStructDB [] =
 	{
-		VAR_BLOCK(gyroCorrection_ParserStruct.IMU_Type),
-		DATA_BLOCK(gyroCorrection_ParserStruct.gyroZeroCorr),
-		VAR_BLOCK(gyroCorrection_ParserStruct.gyroZeroHeadingCorr),
+		VAR_BLOCK_(gyroCorrection_ParserStruct.IMU_Type),
+		DATA_BLOCK_(gyroCorrection_ParserStruct.gyroZeroCorr),
+		VAR_BLOCK_(gyroCorrection_ParserStruct.gyroZeroHeadingCorr),
 	};
 
-	const ui8 GyroCorrection_ParserStructDB_Size = countof(GyroCorrection_ParserStructDB);
+	const ui8 GyroCorrection_ParserStructDB_Size = countof_(GyroCorrection_ParserStructDB);
 	/**	@}
 	 */
 
@@ -95,12 +95,12 @@
 
 	const ParserBlock_t AHRS_Helper_ParserStructDB [] =
 	{
-		VAR_BLOCK(AHRS_Helper_ParserStruct.mode),
-		DATA_BLOCK(AHRS_Helper_ParserStruct.Z_Vect),
-		DATA_BLOCK(AHRS_Helper_ParserStruct.H_Vect),
+		VAR_BLOCK_(AHRS_Helper_ParserStruct.mode),
+		DATA_BLOCK_(AHRS_Helper_ParserStruct.Z_Vect),
+		DATA_BLOCK_(AHRS_Helper_ParserStruct.H_Vect),
 	};
 
-	const ui8 AHRS_Helper_ParserStructDB_Size = countof(AHRS_Helper_ParserStructDB);
+	const ui8 AHRS_Helper_ParserStructDB_Size = countof_(AHRS_Helper_ParserStructDB);
 	/**	@}
 	 */
 
@@ -117,26 +117,25 @@
 
 	const ParserBlock_t HelperData_ParserStructDB [] =
 	{
-		DATA_BLOCK(HelperData_ParserSrtruct.frameACC),
-		VAR_BLOCK(HelperData_ParserSrtruct.frameAngleRoll),
-		VAR_BLOCK(HelperData_ParserSrtruct.frameAnglePitch),
+		DATA_BLOCK_(HelperData_ParserSrtruct.frameACC),
+		VAR_BLOCK_(HelperData_ParserSrtruct.frameAngleRoll),
+		VAR_BLOCK_(HelperData_ParserSrtruct.frameAnglePitch),
 	};
 
-	const ui8 HelperData_ParserStructDB_Size = countof(HelperData_ParserStructDB);
-
+	const ui8 HelperData_ParserStructDB_Size = countof_(HelperData_ParserStructDB);
 
 	const ParserBlock_t HelperDataExt_ParserStructDB [] =
 	{
-		DATA_BLOCK(HelperData_ParserSrtruct.frameACC),
-		VAR_BLOCK(HelperData_ParserSrtruct.frameAngleRoll),
-		VAR_BLOCK(HelperData_ParserSrtruct.frameAnglePitch),
-		VAR_BLOCK(HelperData_ParserSrtruct.flags),
-		DATA_BLOCK(HelperData_ParserSrtruct.frameSpeed),
-		VAR_BLOCK(HelperData_ParserSrtruct.frameHeading),
-		VAR_BLOCK(HelperData_ParserSrtruct.reserved),
+		DATA_BLOCK_(HelperData_ParserSrtruct.frameACC),
+		VAR_BLOCK_(HelperData_ParserSrtruct.frameAngleRoll),
+		VAR_BLOCK_(HelperData_ParserSrtruct.frameAnglePitch),
+		VAR_BLOCK_(HelperData_ParserSrtruct.flags),
+		DATA_BLOCK_(HelperData_ParserSrtruct.frameSpeed),
+		VAR_BLOCK_(HelperData_ParserSrtruct.frameHeading),
+		VAR_BLOCK_(HelperData_ParserSrtruct.reserved),
 	};
 
-	const ui8 HelperDataExt_ParserStructDB_Size = countof(HelperDataExt_ParserStructDB);
+	const ui8 HelperDataExt_ParserStructDB_Size = countof_(HelperDataExt_ParserStructDB);
 	/**	@}
 	 */
 
@@ -161,8 +160,12 @@
  */
 TxRxStatus_t SBGC32_RequestExtIMU_DebugInfo (GeneralSBGC_t *generalSBGC, ExtIMU_DebugInfo_t *extIMU_DebugInfo)
 {
-	if (generalSBGC->_firmwareVersion < 2660)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2660)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_EXT_IMU_DEBUG_INFO);

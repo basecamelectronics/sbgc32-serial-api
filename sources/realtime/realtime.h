@@ -9,7 +9,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -147,7 +147,7 @@ typedef enum
 	/** frw.ver. 2.65b7+ */
 	DSC_CMD_EVENT					= 4
 
-}	DataStreamCommands_t;
+}	DataStreamCommand_t;
 
 
 /**	@note	DataStreamInterval_t.syncToData
@@ -187,7 +187,7 @@ typedef enum
 	RTDCF_ENCODER_RAW24				= BIT_11_SET,
 	RTDCF_IMU_ANGLES_RAD			= BIT_12_SET
 
-}	RealTimeDataCustomFlags_t;
+}	RealTimeDataCustomFlag_t;
 /**	@}
  */
 
@@ -290,7 +290,7 @@ typedef enum
 	RTDF_MOTORS_OFF					= 0,
 	RTDF_MOTORS_ON					= 1
 
-}	RT_DataFlags_t;
+}	RT_DataFlag_t;
 
 
 /**	@note	RealTimeData_t.curProfile
@@ -368,7 +368,7 @@ typedef enum
 	ICF_DONT_TRY_TO_INIT_INPUT		= 0,
 	ICF_TRY_TO_INIT_INPUT			= 1
 
-}	InitCfgFlags_t;
+}	InitCfgFlag_t;
 /**	@}
  */
 
@@ -390,7 +390,7 @@ typedef enum
 	VT_VAR_FLAG_YAW 				= 48,
 	VT_VAR_FLAG_ANGLE14 			= 64
 
-}	VarTypeFlags_t;
+}	VarTypeFlag_t;
 
 /**	@brief	Used as a mask to extract the
  * 			variable type from
@@ -400,9 +400,9 @@ typedef enum
  *
  * 	@return	Variable type
  */
-static inline VarTypes_t GetVarType (ui8 value)
+static inline VarType_t GetVarType (ui8 value)
 {
-	return (VarTypes_t)(value & 0b00001111);
+	return (VarType_t)(value & 0b00001111);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -413,9 +413,9 @@ static inline VarTypes_t GetVarType (ui8 value)
  *
  * 	@return	Variable's flag
  */
-static inline VarTypeFlags_t GetVarFlag (ui8 value)
+static inline VarTypeFlag_t GetVarFlag (ui8 value)
 {
-	return (VarTypeFlags_t)(value & 0b11110000);
+	return (VarTypeFlag_t)(value & 0b11110000);
 }
 /**	@}
  */
@@ -443,7 +443,7 @@ typedef enum
 	SIMUA_COPY_CALIB_FROM_MAIN_EEPROM
 									= 7
 
-}	SelectIMU_Actions_t;
+}	SelectIMU_Action_t;
 /**	@}
  */
 
@@ -467,7 +467,7 @@ typedef enum
  */
 typedef struct __PACKED__
 {
-	ui8		cmdID;									/*!<  See @ref DataStreamCommands_t enumeration										*/
+	ui8		cmdID;									/*!<  See @ref DataStreamCommand_t enumeration										*/
 	ui16	intervalMs;								/*!<  Depends on the syncToData parameter											*/
 	ui8		config [8];								/*!<  Configuration specific to each command, depends on the cmdID parameter		*/
 	ui8		syncToData;								/*!<  See @ref SyncToData_t enumeration												*/
@@ -582,7 +582,7 @@ typedef struct __PACKED__
     ui16    I2C_ErrorCount;							/*!<  Number of registered errors on I2C bus										*/
     ui8     errorCode;                              /*!<  Deprecated, replaced by the SYSTEM_ERROR variable								*/
     ui16    batLevel;                               /*!<  Units: 0.01 volt																*/
-    ui8     RT_DataFlags;							/*!<  See @ref RT_DataFlags_t enumeration											*/
+    ui8     RT_DataFlags;							/*!<  See @ref RT_DataFlag_t enumeration											*/
     ui8     curIMU;									/*!<  See @ref IMU_Type_t enumeration												*/
     ui8     curProfile;                             /*!<  See @ref CurProfile_t enumeration												*/
     ui8     motorPower [3];                         /*!<  0 --> 255																		*/
@@ -718,7 +718,7 @@ typedef struct
 {
 	ui8			varNameLength;						/*!<  This is a 1st byte from varName parameter										*/
 	char		varName [256];						/*!<  This is a string, ended which '\0'											*/
-	VarTypes_t	varType;							/*!<  See @ref VarTypes_t and @ref VarTypeFlags_t enumerations						*/
+	VarType_t	varType;							/*!<  See @ref VarTypes_t and @ref VarTypeFlag_t enumerations						*/
 
 	ui32		varValue;							/*!<  Read-Only																		*/
 
@@ -758,7 +758,7 @@ typedef struct
  * 	@{
  */
 TxRxStatus_t SBGC32_RequestDataStream (GeneralSBGC_t *generalSBGC, DataStreamInterval_t *dataStreamInterval, ConfirmationState_t *confirmationState);
-TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Commands_t cmdID);
+TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Command_t cmdID);
 /**	@}
  */
 
@@ -766,7 +766,7 @@ TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStrea
 /**	@addtogroup	Realtime_Data_Custom
  * 	@{
  */
-TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealTimeDataCustom_t *realTimeDataCustom, RealTimeDataCustomFlags_t flags);
+TxRxStatus_t SBGC32_RequestRealTimeDataCustom (GeneralSBGC_t *generalSBGC, RealTimeDataCustom_t *realTimeDataCustom, RealTimeDataCustomFlag_t flags);
 /**	@}
  */
 
@@ -792,7 +792,7 @@ TxRxStatus_t SBGC32_GetAnglesExt (GeneralSBGC_t *generalSBGC, GetAnglesExt_t *ge
 /**	@addtogroup	RC_Inputs
  * 	@{
  */
-TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_Inputs, InitCfgFlags_t cfgFlags, ui8 srcQuan);
+TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_Inputs, InitCfgFlag_t cfgFlags, ui8 srcQuan);
 /**	@}
  */
 
@@ -809,7 +809,7 @@ TxRxStatus_t SBGC32_ReadRC_Inputs (GeneralSBGC_t *generalSBGC, RC_Inputs_t *RC_I
 /**	@addtogroup	IMU_Select_3
  * 	@{
  */
-TxRxStatus_t SBGC32_SelectIMU_3 (GeneralSBGC_t *generalSBGC, IMU_Type_t IMU_Type, SelectIMU_Actions_t action,
+TxRxStatus_t SBGC32_SelectIMU_3 (GeneralSBGC_t *generalSBGC, IMU_Type_t IMU_Type, SelectIMU_Action_t action,
 								 ui16 timeMs, ConfirmationState_t *confirmationState);
 /**	@}
  */

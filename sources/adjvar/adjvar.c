@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "adjvar.h"
 
 
-#ifdef SBGC_DEBUG_MODE
+#if (SBGC_DEBUG_MODE)
 
 	/**	@addtogroup	Adjvar
 	 * 	@{
@@ -37,72 +37,72 @@
 	/*
 	||			   ENUM ID + NAME					 || MIN VALUE || MAX VALUE || 		TYPE		||
 	 */
-	{ { ADJ_VAR_BLOCK(ADJ_VAR_P_ROLL), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_P_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_P_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_I_ROLL), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_I_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_I_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_D_ROLL), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_D_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_D_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_POWER_ROLL), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_POWER_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_POWER_YAW), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_ACC_LIMITER), 				0, 			1275, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_SPEED_ROLL),	 		0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_SPEED_PITCH), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_SPEED_YAW), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_LPF_ROLL), 			0, 			15, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_LPF_PITCH), 			0, 			15, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_LPF_YAW), 				0, 			15, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_SPEED_ROLL), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_SPEED_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_SPEED_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_LPF_ROLL), 				0, 			255,	 	_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_LPF_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_LPF_YAW), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_TRIM_ROLL), 				-127, 		127, 		_SIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_TRIM_PITCH), 				-127, 		127, 		_SIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_TRIM_YAW), 				-127, 		127, 		_SIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_DEADBAND), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_EXPO_RATE), 				0, 			100, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_PITCH), 				0, 			1, 			_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_FOLLOW_YAW_PITCH), 		0, 			2, 			_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_DEADBAND), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_EXPO_RATE), 			0, 			100, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_ROLL_MIX_START), 		0, 			90, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_ROLL_MIX_RANGE), 		0, 			90, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_GYRO_TRUST), 					0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FRAME_HEADING), 				-1800, 		1800, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_GYRO_HEADING_CORR), 			-20000, 	20000, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAL_ACC_LIMITER_ROLL),			0, 			1275, 		_UNSIGNED_SHORT_
-	},{ ADJ_VAR_BLOCK(ADJ_VAL_ACC_LIMITER_PITCH), 			0, 			1275, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAL_ACC_LIMITER_YAW), 			0, 			1275, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_PID_GAIN_ROLL), 				0, 			255,		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_PID_GAIN_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_PID_GAIN_YAW), 				0,		 	255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_LPF_FREQ_ROLL), 				10, 		400, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_LPF_FREQ_PITCH),				10, 		400, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_LPF_FREQ_YAW), 				10, 		400, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_TIMELAPSE_TIME), 				1, 			3600, 		_UNSIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_MAV_CTRL_MODE), 				0, 			2, 			_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_H_CORR_FACTOR), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MIN_ROLL), 			-3600, 		3600, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MAX_ROLL), 			-3600, 		3600, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MIN_PITCH), 			-3600, 		3600, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MAX_PITCH), 			-3600, 		3600, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MIN_YAW), 				-3600, 		3600,	 	_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_SW_LIM_MAX_YAW), 				-3600, 		3600, 		_SIGNED_SHORT_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_RANGE_ROLL), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_RANGE_PITCH), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_RANGE_YAW), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_AUTO_PID_TARGET), 			0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_MODE_ROLL), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_MODE_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK(ADJ_VAR_RC_MODE_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
-	},{ ADJ_VAR_BLOCK(ADJ_VAR_EULER_ORDER), 				0, 			255,		_UNSIGNED_CHAR_
-	},{ ADJ_VAR_BLOCK(ADJ_VAR_FOLLOW_IN_DBAND), 			0, 			255,		_UNSIGNED_CHAR_
+	{ { ADJ_VAR_BLOCK_(ADJ_VAR_P_ROLL), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_P_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_P_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_I_ROLL), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_I_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_I_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_ROLL), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_PITCH), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_YAW), 						0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_POWER_ROLL), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_POWER_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_POWER_YAW), 					0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER), 				0, 			1275, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_ROLL),	 		0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_PITCH), 		0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_YAW), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_ROLL), 			0, 			15, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_PITCH), 			0, 			15, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_YAW), 			0, 			15, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_ROLL), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_PITCH), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_LPF_ROLL), 				0, 			255,	 	_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_LPF_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_LPF_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_TRIM_ROLL), 				-127, 		127, 		_SIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_TRIM_PITCH), 				-127, 		127, 		_SIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_TRIM_YAW), 				-127, 		127, 		_SIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_DEADBAND), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_EXPO_RATE), 				0, 			100, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_PITCH), 				0, 			1, 			_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_FOLLOW_YAW_PITCH), 		0, 			2, 			_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_DEADBAND), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_EXPO_RATE), 			0, 			100, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_ROLL_MIX_START), 		0, 			90, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_ROLL_MIX_RANGE), 		0, 			90, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_TRUST), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FRAME_HEADING), 				-1800, 		1800, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_HEADING_CORR), 			-20000, 	20000, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAL_ACC_LIMITER_ROLL),			0, 			1275, 		_UNSIGNED_SHORT_
+	},{ ADJ_VAR_BLOCK_(ADJ_VAL_ACC_LIMITER_PITCH), 			0, 			1275, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAL_ACC_LIMITER_YAW), 			0, 			1275, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_ROLL), 				0, 			255,		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_PITCH), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_YAW), 				0,		 	255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_LPF_FREQ_ROLL), 				10, 		400, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_LPF_FREQ_PITCH),				10, 		400, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_LPF_FREQ_YAW), 				10, 		400, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_TIMELAPSE_TIME), 			1, 			3600, 		_UNSIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_MAV_CTRL_MODE), 				0, 			2, 			_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_H_CORR_FACTOR), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MIN_ROLL), 			-3600, 		3600, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MAX_ROLL), 			-3600, 		3600, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MIN_PITCH), 			-3600, 		3600, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MAX_PITCH), 			-3600, 		3600, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MIN_YAW), 			-3600, 		3600,	 	_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_MAX_YAW), 			-3600, 		3600, 		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_RANGE_ROLL), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_RANGE_PITCH), 		0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_RANGE_YAW), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_AUTO_PID_TARGET), 			0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_MODE_ROLL), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_MODE_PITCH), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_MODE_YAW), 				0, 			255, 		_UNSIGNED_CHAR_
+	},{ ADJ_VAR_BLOCK_(ADJ_VAR_EULER_ORDER), 				0, 			255,		_UNSIGNED_CHAR_
+	},{ ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_IN_DBAND), 			0, 			255,		_UNSIGNED_CHAR_
 
 	}};
 	/**	@}
@@ -110,7 +110,7 @@
 
 #endif
 
-#ifdef	SYS_BIG_ENDIAN
+#if	(SYS_BIG_ENDIAN)
 
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *								Parser Big Endian Mapping Structures
@@ -129,48 +129,48 @@
 
 	const ParserBlock_t AdjVarsStateOldTx_ParserStructDB [] =
 	{
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerSlot__old),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogSlot),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerSlot__old),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogSlot),
 	};
 
-	const ui8 AdjVarsStateOldTx_ParserStructDB_Size = countof(AdjVarsStateOldTx_ParserStructDB);
+	const ui8 AdjVarsStateOldTx_ParserStructDB_Size = countof_(AdjVarsStateOldTx_ParserStructDB);
 
 
 	const ParserBlock_t AdjVarsStateOldRx_ParserStructDB [] =
 	{
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerRC_Data__old),
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerAction__old),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogRC_Data),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogValue),
-		VAR_BLOCK(adjVarsState_ParserStruct.reserved),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerRC_Data__old),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerAction__old),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogRC_Data),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogValue),
+		VAR_BLOCK_(adjVarsState_ParserStruct.reserved),
 	};
 
-	const ui8 AdjVarsStateOldRx_ParserStructDB_Size = countof(AdjVarsStateOldRx_ParserStructDB);
+	const ui8 AdjVarsStateOldRx_ParserStructDB_Size = countof_(AdjVarsStateOldRx_ParserStructDB);
 
 
 	const ParserBlock_t AdjVarsStateTx_ParserStructDB [] =
 	{
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerSlot),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogSrcID),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogVarID),
-		VAR_BLOCK(adjVarsState_ParserStruct.lutSrcID),
-		VAR_BLOCK(adjVarsState_ParserStruct.lutVarID),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerSlot),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogSrcID),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogVarID),
+		VAR_BLOCK_(adjVarsState_ParserStruct.lutSrcID),
+		VAR_BLOCK_(adjVarsState_ParserStruct.lutVarID),
 	};
 
-	const ui8 AdjVarsStateTx_ParserStructDB_Size = countof(AdjVarsStateTx_ParserStructDB);
+	const ui8 AdjVarsStateTx_ParserStructDB_Size = countof_(AdjVarsStateTx_ParserStructDB);
 
 
 	const ParserBlock_t AdjVarsStateRx_ParserStructDB [] =
 	{
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerRC_Data),
-		VAR_BLOCK(adjVarsState_ParserStruct.triggerAction),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogSrcValue),
-		VAR_BLOCK(adjVarsState_ParserStruct.analogVarValue),
-		VAR_BLOCK(adjVarsState_ParserStruct.lutSrcValue),
-		VAR_BLOCK(adjVarsState_ParserStruct.lutVarValue),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerRC_Data),
+		VAR_BLOCK_(adjVarsState_ParserStruct.triggerAction),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogSrcValue),
+		VAR_BLOCK_(adjVarsState_ParserStruct.analogVarValue),
+		VAR_BLOCK_(adjVarsState_ParserStruct.lutSrcValue),
+		VAR_BLOCK_(adjVarsState_ParserStruct.lutVarValue),
 	};
 
-	const ui8 AdjVarsStateRx_ParserStructDB_Size = countof(AdjVarsStateRx_ParserStructDB);
+	const ui8 AdjVarsStateRx_ParserStructDB_Size = countof_(AdjVarsStateRx_ParserStructDB);
 	/**	@}
 	 */
 
@@ -184,7 +184,7 @@
  * 	@{
  */
 
-#ifdef	SBGC_DEBUG_MODE
+#if (SBGC_DEBUG_MODE)
 
 	/**	@brief	Needed to change the values of adjustable variables
 	 *
@@ -215,7 +215,7 @@
 void EditAdjVarValue (AdjVarsGeneral_t *adjVarsGeneral, i32 value)
 {
 	/* Values border checking */
-	value = CONSTRAINT(value, adjVarsGeneral->minValue, adjVarsGeneral->maxValue);
+	value = constrain_(value, adjVarsGeneral->minValue, adjVarsGeneral->maxValue);
 
 	if (adjVarsGeneral->value == value)
 		return;
@@ -243,7 +243,7 @@ TxRxStatus_t SBGC32_SetAdjVarValues (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_
 	ui8 numParams = 0;
 	WriteByte(&cmd, numParams);  // temporary offset
 
-	FOR_(i, adjVarQuan)
+	for (ui8 i = 0; i < adjVarQuan; i++)
 		if (adjVarsGeneral[i].changeFlag == CHANGED)
 		{
 			WriteByte(&cmd, adjVarsGeneral[i].ID);
@@ -317,7 +317,7 @@ TxRxStatus_t SBGC32_GetAdjVarValues (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_
 	{
 		SkipBytes(&cmd, 1);  // skip ui8 numParams
 
-		FOR_(i, firstGroupQuan)
+		for (ui8 i = 0; i < firstGroupQuan; i++)
 		{
 			SkipBytes(&cmd, 1);  // skip ui8 ID
 			adjVarsGeneral[i].value = ReadLong(&cmd);
@@ -332,7 +332,7 @@ TxRxStatus_t SBGC32_GetAdjVarValues (GeneralSBGC_t *generalSBGC, AdjVarsGeneral_
 				WriteByte(&cmd, count++);
 
 			if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_SET_ADJ_VARS_VAL), "Adj Var Values vol. 2:") == TX_RX_OK)
-				FOR_(i, adjVarQuan - 40)
+				for (ui8 i = 0; i < adjVarQuan - 40; i++)
 				{
 					SkipBytes(&cmd, 1);  // skip ui8 ID
 					adjVarsGeneral[i + 40].value = ReadLong(&cmd);
@@ -381,7 +381,7 @@ TxRxStatus_t SBGC32_SaveAdjVarsToEEPROM (GeneralSBGC_t *generalSBGC, AdjVarsGene
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_SAVE_PARAMS_3);
 
-	FOR_(i, adjVarQuan)
+	for (ui8 i = 0; i < adjVarQuan; i++)
 		if (adjVarsGeneral[i].saveFlag == NOT_SAVED)
 			WriteByte(&cmd, adjVarsGeneral[i].ID);
 
@@ -392,7 +392,7 @@ TxRxStatus_t SBGC32_SaveAdjVarsToEEPROM (GeneralSBGC_t *generalSBGC, AdjVarsGene
 	SBGC32_CheckConfirmation(generalSBGC, confirmationState, cmd.commandID);
 
 	if (confirmationState->cmdID == CMD_SAVE_PARAMS_3)
-		FOR_(i, adjVarQuan)
+		for (ui8 i = 0; i < adjVarQuan; i++)
 			if (adjVarsGeneral[i].saveFlag != SAVED)
 				adjVarsGeneral[i].saveFlag = SAVED;
 

@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "gimbalControl.h"
 
 
-#ifdef	SYS_BIG_ENDIAN
+#if (SYS_BIG_ENDIAN)
 
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *								Parser Big Endian Mapping Structures
@@ -42,16 +42,16 @@
 
 	const ParserBlock_t Control_ParserStructDB [] =
 	{
-		DATA_BLOCK(control_ParserStruct.controlMode),
-		VAR_BLOCK(control_ParserStruct.AxisC[ROLL].speed),
-		VAR_BLOCK(control_ParserStruct.AxisC[ROLL].angle),
-		VAR_BLOCK(control_ParserStruct.AxisC[PITCH].speed),
-		VAR_BLOCK(control_ParserStruct.AxisC[PITCH].angle),
-		VAR_BLOCK(control_ParserStruct.AxisC[YAW].speed),
-		VAR_BLOCK(control_ParserStruct.AxisC[YAW].angle),
+		DATA_BLOCK_(control_ParserStruct.controlMode),
+		VAR_BLOCK_(control_ParserStruct.AxisC[ROLL].speed),
+		VAR_BLOCK_(control_ParserStruct.AxisC[ROLL].angle),
+		VAR_BLOCK_(control_ParserStruct.AxisC[PITCH].speed),
+		VAR_BLOCK_(control_ParserStruct.AxisC[PITCH].angle),
+		VAR_BLOCK_(control_ParserStruct.AxisC[YAW].speed),
+		VAR_BLOCK_(control_ParserStruct.AxisC[YAW].angle),
 	};
 
-	const ui8 Control_ParserStructDB_Size = countof(Control_ParserStructDB);
+	const ui8 Control_ParserStructDB_Size = countof_(Control_ParserStructDB);
 	/**	@}
 	 */
 
@@ -67,33 +67,33 @@
 
 	const ParserBlock_t ControlConfig_ParserStructDB [] =
 	{
-		VAR_BLOCK(controlConfig_ParserStruct.timeoutMS),
-		VAR_BLOCK(controlConfig_ParserStruct.ch1_Priority),
-		VAR_BLOCK(controlConfig_ParserStruct.ch2_Priority),
-		VAR_BLOCK(controlConfig_ParserStruct.ch3_Priority),
-		VAR_BLOCK(controlConfig_ParserStruct.ch4_Priority),
-		VAR_BLOCK(controlConfig_ParserStruct.thisChPriority),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[ROLL].angleLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[ROLL].speedLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[ROLL].RC_LPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[ROLL].ACC_Limit),
-		DATA_BLOCK(controlConfig_ParserStruct.AxisCC[ROLL].reserved1),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[PITCH].angleLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[PITCH].speedLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[PITCH].RC_LPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[PITCH].ACC_Limit),
-		DATA_BLOCK(controlConfig_ParserStruct.AxisCC[PITCH].reserved1),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[YAW].angleLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[YAW].speedLPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[YAW].RC_LPF),
-		VAR_BLOCK(controlConfig_ParserStruct.AxisCC[YAW].ACC_Limit),
-		DATA_BLOCK(controlConfig_ParserStruct.AxisCC[YAW].reserved1),
-		VAR_BLOCK(controlConfig_ParserStruct.RC_ExpoRate),
-		VAR_BLOCK(controlConfig_ParserStruct.flags),
-		DATA_BLOCK(controlConfig_ParserStruct.reserved2),
+		VAR_BLOCK_(controlConfig_ParserStruct.timeoutMS),
+		VAR_BLOCK_(controlConfig_ParserStruct.ch1_Priority),
+		VAR_BLOCK_(controlConfig_ParserStruct.ch2_Priority),
+		VAR_BLOCK_(controlConfig_ParserStruct.ch3_Priority),
+		VAR_BLOCK_(controlConfig_ParserStruct.ch4_Priority),
+		VAR_BLOCK_(controlConfig_ParserStruct.thisChPriority),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[ROLL].angleLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[ROLL].speedLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[ROLL].RC_LPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[ROLL].ACC_Limit),
+		DATA_BLOCK_(controlConfig_ParserStruct.AxisCC[ROLL].reserved1),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[PITCH].angleLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[PITCH].speedLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[PITCH].RC_LPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[PITCH].ACC_Limit),
+		DATA_BLOCK_(controlConfig_ParserStruct.AxisCC[PITCH].reserved1),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[YAW].angleLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[YAW].speedLPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[YAW].RC_LPF),
+		VAR_BLOCK_(controlConfig_ParserStruct.AxisCC[YAW].ACC_Limit),
+		DATA_BLOCK_(controlConfig_ParserStruct.AxisCC[YAW].reserved1),
+		VAR_BLOCK_(controlConfig_ParserStruct.RC_ExpoRate),
+		VAR_BLOCK_(controlConfig_ParserStruct.flags),
+		DATA_BLOCK_(controlConfig_ParserStruct.reserved2),
 	};
 
-	const ui8 ControlConfig_ParserStructDB_Size = countof(ControlConfig_ParserStructDB);
+	const ui8 ControlConfig_ParserStructDB_Size = countof_(ControlConfig_ParserStructDB);
 	/**	@}
 	 */
 
@@ -142,8 +142,12 @@ TxRxStatus_t SBGC32_Control (GeneralSBGC_t *generalSBGC, const Control_t *contro
  */
 TxRxStatus_t SBGC32_ControlConfig (GeneralSBGC_t *generalSBGC, const ControlConfig_t *controlConfig, ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2610)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2610)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_CONTROL_CONFIG);
@@ -170,7 +174,7 @@ TxRxStatus_t SBGC32_SetAPI_VirtChControl (GeneralSBGC_t *generalSBGC, const i16 
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_API_VIRT_CH_CONTROL);
-	FOR_(i, VIRT_CHANNELS_QUANTITY) WriteWord(&cmd, API_VirtCh[i]);
+	for (ui8 i = 0; i < VIRT_CHANNELS_QUANTITY; i++) WriteWord(&cmd, API_VirtCh[i]);
 	SBGC32_TX(generalSBGC, &cmd);
 	/* no need confirmation */
 	return generalSBGC->_ParserCurrentStatus;
@@ -191,7 +195,7 @@ TxRxStatus_t SBGC32_SetAPI_VirtChHR_Control (GeneralSBGC_t *generalSBGC, const i
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_API_VIRT_CH_HIGH_RES);
-	FOR_(i, chQuan) WriteWord(&cmd, API_VirtCh[i]);
+	for (ui8 i = 0; i< chQuan; i++) WriteWord(&cmd, API_VirtCh[i]);
 	SBGC32_TX(generalSBGC, &cmd);
 	/* no need confirmation */
 	return generalSBGC->_ParserCurrentStatus;

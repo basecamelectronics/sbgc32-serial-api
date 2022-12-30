@@ -1,6 +1,6 @@
 /*  ____________________________________________________________________
  *
- *	Copyright © 2022 BaseCam Electronics™.
+ *	Copyright © 2023 BaseCam Electronics™.
  *	All rights reserved.
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +44,7 @@ void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_Remote
 				 + abs(realTimeData->IMU_Angle[PITCH] - realTimeData->targetAngle[PITCH])
 				 + abs(realTimeData->IMU_Angle[YAW] - realTimeData->targetAngle[YAW])) * (ui32)(ANGLE_DEGREE_SCALE * 1000);
 
-		 AverageValue(&LCD_RemoteGeneral->TargetErrorAverage, CONSTRAINT(err, 0, 999));
+		 AverageValue(&LCD_RemoteGeneral->TargetErrorAverage, constrain_(err, 0, 999));
 	}
 
 	/* If no commands for a long time, set connected state to false */
@@ -147,14 +147,18 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 
 	#ifdef SBGC_DEBUG_MODE
 
-		/* Currently selected adj. variable name and value */
-		for (pos = 0; pos < ADJ_VAR_NAME_MAX_LENGTH; pos++)
-		{
-			if (!(adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]))
-				break;
+		#if (SBGC_DEBUG_MODE)
 
-			sprintf(&buf[pos], "%c", adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]); // offset due to ADJ_VAR_ (+ 8)
-		}
+			/* Currently selected adj. variable name and value */
+			for (pos = 0; pos < ADJ_VAR_NAME_MAX_LENGTH; pos++)
+			{
+				if (!(adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]))
+					break;
+
+				sprintf(&buf[pos], "%c", adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]);  // offset due to ADJ_VAR_ (+ 8)
+			}
+
+		#endif
 
 	#endif
 
@@ -199,7 +203,7 @@ void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos)
 
 ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug)
 {
-	delay(timeout);
+	DELAY_MS_(timeout);
 
 	ui8 size = 0;
 
@@ -214,13 +218,13 @@ ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_
 		{
 			buff[size - 2] = '\0';
 			LCD_DebugMessage(1, TEXT_SIZE_((char*)buff));
-			delay(500);
+			DELAY_MS_(500);
 		}
 
 		else
 		{
 			LCD_DebugMessage(1, TEXT_SIZE_((char*)"NO ANSWER"));
-			delay(1000);
+			DELAY_MS_(1000);
 		}
 	}
 
@@ -301,7 +305,7 @@ void GetEncoderAngles (InputsInfo_t *inputsInfo)
 
 	ui16 count = 0;
     while (Wire.available())
-	{   /* prevent [-Wmisleading-indentation] */
+	{   /* Prevent [-Wmisleading-indentation] */
         inputsInfo->I2C_Buff[count++] = Wire.read();
 	}
 

@@ -1,6 +1,6 @@
 /*  ____________________________________________________________________
  *
- *	Copyright © 2022 BaseCam Electronics™.
+ *	Copyright © 2023 BaseCam Electronics™.
  *	All rights reserved.
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,7 +78,7 @@ extern 		"C" {
  * 						 Hardware Macros & Constants
  */
 /*					### ADC ###					  */
-#ifdef 		HAL_ADC_MODULE_ENABLED
+#ifdef HAL_ADC_MODULE_ENABLED
 	/*  - - - - User Defined Parameters - - - - - */
 	#define	JOYSTICK_ADC		&hadc1
 	/*  - - - - - - - - - - - - - - - - - - - - - */
@@ -94,7 +94,7 @@ extern 		"C" {
 
 	#define	GET_FLAG_ADC_SR_EOC(ADC)	__HAL_ADC_GET_FLAG(ADC, ADC_SR_EOC)
 	#define	GET_FLAG_ADC_CR1_EOCIE(ADC)	__HAL_ADC_GET_IT_SOURCE(ADC, ADC_CR1_EOCIE)
-#else		/* LL_ADC */
+#else /* LL_ADC */
 	/*  - - - - User Defined Parameters - - - - - */
 	#define	JOYSTICK_ADC		ADC1
 	/*  - - - - - - - - - - - - - - - - - - - - - */
@@ -116,7 +116,7 @@ extern 		"C" {
 #endif
 
 /*				    ### I2C ###					  */
-#ifdef 		HAL_I2C_MODULE_ENABLED
+#ifdef HAL_I2C_MODULE_ENABLED
 	/*  - - - - User Defined Parameters - - - - - */
 	#define	ENCODER_I2C			&hi2c4
 	/*  - - - - - - - - - - - - - - - - - - - - - */
@@ -234,7 +234,7 @@ extern 		"C" {
 
 typedef enum
 {
-	BTN_RELEASED  								= 0,
+	BTN_RELEASED  					= 0,
 	BTN_PRESSED,
 	BTN_POST_PRESSED
 
@@ -243,7 +243,7 @@ typedef enum
 
 typedef enum
 {
-	NAV_BTN_RELEASED							= 0,
+	NAV_BTN_RELEASED				= 0,
 
 	NAV_BTN_RIGHT,
 	NAV_BTN_UP,
@@ -257,7 +257,7 @@ typedef enum
 
 typedef enum
 {
-	DISPLAY_UPDATED								= 0,
+	DISPLAY_UPDATED					= 0,
 	DISPLAY_NOT_UPDATED
 
 }	DisplayUpdateFlag_t;
@@ -265,7 +265,7 @@ typedef enum
 
 typedef enum
 {
-	DISPLAY_UPDATE_ENABLED						= 0,
+	DISPLAY_UPDATE_ENABLED			= 0,
 	DISPLAY_UPDATE_DISABLED
 
 }	DisplayUpdateEnableFlag_t;
@@ -273,7 +273,7 @@ typedef enum
 
 typedef enum
 {
-	MOTORS_ON									= 0,
+	MOTORS_ON						= 0,
 	MOTORS_OFF
 
 }	MotorsState_t;

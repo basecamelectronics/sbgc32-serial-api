@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "service.h"
 
 
-#ifdef	SYS_BIG_ENDIAN
+#if (SYS_BIG_ENDIAN)
 
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *								Parser Big Endian Mapping Structures
@@ -42,18 +42,18 @@
 
 	const ParserBlock_t BoardInfo_ParserStructDB [] =
 	{
-		VAR_BLOCK(boardInfo_ParserStruct.boardVer),
-		VAR_BLOCK(boardInfo_ParserStruct.firmwareVer),
-		VAR_BLOCK(boardInfo_ParserStruct.stateFlags1),
-		VAR_BLOCK(boardInfo_ParserStruct.boardFeatures),
-		VAR_BLOCK(boardInfo_ParserStruct.connectionFlag),
-		VAR_BLOCK(boardInfo_ParserStruct.FRW_ExtraID),
-		VAR_BLOCK(boardInfo_ParserStruct.boardFeaturesExt),
-		DATA_BLOCK(boardInfo_ParserStruct.reserved),
-		VAR_BLOCK(boardInfo_ParserStruct.baseFRW_Ver),
+		VAR_BLOCK_(boardInfo_ParserStruct.boardVer),
+		VAR_BLOCK_(boardInfo_ParserStruct.firmwareVer),
+		VAR_BLOCK_(boardInfo_ParserStruct.stateFlags1),
+		VAR_BLOCK_(boardInfo_ParserStruct.boardFeatures),
+		VAR_BLOCK_(boardInfo_ParserStruct.connectionFlag),
+		VAR_BLOCK_(boardInfo_ParserStruct.FRW_ExtraID),
+		VAR_BLOCK_(boardInfo_ParserStruct.boardFeaturesExt),
+		DATA_BLOCK_(boardInfo_ParserStruct.reserved),
+		VAR_BLOCK_(boardInfo_ParserStruct.baseFRW_Ver),
 	};
 
-	const ui8 BoardInfo_ParserStructDB_Size = countof(BoardInfo_ParserStructDB);
+	const ui8 BoardInfo_ParserStructDB_Size = countof_(BoardInfo_ParserStructDB);
 
 
 	/** @brief	Sample for Big Endian Mapping
@@ -64,21 +64,21 @@
 
 	const ParserBlock_t BoardInfo3_ParserStructDB [] =
 	{
-		DATA_BLOCK(boardInfo3_ParserStruct.deviceID),
-		DATA_BLOCK(boardInfo3_ParserStruct.MCU_ID),
-		VAR_BLOCK(boardInfo3_ParserStruct.EEPROM_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.scriptSlot1_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.scriptSlot2_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.scriptSlot3_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.scriptSlot4_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.scriptSlot5_Size),
-		VAR_BLOCK(boardInfo3_ParserStruct.profileSetSlots),
-		VAR_BLOCK(boardInfo3_ParserStruct.profileSetCur),
-		VAR_BLOCK(boardInfo3_ParserStruct.flashSize),
-		DATA_BLOCK(boardInfo3_ParserStruct.reserved),
+		DATA_BLOCK_(boardInfo3_ParserStruct.deviceID),
+		DATA_BLOCK_(boardInfo3_ParserStruct.MCU_ID),
+		VAR_BLOCK_(boardInfo3_ParserStruct.EEPROM_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.scriptSlot1_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.scriptSlot2_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.scriptSlot3_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.scriptSlot4_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.scriptSlot5_Size),
+		VAR_BLOCK_(boardInfo3_ParserStruct.profileSetSlots),
+		VAR_BLOCK_(boardInfo3_ParserStruct.profileSetCur),
+		VAR_BLOCK_(boardInfo3_ParserStruct.flashSize),
+		DATA_BLOCK_(boardInfo3_ParserStruct.reserved),
 	};
 
-	const ui8 BoardInfo3_ParserStructDB_Size = countof(BoardInfo3_ParserStructDB);
+	const ui8 BoardInfo3_ParserStructDB_Size = countof_(BoardInfo3_ParserStructDB);
 	/**	@}
 	 */
 
@@ -94,15 +94,15 @@
 
 	const ParserBlock_t AutoPID_ParserStructDB [] =
 	{
-		VAR_BLOCK(autoPID_ParserStruct.profileID),
-		VAR_BLOCK(autoPID_ParserStruct.cfgFlags),
-		VAR_BLOCK(autoPID_ParserStruct.Gain_VS_Stability),
-		VAR_BLOCK(autoPID_ParserStruct.momentum),
-		VAR_BLOCK(autoPID_ParserStruct.action),
-		DATA_BLOCK(autoPID_ParserStruct.reserved),
+		VAR_BLOCK_(autoPID_ParserStruct.profileID),
+		VAR_BLOCK_(autoPID_ParserStruct.cfgFlags),
+		VAR_BLOCK_(autoPID_ParserStruct.Gain_VS_Stability),
+		VAR_BLOCK_(autoPID_ParserStruct.momentum),
+		VAR_BLOCK_(autoPID_ParserStruct.action),
+		DATA_BLOCK_(autoPID_ParserStruct.reserved),
 	};
 
-	const ui8 AutoPID_ParserStructDB_Size = countof(AutoPID_ParserStructDB);
+	const ui8 AutoPID_ParserStructDB_Size = countof_(AutoPID_ParserStructDB);
 
 
 	/** @brief	Sample for Big Endian Mapping
@@ -113,36 +113,36 @@
 
 	const ParserBlock_t AutoPID_2_ParserStructDB [] =
 	{
-		VAR_BLOCK(autoPID_2_ParserStruct.action),
-		DATA_BLOCK(autoPID_2_ParserStruct.reserved1),
-		VAR_BLOCK(autoPID_2_ParserStruct.cfgVersion),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].axisFlag),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].gain),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].stimulus),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].effectiveFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].problemFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].problemMargin),
-		DATA_BLOCK(autoPID_2_ParserStruct.AxisAPID2[ROLL].reserved2),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].axisFlag),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].gain),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].stimulus),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].effectiveFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].problemFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].problemMargin),
-		DATA_BLOCK(autoPID_2_ParserStruct.AxisAPID2[PITCH].reserved2),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].axisFlag),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].gain),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].stimulus),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].effectiveFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].problemFreq),
-		VAR_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].problemMargin),
-		DATA_BLOCK(autoPID_2_ParserStruct.AxisAPID2[YAW].reserved2),
-		VAR_BLOCK(autoPID_2_ParserStruct.generalFlags),
-		VAR_BLOCK(autoPID_2_ParserStruct.startupCfg),
-		DATA_BLOCK(autoPID_2_ParserStruct.reserved3),
+		VAR_BLOCK_(autoPID_2_ParserStruct.action),
+		DATA_BLOCK_(autoPID_2_ParserStruct.reserved1),
+		VAR_BLOCK_(autoPID_2_ParserStruct.cfgVersion),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].axisFlag),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].gain),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].stimulus),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].effectiveFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].problemFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].problemMargin),
+		DATA_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[ROLL].reserved2),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].axisFlag),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].gain),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].stimulus),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].effectiveFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].problemFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].problemMargin),
+		DATA_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[PITCH].reserved2),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].axisFlag),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].gain),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].stimulus),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].effectiveFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].problemFreq),
+		VAR_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].problemMargin),
+		DATA_BLOCK_(autoPID_2_ParserStruct.AxisAPID2[YAW].reserved2),
+		VAR_BLOCK_(autoPID_2_ParserStruct.generalFlags),
+		VAR_BLOCK_(autoPID_2_ParserStruct.startupCfg),
+		DATA_BLOCK_(autoPID_2_ParserStruct.reserved3),
 	};
 
-	const ui8 AutoPID_2_ParserStructDB_Size = countof(AutoPID_2_ParserStructDB);
+	const ui8 AutoPID_2_ParserStructDB_Size = countof_(AutoPID_2_ParserStructDB);
 
 
 	/** @brief	Sample for Big Endian Mapping
@@ -153,21 +153,21 @@
 
 	const ParserBlock_t AutoPID_State_ParserStructDB [] =
 	{
-		DATA_BLOCK(autoPID_State_ParserStruct.p),
-		DATA_BLOCK(autoPID_State_ParserStruct.i),
-		DATA_BLOCK(autoPID_State_ParserStruct.d),
-		DATA_BLOCK(autoPID_State_ParserStruct.LPF_Freq),
-		VAR_BLOCK(autoPID_State_ParserStruct.iterationCnt),
-		VAR_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[ROLL].trackingError),
-		DATA_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[ROLL].reserved1),
-		VAR_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[PITCH].trackingError),
-		DATA_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[PITCH].reserved1),
-		VAR_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[YAW].trackingError),
-		DATA_BLOCK(autoPID_State_ParserStruct.AxisAPIDS[YAW].reserved1),
-		DATA_BLOCK(autoPID_State_ParserStruct.reserved2),
+		DATA_BLOCK_(autoPID_State_ParserStruct.p),
+		DATA_BLOCK_(autoPID_State_ParserStruct.i),
+		DATA_BLOCK_(autoPID_State_ParserStruct.d),
+		DATA_BLOCK_(autoPID_State_ParserStruct.LPF_Freq),
+		VAR_BLOCK_(autoPID_State_ParserStruct.iterationCnt),
+		VAR_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[ROLL].trackingError),
+		DATA_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[ROLL].reserved1),
+		VAR_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[PITCH].trackingError),
+		DATA_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[PITCH].reserved1),
+		VAR_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[YAW].trackingError),
+		DATA_BLOCK_(autoPID_State_ParserStruct.AxisAPIDS[YAW].reserved1),
+		DATA_BLOCK_(autoPID_State_ParserStruct.reserved2),
 	};
 
-	const ui8 AutoPID_State_ParserStructDB_Size = countof(AutoPID_State_ParserStructDB);
+	const ui8 AutoPID_State_ParserStructDB_Size = countof_(AutoPID_State_ParserStructDB);
 	/**	@}
 	 */
 
@@ -183,25 +183,25 @@
 
 	const ParserBlock_t StateVars_ParserStructDB [] =
 	{
-		DATA_BLOCK(stateVars_ParserStruct.stepSignalVars),
-		VAR_BLOCK(stateVars_ParserStruct.subError),
-		VAR_BLOCK(stateVars_ParserStruct.maxAcc),
-		VAR_BLOCK(stateVars_ParserStruct.workTime),
-		VAR_BLOCK(stateVars_ParserStruct.startupCnt),
-		VAR_BLOCK(stateVars_ParserStruct.maxCurrent),
-		VAR_BLOCK(stateVars_ParserStruct.IMU_TempMin),
-		VAR_BLOCK(stateVars_ParserStruct.IMU_TempMax),
-		VAR_BLOCK(stateVars_ParserStruct.MCU_TempMin),
-		VAR_BLOCK(stateVars_ParserStruct.MCU_TempMax),
-		DATA_BLOCK(stateVars_ParserStruct.shockCnt),
-		VAR_BLOCK(stateVars_ParserStruct.energyTime),
-		VAR_BLOCK(stateVars_ParserStruct.energy),
-		VAR_BLOCK(stateVars_ParserStruct.AVG_CurrentTime),
-		VAR_BLOCK(stateVars_ParserStruct.AVG_Current),
-		DATA_BLOCK(stateVars_ParserStruct.reserved),
+		DATA_BLOCK_(stateVars_ParserStruct.stepSignalVars),
+		VAR_BLOCK_(stateVars_ParserStruct.subError),
+		VAR_BLOCK_(stateVars_ParserStruct.maxAcc),
+		VAR_BLOCK_(stateVars_ParserStruct.workTime),
+		VAR_BLOCK_(stateVars_ParserStruct.startupCnt),
+		VAR_BLOCK_(stateVars_ParserStruct.maxCurrent),
+		VAR_BLOCK_(stateVars_ParserStruct.IMU_TempMin),
+		VAR_BLOCK_(stateVars_ParserStruct.IMU_TempMax),
+		VAR_BLOCK_(stateVars_ParserStruct.MCU_TempMin),
+		VAR_BLOCK_(stateVars_ParserStruct.MCU_TempMax),
+		DATA_BLOCK_(stateVars_ParserStruct.shockCnt),
+		VAR_BLOCK_(stateVars_ParserStruct.energyTime),
+		VAR_BLOCK_(stateVars_ParserStruct.energy),
+		VAR_BLOCK_(stateVars_ParserStruct.AVG_CurrentTime),
+		VAR_BLOCK_(stateVars_ParserStruct.AVG_Current),
+		DATA_BLOCK_(stateVars_ParserStruct.reserved),
 	};
 
-	const ui8 StateVars_ParserStructDB_Size = countof(StateVars_ParserStructDB);
+	const ui8 StateVars_ParserStructDB_Size = countof_(StateVars_ParserStructDB);
 	/**	@}
 	 */
 
@@ -303,8 +303,12 @@ TxRxStatus_t SBGC32_TuneAutoPID (GeneralSBGC_t *generalSBGC, const AutoPID_t *au
  */
 TxRxStatus_t SBGC32_TuneAutoPID_2 (GeneralSBGC_t *generalSBGC, const AutoPID_2_t *autoPID2, ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2700)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2700)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_AUTO_PID2);
@@ -360,8 +364,12 @@ TxRxStatus_t SBGC32_SetMotorsON (GeneralSBGC_t *generalSBGC, ConfirmationState_t
  */
 TxRxStatus_t SBGC32_SetMotorsOFF (GeneralSBGC_t *generalSBGC, MotorsMode_t mode, ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2687)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2687)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_MOTORS_OFF);
@@ -493,8 +501,12 @@ void SBGC32_ParseScriptDebugInfoCmd (SerialCommand_t *cmd, ScriptDebugInfo_t *sc
  */
 TxRxStatus_t SBGC32_WriteStateVars (GeneralSBGC_t *generalSBGC, const StateVars_t *stateVars, ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2687)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2687)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_WRITE_STATE_VARS);
@@ -577,7 +589,7 @@ TxRxStatus_t SBGC32_SetTriggerPin (GeneralSBGC_t *generalSBGC, TriggerPinID_t pi
  *
  *	@return Communication status
  */
-TxRxStatus_t SBGC32_ExecuteMenu (GeneralSBGC_t *generalSBGC, MenuCommands_t cmdID, ConfirmationState_t *confirmationState)
+TxRxStatus_t SBGC32_ExecuteMenu (GeneralSBGC_t *generalSBGC, MenuCommand_t cmdID, ConfirmationState_t *confirmationState)
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_EXECUTE_MENU);
@@ -604,7 +616,7 @@ TxRxStatus_t SBGC32_SetServoOut (GeneralSBGC_t *generalSBGC, const i16 servoTime
 {
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_SERVO_OUT);
-	FOR_(i, 8) WriteWord(&cmd, servoTime[i]);
+	for (ui8 i = 0; i < 8; i++) WriteWord(&cmd, servoTime[i]);
 	SBGC32_TX(generalSBGC, &cmd);
 	/* no need confirmation */
 	return generalSBGC->_ParserCurrentStatus;
@@ -629,7 +641,8 @@ TxRxStatus_t SBGC32_PlayBeeper (GeneralSBGC_t *generalSBGC, const BeeperSettings
 	WriteEmptyBuff(&cmd, 8);  // reserved[8]
 
     if (beeperSettings->mode == BM_BEEPER_MODE_CUSTOM_MELODY)
-    	FOR_(i, beeperSettings->notesQuan) WriteWord(&cmd, beeperSettings->notesFreqHz[i]);
+    	for (ui8 i = 0; i < beeperSettings->notesQuan; i++)
+    		WriteWord(&cmd, beeperSettings->notesFreqHz[i]);
 
     SBGC32_TX(generalSBGC, &cmd);
     /* no need confirmation */

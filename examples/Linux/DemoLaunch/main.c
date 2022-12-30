@@ -29,8 +29,11 @@ static		RealTimeDataCustom_t	RealTimeDataCustom;
 static		RealTimeData_t			RealTimeData;
 
 static		AdjVarsGeneral_t		AdjVarsGeneral [3];
-extern const
-            AdjVarsDebugInfo_t		AdjVarsDebugInfoArray [];
+
+#if (SBGC_DEBUG_MODE)
+	extern const
+			AdjVarsDebugInfo_t		AdjVarsDebugInfoArray [];
+#endif
 
 static		DataStreamInterval_t	DataStreamInterval;
 
@@ -97,14 +100,31 @@ int main ()
     ui32 DataStreamIntervalConfig = RTDCF_STATOR_ROTOR_ANGLE | RTDCF_GYRO_DATA | RTDCF_ACC_DATA;
     memcpy(DataStreamInterval.config, &DataStreamIntervalConfig, sizeof(DataStreamIntervalConfig));
 
+	/* Adj Vars Setting */
+	#if (SBGC_DEBUG_MODE)
 
-    /* Adj Vars Setting */
-    /* Note: If your microprocessor has little size of RAM,
-             initialize these variables manually,
-             without AdjVarsDebugInfoArray [] */
-    InitAdjVar(&AdjVarsGeneral[0], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_ROLL]);
-    InitAdjVar(&AdjVarsGeneral[1], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_PITCH]);
-    InitAdjVar(&AdjVarsGeneral[2], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_YAW]);
+		InitAdjVar(&AdjVarsGeneral[0], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_ROLL]);
+		InitAdjVar(&AdjVarsGeneral[1], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_PITCH]);
+		InitAdjVar(&AdjVarsGeneral[2], &AdjVarsDebugInfoArray[ADJ_VAL_ACC_LIMITER_YAW]);
+
+	#else
+
+		AdjVarsGeneral[0].ID = ADJ_VAL_ACC_LIMITER_ROLL;
+		AdjVarsGeneral[0].minValue = 0;
+		AdjVarsGeneral[0].maxValue = 1275;
+		AdjVarsGeneral[0].varType = _UNSIGNED_SHORT_;
+
+		AdjVarsGeneral[1].ID = ADJ_VAL_ACC_LIMITER_PITCH;
+		AdjVarsGeneral[1].minValue = 0;
+		AdjVarsGeneral[1].maxValue = 1275;
+		AdjVarsGeneral[1].varType = _UNSIGNED_SHORT_;
+
+		AdjVarsGeneral[2].ID = ADJ_VAL_ACC_LIMITER_YAW;
+		AdjVarsGeneral[2].minValue = 0;
+		AdjVarsGeneral[2].maxValue = 1275;
+		AdjVarsGeneral[2].varType = _UNSIGNED_SHORT_;
+
+	#endif
 
 
     /* - - - - - - - - - - - - Program Launch - - - - - - - - - - - - */
@@ -216,14 +236,16 @@ TxRxStatus_t SBGC32_DemoControl (void)
 {
     /* Getting adjvars values */
     /* Note: AdjVarsGeneral.ID fields are already filled */
-    SBGC32_GetAdjVarValues(&SBGC_1, AdjVarsGeneral, countof(AdjVarsGeneral));
+    SBGC32_GetAdjVarValues(&SBGC_1, AdjVarsGeneral, countof_(AdjVarsGeneral));
 
     /* Run the Demonstration Cycle */
-    FOR_(i, 4)
+    for (ui8 i = 0; i < 4; i++)
     {
-        /* Printing */
-        FOR_(k, countof(AdjVarsGeneral))
-            PrintStructElement(&SBGC_1, &AdjVarsGeneral[k].value, AdjVarsGeneral[k].name, AdjVarsGeneral[k].varType);
+		#if (SBGC_DEBUG_MODE)
+			/* Printing */
+			for (ui8 k = 0; k < countof_(AdjVarsGeneral); k++)
+				PrintStructElement(&SBGC_1, &AdjVarsGeneral[k].value, AdjVarsGeneral[k].name, AdjVarsGeneral[k].varType);
+		#endif
 
         Control.AxisC[YAW].angle = DEGREE_TO_ANGLE_INT(50);
         Control.AxisC[PITCH].angle = DEGREE_TO_ANGLE_INT(-20);
@@ -250,22 +272,22 @@ TxRxStatus_t SBGC32_DemoControl (void)
         SBGC32_PlayBeeper(&SBGC_1, &BeeperSettings);
 
         /* Adjustable Variables Re-Setting */
-        FOR_(k, countof(AdjVarsGeneral))
+        for (ui8 k = 0; k < countof_(AdjVarsGeneral); k++)
             /* Toggle Min : Max adjvars contrast */
             EditAdjVarValue(&AdjVarsGeneral[k], ((i % 2 == 0) ? AdjVarsGeneral[k].maxValue : AdjVarsGeneral[k].minValue));
 
-        SBGC32_SetAdjVarValues(&SBGC_1, AdjVarsGeneral, countof(AdjVarsGeneral), &Confirm);
+        SBGC32_SetAdjVarValues(&SBGC_1, AdjVarsGeneral, countof_(AdjVarsGeneral), &Confirm);
     }
 
     /* Saving all changed adjustable variables to EEPROM */
-//	SBGC32_SaveAllActiveAdjVarsToEEPROM(&SBGC_1, &Confirm);
-//
-//	if (Confirm.cmdID == CMD_SAVE_PARAMS_3)
-//		FOR_(i, countof(AdjVarsGeneral))
-//			if (AdjVarsGeneral[i].saveFlag != SAVED)
-//				AdjVarsGeneral[i].saveFlag = SAVED;
+	/* SBGC32_SaveAllActiveAdjVarsToEEPROM(&SBGC_1, &Confirm);
 
-    /* or SBGC32_SaveAdjVarsToEEPROM(&SBGC_1, AdjVarsGeneral, countof(AdjVarsGeneral), &Confirm); */
+	if (Confirm.cmdID == CMD_SAVE_PARAMS_3)
+		for (ui8 i = 0; i < countof_(AdjVarsGeneral); i++)
+			if (AdjVarsGeneral[i].saveFlag != SAVED)
+				AdjVarsGeneral[i].saveFlag = SAVED; */
+
+    /* or SBGC32_SaveAdjVarsToEEPROM(&SBGC_1, AdjVarsGeneral, countof_(AdjVarsGeneral), &Confirm); */
 
     return SBGC_1._ParserCurrentStatus;
 }

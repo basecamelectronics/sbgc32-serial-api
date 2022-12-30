@@ -6,7 +6,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<center><h3>
- *	Copyright © 2022 BaseCam Electronics™.</h3></center>
+ *	Copyright © 2023 BaseCam Electronics™.</h3></center>
  *	<center>All rights reserved.</center>
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@
 #include "calib.h"
 
 
-#ifdef	SYS_BIG_ENDIAN
+#if (SYS_BIG_ENDIAN)
 
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *								Parser Big Endian Mapping Structures
@@ -42,25 +42,25 @@
 
 	const ParserBlock_t CalibInfo_ParserStructDB [] =
 	{
-		VAR_BLOCK(calibInfo_ParserStruct.progress),
-		VAR_BLOCK(calibInfo_ParserStruct.IMU_Type),
-		DATA_BLOCK(calibInfo_ParserStruct.ACC_Data),
-		VAR_BLOCK(calibInfo_ParserStruct.gyroABS_Val),
-		VAR_BLOCK(calibInfo_ParserStruct.ACC_CurAxis),
-		VAR_BLOCK(calibInfo_ParserStruct.ACC_LimitsInfo),
-		VAR_BLOCK(calibInfo_ParserStruct.IMU_TempCels),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibGyroEnabled),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibGyroT_MinCels),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibGyroT_MaxCels),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibACC_Enabled),
-		DATA_BLOCK(calibInfo_ParserStruct.tempCalibACC_SlotNum),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibACC_T_MinCels),
-		VAR_BLOCK(calibInfo_ParserStruct.tempCalibACC_T_MaxCels),
-		VAR_BLOCK(calibInfo_ParserStruct.H_ErrLength),
-		DATA_BLOCK(calibInfo_ParserStruct.reserved),
+		VAR_BLOCK_(calibInfo_ParserStruct.progress),
+		VAR_BLOCK_(calibInfo_ParserStruct.IMU_Type),
+		DATA_BLOCK_(calibInfo_ParserStruct.ACC_Data),
+		VAR_BLOCK_(calibInfo_ParserStruct.gyroABS_Val),
+		VAR_BLOCK_(calibInfo_ParserStruct.ACC_CurAxis),
+		VAR_BLOCK_(calibInfo_ParserStruct.ACC_LimitsInfo),
+		VAR_BLOCK_(calibInfo_ParserStruct.IMU_TempCels),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibGyroEnabled),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibGyroT_MinCels),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibGyroT_MaxCels),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibACC_Enabled),
+		DATA_BLOCK_(calibInfo_ParserStruct.tempCalibACC_SlotNum),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibACC_T_MinCels),
+		VAR_BLOCK_(calibInfo_ParserStruct.tempCalibACC_T_MaxCels),
+		VAR_BLOCK_(calibInfo_ParserStruct.H_ErrLength),
+		DATA_BLOCK_(calibInfo_ParserStruct.reserved),
 	};
 
-	const ui8 CalibInfo_ParserStructDB_Size = countof(CalibInfo_ParserStructDB);
+	const ui8 CalibInfo_ParserStructDB_Size = countof_(CalibInfo_ParserStructDB);
 	/**	@}
 	 */
 
@@ -193,8 +193,8 @@ TxRxStatus_t SBGC32_CalibEncodersFldOffsetExt (GeneralSBGC_t *generalSBGC, const
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_ENCODERS_CALIB_FLD_OFFSET_4);
 	WriteByte(&cmd, calibEncodersOffset->motor);
-	FOR_(i, 3) WriteWord(&cmd, calibEncodersOffset->calibAngle[i]);
-	FOR_(i, 3) WriteWord(&cmd, calibEncodersOffset->calibSpeed[i]);
+	for (ui8 i = 0; i < 3; i++) WriteWord(&cmd, calibEncodersOffset->calibAngle[i]);
+	for (ui8 i = 0; i < 3; i++) WriteWord(&cmd, calibEncodersOffset->calibSpeed[i]);
 	SBGC32_TX(generalSBGC, &cmd);
 	/* no need confirmation */
 	return generalSBGC->_ParserCurrentStatus;
@@ -275,8 +275,12 @@ TxRxStatus_t SBGC32_CalibBat (GeneralSBGC_t *generalSBGC, ui16 voltage, Confirma
  */
 TxRxStatus_t SBGC32_CalibOrientCorr (GeneralSBGC_t *generalSBGC, ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2610)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2610)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_CALIB_ORIENT_CORR);
@@ -300,12 +304,16 @@ TxRxStatus_t SBGC32_CalibOrientCorr (GeneralSBGC_t *generalSBGC, ConfirmationSta
  */
 TxRxStatus_t SBGC32_CalibACC_ExtRef (GeneralSBGC_t *generalSBGC, const i16 ACC_Ref [3], ConfirmationState_t *confirmationState)
 {
-	if (generalSBGC->_firmwareVersion < 2627)
-		return NOT_SUPPORTED_BY_FIRMWARE;
+	#if (SBGC_DEBUG_MODE == SET_OFF)
+
+		if (generalSBGC->_firmwareVersion < 2627)
+			return NOT_SUPPORTED_BY_FIRMWARE;
+
+	#endif
 
 	SerialCommand_t cmd;
 	InitCmdWrite(&cmd, CMD_CALIB_ACC_EXT_REF);
-	FOR_(i, 3) WriteWord(&cmd, ACC_Ref[i]);
+	for (ui8 i = 0; i < 3; i++) WriteWord(&cmd, ACC_Ref[i]);
 	WriteEmptyBuff(&cmd, 14);  // reserved[14]
 	SBGC32_TX(generalSBGC, &cmd);
 	SBGC32_CheckConfirmation(generalSBGC, confirmationState, cmd.commandID);

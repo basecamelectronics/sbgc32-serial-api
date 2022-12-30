@@ -2,8 +2,9 @@
 doxygen/doc/
 examples/Arduino/LCD_RemoteUno/
 SBGC32_ArduinoDebug/
-SBGC32_STM32_Debug/
 SBGC32_LinuxDebug/
+SBGC32_STM32_Debug/
+SBGC32_STM32_NoCubeMX/
 
 *.launch
 *.bak

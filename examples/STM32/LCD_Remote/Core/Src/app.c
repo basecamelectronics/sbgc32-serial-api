@@ -1,6 +1,6 @@
 /*  ____________________________________________________________________
  *
- *	Copyright © 2022 BaseCam Electronics™.
+ *	Copyright © 2023 BaseCam Electronics™.
  *	All rights reserved.
  *
  *	Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,7 @@ void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_Remote
 				 + abs(realTimeData->IMU_Angle[PITCH] - realTimeData->targetAngle[PITCH])
 				 + abs(realTimeData->IMU_Angle[YAW] - realTimeData->targetAngle[YAW])) * (ui32)(ANGLE_DEGREE_SCALE * 1000);
 
-		 AverageValue(&LCD_RemoteGeneral->TargetErrorAverage, CONSTRAINT(err, 0, 999));
+		 AverageValue(&LCD_RemoteGeneral->TargetErrorAverage, constrain_(err, 0, 999));
 	}
 
 	/* If no commands for a long time, set connected state to false */
@@ -147,7 +147,7 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 	/* Second raw */
 	setCursor(0, 1);
 
-	#ifdef SBGC_DEBUG_MODE
+	#if (SBGC_DEBUG_MODE)
 
 		/* Currently selected adj. variable name and value */
 		for (pos = 0; pos < ADJ_VAR_NAME_MAX_LENGTH; pos++)
