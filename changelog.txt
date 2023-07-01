@@ -1,0 +1,29 @@
+
+‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+				 Releases
+________________________________________________________________________
+
+
+### Release 1.0  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+- Library structure has been changed
+- All settings have been moved to a separate file - serialAPI_ConfigTemplate.h
+- Added data structures with reference information + PrintWholeStruct() function
+- Added customization of sprintf() function as GeneralSBGC_t parameter
+- SBGC32_StopDataStream() function has been added
+- 2nd argument of InitAdjVar() function has been changed
+- Added extended IMU calibration functions
+- DriverDeinit() function for STM32 driver has been added
+- Module build config-flags have been added
+- Driver build config-flags have been added
+- Added command confirmation handling config-flag
+- Added reference info config-flag
+- Added adjustable variables reference info config-flag
+- Added config-flag of adjustable variable's name
+- Added adjustable variable's extender config-flag
+- Added config-flag to save unexpected commands permanently
+- Added config-parameter for request timeout waiting
+- Input parser bugfix
+- High layer functions minor bugfix
+- Minor change in type names
+- Minor grammar correction

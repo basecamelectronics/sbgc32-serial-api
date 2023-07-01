@@ -26,9 +26,9 @@
 /* Process incoming commands. Call it as frequently as possible,
    to prevent overrun of serial input buffer */
 void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					 RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral)
+					 RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral)
 {
-	if (generalSBGC->_ParserCurrentStatus == TX_RX_OK)
+	if (generalSBGC->_parserCurrentStatus == TX_RX_OK)
 	{
 		if (LCD_RemoteGeneral->connectFlag == 0)
 		{
@@ -100,7 +100,7 @@ ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo)
 
 /* Re-paint display */
 void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral)
+					RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral)
 {
 	/* First raw */
 	setCursor(0, 0);

@@ -31,14 +31,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>STM32_Driver</name>
+			<name>serialAPI</name>
 			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/drivers/STM32_Driver</locationURI>
-		</link>
-		<link>
-			<name>sources</name>
-			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/sources</locationURI>
+			<location>D:/basecam/SBGC32_Library/sbgc32-serial-api/serialAPI</location>
 		</link>
 	</linkedResources>
 </projectDescription>

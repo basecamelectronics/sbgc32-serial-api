@@ -1,6 +1,7 @@
 # Folders
 doxygen/doc/
 examples/Arduino/LCD_RemoteUno/
+examples/STM32/MiniRemote/
 SBGC32_ArduinoDebug/
 SBGC32_LinuxDebug/
 SBGC32_STM32_Debug/

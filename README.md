@@ -6,12 +6,9 @@ Description
 -----------
 This library is a helping instrument for communication between the SimpleBGC32 devices and different data processing devices.
 For more comfortable interaction with the SBGC32 devices repository contents possible examples of implementations of the
-driver algorithms are presented. General source files are placed in the /sources folder. Also, you may include the
-pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS systems.
-
-Pay attention to the **User Defined Parameter** constants, contained in the core.h file. Uncomment the SYS_BIG_ENDIAN constant
-if your general processing system have a BIG ENDIAN memory type. Uncomment the SBGC_DEBUG_MODE constant if you need to display
-debug information. Reducing the MAX_BUFF_SIZE you also reduce the load on the stack (256 byte is a optimal value).
+driver algorithms are presented. General source files are placed in the /serialAPI/sources folder. Also, you may include the
+pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS.
+Pay attention to the serialAPI_ConfigTemplate file. This file helps to configure the internal functionality of the library.
 
 ### Header library files involve: ###
 
@@ -23,11 +20,11 @@ debug information. Reducing the MAX_BUFF_SIZE you also reduce the load on the st
 
 ### Source library files involve: ###
 
-- Data blocks for BIG ENDIAN systems
+- Reference data for BIG ENDIAN parsing and debug
 
 - Executable functions
 
-The adjvar.c file contains a data block "AdjVarsDebugInfoArray" with auxiliary information about all adjustable variables
+The adjvar.c file contains a data block "adjVarsReferenceInfoArray" with auxiliary information about all adjustable variables
 at the time of the current version. The core.c and core.h files also contain a lot of general service code.
 
 Requirements
@@ -37,73 +34,82 @@ and at least **16 KB FLASH**.
 
 Files Description
 -----------------
+
+### Common files ###
+
+**Headers (.h):**
+
+- adjunct.h - Header help-code file
+
+- sbgc32.h - Assembly header file of the Library
+
+- serialAPI_ConfigTemplate.h - Configurations template header file of the Library
+
+**Sources (.c):**
+
+- sbgc32.c - Assembly source file of the Library
+
 ### Source files ###
 
 **Headers (.h):**
 
-- adjvar/adjvar.h - Adjustable variables header file
+- sources/adjvar/adjvar.h - Adjustable variables header file
 
-- calib/calib.h - Calibration commands header file
+- sources/calib/calib.h - Calibration commands header file
 
-- core/adjunct.h - Header common help-code file
+- sources/core/adjunct.h - Header common help-code file
 
-- core/core.h - Header file of the core for the custom usage SBGC32 Library
+- sources/core/core.h - Header file of the core for the custom usage SBGC32 Library
 
-- eeprom/eeprom.h - EEPROM module header file
+- sources/eeprom/eeprom.h - EEPROM module header file
 
-- gimbalControl/gimbalControl.h - Gimbal realtime-control header file
+- sources/gimbalControl/gimbalControl.h - Gimbal realtime-control header file
 
-- imu/imu.h - IMU module header file
+- sources/imu/imu.h - IMU module header file
 
-- profiles/profiles.h - Profile commands header file
+- sources/profiles/profiles.h - Profile commands header file
 
-- realtime/realtime.h - Realtime operations header file
+- sources/realtime/realtime.h - Realtime operations header file
 
-- service/service.h - Service functions header file
+- sources/service/service.h - Service functions header file
 
 **Sources (.c):**
 
-- adjvar/adjvar.c - Adjustable variables source file
+- sources/adjvar/adjvar.c - Adjustable variables source file
 
-- calib/calib.c - Calibration commands source file
+- sources/calib/calib.c - Calibration commands source file
 
-- core/core.c - SBGC32 core source file
+- sources/core/core.c - SBGC32 core source file
 
-- eeprom/eeprom.c - EEPROM module source file
+- sources/eeprom/eeprom.c - EEPROM module source file
 
-- gimbalControl/gimbalControl.c - Gimbal realtime-control source file
+- sources/gimbalControl/gimbalControl.c - Gimbal realtime-control source file
 
-- imu/imu.c - IMU module source file
+- sources/imu/imu.c - IMU module source file
 
-- profiles/profiles.c - Profile commands source file
+- sources/profiles/profiles.c - Profile commands source file
 
-- realtime/realtime.c - Realtime operations source file
+- sources/realtime/realtime.c - Realtime operations source file
 
-- service/service.c - Service functions source file
+- sources/service/service.c - Service functions source file
 
 ### Driver files ###
 
 **Headers (.h):**
 
-- ArduinoDriver/driver_Arduino.h - Arduino driver header file
+- drivers/ArduinoDriver/driver_Arduino.h - Arduino driver header file
 
-- LinuxDriver/driver_Linux.h - Linux driver header file
+- drivers/LinuxDriver/driver_Linux.h - Linux driver header file
 
-- STM32_Driver/driver_STM32.h - STM32 driver header file
-
-- STM32_Driver/MCU_Config.h - STM32 MCU configurations header file
-
-- STM32_Driver/stm32_it.h - STM32 interrupts header file
+- drivers/STM32_Driver/driver_STM32.h - STM32 driver header file
 
 **Sources (.c):**
 
-- ArduinoDriver/driver_Arduino.cpp - Arduino driver source file
+- drivers/ArduinoDriver/driver_Arduino.cpp - Arduino driver source file
 
-- LinuxDriver/driver_Linux.c - Linux driver source file
+- drivers/LinuxDriver/driver_Linux.c - Linux driver source file
 
-- STM32_Driver/driver_STM32.c - STM32 driver source file
-
-- STM32_Driver/stm32_it.c - STM32 interrupts source file
+- drivers/STM32_Driver/driver_STM32.c - STM32 driver source file
 
 How to use this library
 -----------------------
@@ -112,64 +118,17 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 ### Initialization ###
 
-**Arduino:**
+	#include "sbgc32.h"
 
-	#include "driver_Arduino.h"
-	#include "core.h"
-	
 	GeneralSBGC_t SBGC32_Device;
-	
-	void setup ()
-	{
-		SBGC_SERIAL_PORT.begin(SBGC_SERIAL_SPEED);
-		DEBUG_SERIAL_PORT.begin(DEBUG_SERIAL_SPEED);
-		
-		pinMode(SERIAL2_RX_PIN, INPUT_PULLUP);
 
-		SBGC32_DefaultInit(&SBGC32_Device, UartTransmitData, UartReceiveByte, GetAvailableBytes,
-				UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);			   	
-	}
+	SBGC32_Init(&SBGC32_Device);
 
-**Linux:**
-
-	#include "driver_Linux.h"
-	#include "core.h"
-
-	int main (void)
-	{
-		SBGC32_Device.Drv = malloc(sizeof(Driver_t));
-		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT);
-
-		SBGC32_DefaultInit(&SBGC32_Device, PortTransmitData, PortReceiveByte, GetAvailableBytes,
-				PrintDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
-	}
-
-
-**STM32:**
-
-*main.c :*
-
-	#include "driver_STM32.h"
-	#include "core.h"
-	
-	GeneralSBGC_t SBGC32_Device;
-	
-	int main (void)
-	{
-		USARTx_Init();
-		USARTx_Init();
-	
-		SBGC32_Device.Drv = malloc(sizeof(Driver_t));
-		DriverInit(SBGC32_Device.Drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
-
-		SBGC32_DefaultInit(&SBGC32_Device, UartTransmitData, UartReceiveByte, GetAvailableBytes,
-				UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
-	}
+**STM32 note:**
 	
 *if your application uses CubeMX - stm32fxxx_it.c :*
 
-	#include "driver_STM32.h"
-	#include "core.h"
+	#include "sbgc32.h"
 	
 	extern GeneralSBGC_t SBGC32_Device;
 
@@ -215,17 +174,17 @@ specification](https://www.basecamelectronics.com/serialapi/).
 
 *Notes:*
 
-*- All general library settings are placed in the "core.h" file under "User Defined Parameters" comment;*
+*- To connect the library to your project, just place the serialAPI folder in it;*
 
-*- All general drivers settings are placed in the "driver_xx.h" files under "User Defined Parameters" comment;*
+*- The "sbgc32.h" file looks at the settings from the file "serialAPI_Config.h" file. Rename the "serialAPI_ConfigTemplate.h" file like this;*
 
-*- The default speed of SimpleBGC32 devices is 115200 bits per second;*
+*- The default speed of the SimpleBGC32 devices is 115200 bits per second;*
 
-*- Initialize the **DebugData** functions with **NULL** if you don't want to use debug mode;*
-
-*- If you are connecting SBGC32 through UART, the RX pin must be pulled up;*
+*- If you are connecting a SBGC32 through UART, the RX pin should be pulled up;*
 
 *- If you want to create your gimbal communication driver, create it based on the necessary functions defined in the GeneralSBGC_t structure;*
+
+*- If you are using PlatformIO for Arduino, you need to add the serialAPI_Config.h file to the build directory: .pio/libdeps/ArduinoXX/serialAPI;*
 
 *- Starting to work with the gimbal using Arduino don't forget to check the **SERIAL_TX_BUFFER_SIZE** and **SERIAL_RX_BUFFER_SIZE** constants
 in "HardwareSerial.h" file. Strongly recommend increasing this value to 256;*
@@ -233,13 +192,15 @@ in "HardwareSerial.h" file. Strongly recommend increasing this value to 256;*
 *- When SBGC32 device connected with Linux device you need to set **choose mode** for this connection to **read, write, and executable** 
 using the terminal (sudo chmod a+rwx /dev/ttyUSBx);*
 
-*- The communication driver for STM32 devices supports HAL and LL libraries. Common software settings are made in the "MCU_Config.h" file.
-Special settings are made in the "driver_STM32.h" file in the relevant sections. If your application doesn't use CubeMX utility,
-it is recommended to explore all the configurable driver parameters;*
+*- The communication driver for STM32 devices supports the HAL and LL libraries;*
+
+*- Set the SYS_BIG_ENDIAN constant to SET_ON, if your general processing system have a BIG ENDIAN memory type;*
+
+*- Reducing the MAX_BUFF_SIZE and UNEXP_CMD_BUFFER_SIZE parameters you also reduce the load on the stack.*
 
 ### Data handling ###
 
-Each function beginning with SBGC32_... communicates with the SBGC32 device in a different way.
+Each function beginning with SBGC32_... communicates with a SBGC32 device in one way or another.
 
 - Transmit functions required preparing data in the target writable structures or other arguments. Such structures are
 marked by the **const** keyword. Besides, for most -TX functions after sending data, the SBGC32 device sends a confirmation
@@ -251,7 +212,7 @@ in this structure. Confirmation of correct data reception is a returned status v
 - For manual data management use the **SBGC32_TX** and **SBGC32_RX** functions.
 
 The rest of the details are contained in the descriptions inside the library itself. Also, you can generate project documentation
-using doxyfile in the /doxygen folder.
+using a doxyfile in the /doxygen folder.
 
  ### Feedback ###
 
@@ -259,4 +220,4 @@ If you have any questions about using this library, you can ask for help at:
 
 support@basecamelectronics.com
 
-qsivey@gmail.com
+a.ivanisov@basecamelectronics.com

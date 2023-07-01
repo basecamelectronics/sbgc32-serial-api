@@ -49,11 +49,8 @@
 extern 		"C" {
 #endif
 
-#include	"driver_STM32.h"
 #include	"adc.h"
-
-#include	"gimbalControl/gimbalControl.h"
-#include	"service/service.h"
+#include	"sbgc32.h"
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

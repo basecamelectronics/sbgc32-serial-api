@@ -45,10 +45,7 @@
 #ifndef		_APP_H_
 #define 	_APP_H_
 
-#include	<../../../../drivers/ArduinoDriver/driver_Arduino.h>
-
-#include 	<../../../../sources/gimbalControl/gimbalControl.h>
-#include 	<../../../../sources/service/service.h>
+#include	"sbgc32.h"
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

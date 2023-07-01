@@ -58,16 +58,11 @@
 #ifndef		_APP_H_
 #define 	_APP_H_
 
-#include	<../../../../drivers/ArduinoDriver/driver_Arduino.h>
+#include	"sbgc32.h"
 #include	"Wire.h"
 
 #include 	"LiquidCrystal.h"
 #include	"MemoryFree.h"
-
-#include 	<../../../../sources/gimbalControl/gimbalControl.h>
-#include 	<../../../../sources/realtime/realtime.h>
-#include 	<../../../../sources/adjvar/adjvar.h>
-#include 	<../../../../sources/service/service.h>
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -304,12 +299,12 @@ static inline void AverageValue (AverageValue_t *averageValue, i16 value)
 
 
 void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					 RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
+					 RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
 ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDirection_t newState);
 
 ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo);
 void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
+					RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
 void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
 void LCD_PrintProgress (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ui8 cursor_pos);
 void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos);

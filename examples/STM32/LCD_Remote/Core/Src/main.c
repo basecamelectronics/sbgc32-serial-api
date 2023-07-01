@@ -64,15 +64,13 @@ void SystemClock_Config(void);
 /*   					Global Software Objects  					  */
 /* __________________________________________________________________ */
 
-			GeneralSBGC_t			SBGC_1;
+			GeneralSBGC_t			SBGC32_Device;
 
 static 		Control_t    			Control;
 static		ControlConfig_t			ControlConfig;
 
 static		RealTimeData_t			RealTimeData;
 static		GetAnglesExt_t			GetAnglesExt;
-
-static 		ConfirmationState_t		Confirm;
 
 static		LCD_RemoteGeneral_t		LCD_RemoteGeneral;
 
@@ -83,31 +81,17 @@ static		LCD_RemoteGeneral_t		LCD_RemoteGeneral;
    You may add any variables listed in the AdjVarsList_t
    Be careful, this structure is placed into the RAM, which
    may be a problem with the low memory of boards */
-static AdjVarsGeneral_t AdjVarsGeneral [] =
+static AdjVarGeneral_t AdjVarGeneral [] =
 {
-	#if (SBGC_DEBUG_MODE)
+	  {	ADJ_VAR_BLOCK_(ADJ_VAR_RC_TRIM_YAW), -127, 127, _SIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_PITCH), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_YAW), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_PITCH), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_YAW), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_PITCH), 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_YAW), 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_DEADBAND), 0, 255, _UNSIGNED_CHAR_, 6, NOT_CHANGED, SAVED
 
-		  {	ADJ_VAR_BLOCK_(ADJ_VAR_RC_TRIM_YAW), -127, 127, _SIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_PITCH), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_RC_SPEED_YAW), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_PITCH), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_SPEED_YAW), 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_PITCH), 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_LPF_YAW), 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_DEADBAND), 0, 255, _UNSIGNED_CHAR_, 6, NOT_CHANGED, SAVED
-
-	#else
-
-		  {	ADJ_VAR_RC_TRIM_YAW, -127, 127, _SIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_RC_SPEED_PITCH, 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_RC_SPEED_YAW, 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_FOLLOW_SPEED_PITCH, 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_FOLLOW_SPEED_YAW, 0, 255, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_FOLLOW_LPF_PITCH, 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_FOLLOW_LPF_YAW, 0, 15, _UNSIGNED_CHAR_, 5, NOT_CHANGED, SAVED
-		},{	ADJ_VAR_FOLLOW_DEADBAND, 0, 255, _UNSIGNED_CHAR_, 6, NOT_CHANGED, SAVED
-
-	#endif
 }};
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -162,30 +146,23 @@ int main(void)
   	InitI2C(&InputsInfo, ENCODER_I2C);
 
 
-  	/*  - - - - - - - - SBGC Hardware-Software Init - - - - - - - - - */
+	/*  - - - - - - - - - - Software Initialization - - - - - - - - - */
 
-  	/* Driver Init */
-  	SBGC_1.Drv = malloc(sizeof(Driver_t));
-  	DriverInit(SBGC_1.Drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
-
-  	/* SimpleBGC32 Init */
-  	SBGC32_DefaultInit(&SBGC_1, UartTransmitData, UartReceiveByte, GetAvailableBytes,
-  			  		   UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
-
-
-  	/* - - - - - - - - - High Layer Software Init - - - - - - - - - - */
+	/* SimpleBGC32 Init */
+	SBGC32_Init(&SBGC32_Device);
 
 	#if ((defined BLUETOOTH_DO_SETUP) && (defined BLUETOOTH_CONNECTION))
 
+		/* Bluetooth initialization */
 		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 1);  // The HC_05 EN pin became high level
 		DELAY_MS(200);
-		BT_MasterConnect(&SBGC_1);
+		BT_MasterConnect(&SBGC32_Device);
 		WRITE_PIN(BT_EN_GPIO_Port, BT_EN_Pin, 0);  // The HC_05 EN pin became low level
 		DELAY_MS(BLUETOOTH_CONNECT_WAITING * 1000);
 
 	#endif
 
-
+	/* Control Configurations */
   	Control.controlMode[ROLL] = CtrlM_MODE_ANGLE;
   	Control.controlMode[PITCH] = CtrlM_MODE_ANGLE;
   	Control.controlMode[YAW] = CtrlM_MODE_ANGLE;
@@ -210,7 +187,7 @@ int main(void)
 	AverageInit(&LCD_RemoteGeneral.JoystickAverage[0], JOY_LOW_PASS_FACTOR);
 	AverageInit(&LCD_RemoteGeneral.JoystickAverage[1], JOY_LOW_PASS_FACTOR);
 
-	LCD_RemoteGeneral.adjVarQuan = countof_(AdjVarsGeneral);
+	LCD_RemoteGeneral.adjVarQuan = countof_(AdjVarGeneral);
 	LCD_RemoteGeneral.currentAdjVarIndex = 0;
 
 	LCD_RemoteGeneral.currentTimeMs = 0;
@@ -226,9 +203,9 @@ int main(void)
 
 	/*  - - - - - - - - - Initializing commands - - - - - - - - - - - */
 
-	SBGC32_ControlConfig(&SBGC_1, &ControlConfig, &Confirm);
+	SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig);
 
-	SBGC32_GetAnglesExt(&SBGC_1, &GetAnglesExt);
+	SBGC32_GetAnglesExt(&SBGC32_Device, &GetAnglesExt);
 	Control.AxisC[YAW].angle = (i16)GetAnglesExt.AxisGAE[AXIS_Z].frameCamAngle;
 
 	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -245,7 +222,7 @@ int main(void)
 		/* __________________________________________________________ */
 
 	  	/* Getting current time */
-	  	LCD_RemoteGeneral.currentTimeMs = SBGC_1.GetTimeFunc(SBGC_1.Drv);
+	  	LCD_RemoteGeneral.currentTimeMs = SBGC32_Device.GetTimeFunc(SBGC32_Device.Drv);
 
 	  	/*  - - - - - - - - - Controllers Handler - - - - - - - - - - */
 
@@ -264,8 +241,8 @@ int main(void)
 						Control.AxisC[YAW].angle += InputsInfo.deltaFW * FLYWHEEL_SENSITIVITY;
 
 					InputsInfo.FE_OldAngle = InputsInfo.FE_CurrentAngle;
-					SBGC32_Control(&SBGC_1, &Control);
-					/* SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_CONTROL); */
+					SBGC32_Control(&SBGC32_Device, &Control);
+					/* SBGC32_CheckConfirmation(&SBGC32_Device, &Confirm, CMD_CONTROL); */
 
 					/* if (LCD_RemoteGeneral.updateDisplayFlagEnable == DISPLAY_UPDATE_ENABLED)
 						LCD_RemoteGeneral.updateDisplayFlagEnable = DISPLAY_UPDATE_DISABLED; */
@@ -291,8 +268,8 @@ int main(void)
 
 					Control.AxisC[PITCH].angle = InputsInfo.ADC_INx[ADC_JOY_X] - JOY_X_NEUTRAL;
 					Control.AxisC[YAW].angle = InputsInfo.ADC_INx[ADC_JOY_Y] - JOY_Y_NEUTRAL;
-					SBGC32_Control(&SBGC_1, &Control);
-					/* SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_CONTROL); */
+					SBGC32_Control(&SBGC32_Device, &Control);
+					/* SBGC32_CheckConfirmation(&SBGC32_Device, &Confirm, CMD_CONTROL); */
 
 					LCD_RemoteGeneral.gimbalCtrlTimeMs = LCD_RemoteGeneral.currentTimeMs;
 
@@ -311,8 +288,8 @@ int main(void)
 
 					Control.AxisC[PITCH].angle = 0;
 					Control.AxisC[YAW].angle = 0;
-					SBGC32_Control(&SBGC_1, &Control);
-					/* SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_CONTROL); */
+					SBGC32_Control(&SBGC32_Device, &Control);
+					/* SBGC32_CheckConfirmation(&SBGC32_Device, &Confirm, CMD_CONTROL); */
 				}
 
 			#endif
@@ -322,8 +299,8 @@ int main(void)
 
 		if (InputsInfo.KE_CurrentValue != 0)
 		{
-			EditAdjVarValue(&AdjVarsGeneral[LCD_RemoteGeneral.currentAdjVarIndex],
-						   (AdjVarsGeneral[LCD_RemoteGeneral.currentAdjVarIndex].value + (InputsInfo.KE_CurrentValue * ADJ_VAR_STEP)));
+			EditAdjVarValue(&AdjVarGeneral[LCD_RemoteGeneral.currentAdjVarIndex],
+						   (AdjVarGeneral[LCD_RemoteGeneral.currentAdjVarIndex].value + (InputsInfo.KE_CurrentValue * ADJ_VAR_STEP)));
 
 			InputsInfo.KE_CurrentValue = 0;
 
@@ -357,7 +334,7 @@ int main(void)
 	  				break;
 
 	  			case NAV_BTN_SELECT:  /* Turn motors ON/OFF */
-	  				if (SBGC32_ExecuteMenu(&SBGC_1, MENU_CMD_MOTOR_TOGGLE, &Confirm) == TX_RX_OK)
+	  				if (SBGC32_ExecuteMenu(&SBGC32_Device, MENU_CMD_MOTOR_TOGGLE) == TX_RX_OK)
 	  				{
 	  					LCD_RemoteGeneral.motorsCurrentState = (LCD_RemoteGeneral.motorsCurrentState == MOTORS_ON) ? MOTORS_OFF : MOTORS_ON;
 	  					if (LCD_RemoteGeneral.motorsCurrentState == MOTORS_ON)
@@ -366,7 +343,7 @@ int main(void)
 	  				break;
 
 	  			case NAV_BTN_ENCODER_SELECT:
-	  				SBGC32_SaveAdjVarsToEEPROM(&SBGC_1, AdjVarsGeneral, LCD_RemoteGeneral.adjVarQuan, &Confirm);
+	  				SBGC32_SaveAdjVarsToEEPROM(&SBGC32_Device, AdjVarGeneral, LCD_RemoteGeneral.adjVarQuan);
 	  				break;
 
 	  			default:
@@ -390,7 +367,7 @@ int main(void)
 			if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.btnTimeMs > SOFTWARE_ANTI_BOUNCE) &&
 				(InputsInfo.menuBtn != BTN_POST_PRESSED))
 			{
-				SBGC32_ExecuteMenu(&SBGC_1, MENU_BUTTON_IS_PRESSED, &Confirm);
+				SBGC32_ExecuteMenu(&SBGC32_Device, MENU_BUTTON_IS_PRESSED);
 				InputsInfo.menuBtn = BTN_POST_PRESSED;
 			}
 		}
@@ -400,20 +377,20 @@ int main(void)
 			InputsInfo.menuBtn = BTN_RELEASED;
 
 
-	  	/* - - - - - - - - - AdjVarsGeneral Handler - - - - - - - - - */
+	  	/* - - - - - - - - - AdjVarGeneral Handler - - - - - - - - - */
 
 	  	/* Send the value of updated adjvars to the board */
-	  	SBGC32_SetAdjVarValues(&SBGC_1, AdjVarsGeneral, LCD_RemoteGeneral.adjVarQuan, &Confirm);
+	  	SBGC32_SetAdjVarValues(&SBGC32_Device, AdjVarGeneral, LCD_RemoteGeneral.adjVarQuan);
 
 
 		/* - - - - - - - - - - - SBGC Handler - - - - - - - - - - - - */
 
-		ProcessHandler(&SBGC_1, &LCD_RemoteGeneral, &RealTimeData, AdjVarsGeneral);
+		ProcessHandler(&SBGC32_Device, &LCD_RemoteGeneral, &RealTimeData, AdjVarGeneral);
 
 		/* Request realtime data with the fixed rate */
 		if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.rtReqCmdTimeMs) > REALTIME_DATA_REQUEST_INTERAL_MS)
 		{
-			if (SBGC32_ReadRealTimeData4(&SBGC_1, &RealTimeData) == TX_RX_OK)
+			if (SBGC32_ReadRealTimeData4(&SBGC32_Device, &RealTimeData) == TX_RX_OK)
 				LCD_RemoteGeneral.rtReqCmdTimeMs = LCD_RemoteGeneral.currentTimeMs;
 		}
 
@@ -423,7 +400,7 @@ int main(void)
 	  	/* Low-rate tasks */
 	  	if (((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.lowRateTimeMs) > LOW_RATE_TASK_INTERVAL ||
 	  		  LCD_RemoteGeneral.updateDisplayFlag) && !LCD_RemoteGeneral.updateDisplayFlagEnable)
-	  		UpdateDisplay(&SBGC_1, &LCD_RemoteGeneral, &RealTimeData, AdjVarsGeneral);  // Update LCD to display animation and state
+	  		UpdateDisplay(&SBGC32_Device, &LCD_RemoteGeneral, &RealTimeData, AdjVarGeneral);  // Update LCD to display animation and state
 
 		/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 

@@ -62,16 +62,11 @@
 extern 		"C" {
 #endif
 
-#include	"driver_STM32.h"
+#include	"sbgc32.h"
 #include	"adc.h"
 #include	"i2c.h"
 
 #include 	"LiquidCrystal.h"
-
-#include 	"gimbalControl/gimbalControl.h"
-#include 	"realtime/realtime.h"
-#include 	"adjvar/adjvar.h"
-#include 	"service/service.h"
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -394,12 +389,12 @@ static inline void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos)
 
 
 void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					 RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
+					 RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
 ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDirection_t newState);
 
 ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo);
 void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					RealTimeData_t *realTimeData, AdjVarsGeneral_t *adjVarGeneral);
+					RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
 void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
 ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug);
 void BT_MasterConnect (GeneralSBGC_t *generalSBGC);

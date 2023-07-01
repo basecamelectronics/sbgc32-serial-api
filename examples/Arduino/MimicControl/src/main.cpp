@@ -5,12 +5,10 @@
 /*   					Global Software Objects  					  */
 /* __________________________________________________________________ */
 
-			GeneralSBGC_t			SBGC_1;
+			GeneralSBGC_t			SBGC32_Device;
 
 static 		Control_t    			Control;
 static		ControlConfig_t			ControlConfig;
-
-static 		ConfirmationState_t		Confirm;
 
 			InputsInfo_t			InputsInfo;
 
@@ -44,15 +42,12 @@ void setup()
 	pinMode(MENU_BTN_PIN, INPUT);
 	pinMode(REC_BTN_PIN, INPUT);
 
-	/*  - - - - - - - - SBGC Hardware-Software Init - - - - - - - - - */
+	/*  - - - - - - - - - - Software Initialization - - - - - - - - - */
 
-  	/* High Layer Init */
-  	SBGC32_DefaultInit(&SBGC_1, UartTransmitData, UartReceiveByte, GetAvailableBytes,
-  			  		   UartTransmitDebugData, GetTimeMs, SBGC_PROTOCOL_V2);
+	/* SimpleBGC32 Init */
+	SBGC32_Init(&SBGC32_Device);
 
-
-	/* - - - - - - - - - High Layer Software Init - - - - - - - - - - */
-
+	/* Control Configurations */
 	Control.controlMode[PITCH] = CtrlM_MODE_ANGLE;
 	Control.controlMode[YAW] = CtrlM_MODE_ANGLE;
 
@@ -79,10 +74,9 @@ void setup()
 
 	/*  - - - - - - - - - Initializing commands - - - - - - - - - - - */
 
-	SBGC32_ControlConfig(&SBGC_1, &ControlConfig, &Confirm);
+	SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig);
 
-	SBGC32_SetServoOut(&SBGC_1, servoOut);
-
+	SBGC32_SetServoOut(&SBGC32_Device, servoOut);
 
 	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 }
@@ -94,7 +88,7 @@ void loop()
 	/* ______________________________________________________________ */
 
 	/* Getting current time */
-	currentTime = SBGC_1.GetTimeFunc(SBGC_1.Drv);
+	currentTime = SBGC32_Device.GetTimeFunc(SBGC32_Device.Drv);
 
 
 	/*  - - - - - - - - - - - Joystick Handling - - - - - - - - - - - */
@@ -115,8 +109,8 @@ void loop()
 		Control.AxisC[PITCH].angle = JoystickAverage[1].avgRes;
 		Control.AxisC[YAW].angle = JoystickAverage[0].avgRes;
 
-		SBGC32_Control(&SBGC_1, &Control);
-		/* SBGC32_CheckConfirmation(&SBGC_1, &Confirm, CMD_CONTROL); */
+		SBGC32_Control(&SBGC32_Device, &Control);
+		/* SBGC32_CheckConfirmation(&SBGC32_Device, CMD_CONTROL); */
 	}
 
 
@@ -134,7 +128,7 @@ void loop()
 		if ((currentTime - lastButtonTime > SOFTWARE_ANTI_BOUNCE))
 		{
 			servoOut[PWM_SERVO_OUT_IDX] = PWM_CAM_REC_ON;
-			SBGC32_SetServoOut(&SBGC_1, servoOut);
+			SBGC32_SetServoOut(&SBGC32_Device, servoOut);
 			DEBUG_LED_ON;
 		}
 	}
@@ -143,7 +137,7 @@ void loop()
 				(InputsInfo.recBtn == BTN_PRESSED))
 	{
 		servoOut[PWM_SERVO_OUT_IDX] = PWM_CAM_REC_OFF;
-		SBGC32_SetServoOut(&SBGC_1, servoOut);
+		SBGC32_SetServoOut(&SBGC32_Device, servoOut);
 		DEBUG_LED_OFF;
 		InputsInfo.recBtn = BTN_RELEASED;
 	}
@@ -160,7 +154,7 @@ void loop()
 		if ((currentTime - lastButtonTime > SOFTWARE_ANTI_BOUNCE) &&
 			(InputsInfo.menuBtn != BTN_POST_PRESSED))
 		{
-			SBGC32_ExecuteMenu(&SBGC_1, MENU_BUTTON_IS_PRESSED, &Confirm);
+			SBGC32_ExecuteMenu(&SBGC32_Device, MENU_BUTTON_IS_PRESSED);
 			InputsInfo.menuBtn = BTN_POST_PRESSED;
 		}
 	}
@@ -171,7 +165,7 @@ void loop()
 
 
 	/* Make a constant sampling time by inserting a delay of 1 ms */
-	while ((SBGC_1.GetTimeFunc(SBGC_1.Drv) - currentTime) < 1);
+	while ((SBGC32_Device.GetTimeFunc(SBGC32_Device.Drv) - currentTime) < 1);
 
 	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 }

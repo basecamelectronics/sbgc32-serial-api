@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
-project(DemoLaunch C)
+project(SBGC32_LinuxDebug C)
 
 set(CMAKE_C_STANDARD 11)
 
-set(PATH_TO_SOURCES ../../../sources)
-set(PATH_TO_DRIVERS ../../../drivers/LinuxDriver)
+set(PATH_TO_SERIAL_API ../../../serialAPI)
+set(PATH_TO_SOURCES ../../../serialAPI/sources)
+set(PATH_TO_DRIVERS ../../../serialAPI/drivers/LinuxDriver)
 
 add_executable(${PROJECT_NAME}
         ${PATH_TO_DRIVERS}/driver_Linux.c
         ${PATH_TO_DRIVERS}/driver_Linux.h
+
         ${PATH_TO_SOURCES}/adjvar/adjvar.c
         ${PATH_TO_SOURCES}/adjvar/adjvar.h
         ${PATH_TO_SOURCES}/calib/calib.c
@@ -27,7 +29,13 @@ add_executable(${PROJECT_NAME}
         ${PATH_TO_SOURCES}/realtime/realtime.h
         ${PATH_TO_SOURCES}/service/service.c
         ${PATH_TO_SOURCES}/service/service.h
-        main.c)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ../../../drivers/LinuxDriver)
-target_include_directories(${PROJECT_NAME} PRIVATE ../../../sources)
+        ${PATH_TO_SERIAL_API}/adjunct.h
+        ${PATH_TO_SERIAL_API}/sbgc32.c
+        ${PATH_TO_SERIAL_API}/sbgc32.h
+
+        main.c serialAPI_Config.h)
+
+
+target_include_directories(${PROJECT_NAME} PUBLIC .)
+target_include_directories(${PROJECT_NAME} PUBLIC ../../../serialAPI)

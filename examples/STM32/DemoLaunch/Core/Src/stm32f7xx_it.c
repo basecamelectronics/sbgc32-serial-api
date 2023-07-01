@@ -23,8 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "core/core.h"
-#include "driver_STM32.h"
+#include "sbgc32.h"
 
 /* USER CODE END Includes */
 
@@ -63,7 +62,7 @@ extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
-extern GeneralSBGC_t SBGC_1;
+extern GeneralSBGC_t SBGC32_Device;
 
 /* USER CODE END EV */
 
@@ -216,7 +215,7 @@ void TIM2_IRQHandler(void)
 
 	if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
 		GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
-		TimerDRV_CallBack(SBGC_1.Drv);
+		TimerDRV_CallBack(SBGC32_Device.Drv);
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -238,11 +237,11 @@ void USART1_IRQHandler(void)
 
 	if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
 		GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
-		UART_DRV_TxCallBack(SBGC_1.Drv);
+		UART_DRV_TxCallBack(SBGC32_Device.Drv);
 
 	if (GET_FLAG_UART_ISR_RXNE(SBGC_SERIAL_PORT) &&
 		GET_FLAG_UART_CR1_RXNEIE(SBGC_SERIAL_PORT))
-		UART_DRV_RxCallBack(SBGC_1.Drv);
+		UART_DRV_RxCallBack(SBGC32_Device.Drv);
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - */
 
