@@ -10,19 +10,34 @@ driver algorithms are presented. General source files are placed in the /serialA
 pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS.
 Pay attention to the serialAPI_ConfigTemplate file. This file helps to configure the internal functionality of the library.
 
+Files Description
+-----------------
+
+**Common files:**
+
+- adjunct.h - Header help-code file;
+
+- sbgc32.c and sbgc32.h - Assembly files of the Library;
+
+- serialAPI_ConfigTemplate.h - Configurations template header file of the Library.
+
+**sources** - a folder that stores a Serial API commands functional sorted by purpose.
+
+**drivers** - a folder containing the driver files.
+
 ### Header library files involve: ###
 
 - Macros and constants
 
-- Auxiliary flags and their functions
+- Auxiliary flags and their functions;
 
-- Structure types corresponding to their commands
+- Structure types corresponding to their commands.
 
 ### Source library files involve: ###
 
-- Reference data for BIG ENDIAN parsing and debug
+- Reference data for BIG ENDIAN parsing and debug;
 
-- Executable functions
+- Executable functions.
 
 The adjvar.c file contains a data block "adjVarsReferenceInfoArray" with auxiliary information about all adjustable variables
 at the time of the current version. The core.c and core.h files also contain a lot of general service code.
@@ -31,85 +46,6 @@ Requirements
 ------------
 To fully use the functions of this library, it is recommended to use a device with at least **2 KB RAM**
 and at least **16 KB FLASH**.
-
-Files Description
------------------
-
-### Common files ###
-
-**Headers (.h):**
-
-- adjunct.h - Header help-code file
-
-- sbgc32.h - Assembly header file of the Library
-
-- serialAPI_ConfigTemplate.h - Configurations template header file of the Library
-
-**Sources (.c):**
-
-- sbgc32.c - Assembly source file of the Library
-
-### Source files ###
-
-**Headers (.h):**
-
-- sources/adjvar/adjvar.h - Adjustable variables header file
-
-- sources/calib/calib.h - Calibration commands header file
-
-- sources/core/adjunct.h - Header common help-code file
-
-- sources/core/core.h - Header file of the core for the custom usage SBGC32 Library
-
-- sources/eeprom/eeprom.h - EEPROM module header file
-
-- sources/gimbalControl/gimbalControl.h - Gimbal realtime-control header file
-
-- sources/imu/imu.h - IMU module header file
-
-- sources/profiles/profiles.h - Profile commands header file
-
-- sources/realtime/realtime.h - Realtime operations header file
-
-- sources/service/service.h - Service functions header file
-
-**Sources (.c):**
-
-- sources/adjvar/adjvar.c - Adjustable variables source file
-
-- sources/calib/calib.c - Calibration commands source file
-
-- sources/core/core.c - SBGC32 core source file
-
-- sources/eeprom/eeprom.c - EEPROM module source file
-
-- sources/gimbalControl/gimbalControl.c - Gimbal realtime-control source file
-
-- sources/imu/imu.c - IMU module source file
-
-- sources/profiles/profiles.c - Profile commands source file
-
-- sources/realtime/realtime.c - Realtime operations source file
-
-- sources/service/service.c - Service functions source file
-
-### Driver files ###
-
-**Headers (.h):**
-
-- drivers/ArduinoDriver/driver_Arduino.h - Arduino driver header file
-
-- drivers/LinuxDriver/driver_Linux.h - Linux driver header file
-
-- drivers/STM32_Driver/driver_STM32.h - STM32 driver header file
-
-**Sources (.c):**
-
-- drivers/ArduinoDriver/driver_Arduino.cpp - Arduino driver source file
-
-- drivers/LinuxDriver/driver_Linux.c - Linux driver source file
-
-- drivers/STM32_Driver/driver_STM32.c - STM32 driver source file
 
 How to use this library
 -----------------------

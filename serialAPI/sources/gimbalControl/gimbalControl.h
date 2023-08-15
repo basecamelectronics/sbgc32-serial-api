@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  * 	@file		gimbalControl.h
  *
@@ -74,38 +74,6 @@ extern 		"C" {
 
 
 #if (SBGC_CONTROL_MODULE)
-
-/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *								Macros and Constants
- */
-#define	 	ANGLE_FULL_TURN 		16384
-
-/*	Conversion from degree/sec to units
-	that command understand */
-#define		SPEED_SCALE  			(1.0F / 0.1220740379F)
-#define		SPEED_TO_VALUE(val)		((val) * SPEED_SCALE)
-
-#define 	DEGREE_ANGLE_SCALE 		((float)ANGLE_FULL_TURN / 360.0F)
-#define 	ANGLE_DEGREE_SCALE 		(360.0F / (float)ANGLE_FULL_TURN)
-
-/* Conversions for angle in degrees to angle
-	in SBGC 14 bit representation, and back */
-#define 	DEGREE_TO_ANGLE(val) 	((val) * DEGREE_ANGLE_SCALE)
-#define 	ANGLE_TO_DEGREE(val) 	((val) * ANGLE_DEGREE_SCALE)
-
-/*	Same thing, optimized for integers */
-#define 	DEGREE_TO_ANGLE_INT(val)\
-									(((i32)(val) * ANGLE_FULL_TURN) / 360)
-
-#define		DEGREE_01_TO_ANGLE_INT(val)\
-									(((i32)(val) * ANGLE_FULL_TURN) / 3600)
-
-#define 	ANGLE_TO_DEGREE_INT(val)\
-									(((i32)(val) * 360) / ANGLE_FULL_TURN)
-
-#define 	ANGLE_TO_DEGREE_01_INT(val)\
-									(((i32)(val) * 3600) / ANGLE_FULL_TURN)
-
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *									   Control Flags
@@ -208,7 +176,8 @@ typedef enum
 typedef struct __PACKED__
 {
 	i16     speed,                              	/*!<  Units: 0.1220740379 deg/sec or
-													  	  Units: 0.001 deg/sec, if CtrlF_CONTROL_FLAG_HIGH_RES_SPEED is set				*/
+													  	  Units: 0.001 deg/sec, if CtrlF_CONTROL_FLAG_HIGH_RES_SPEED is set.
+													  	  See @ref ControlFlag_t enumeration and @ref Control_t.controlMode field		*/
 			angle;                              	/*!<  Units: 0.02197265625 degree													*/
 
 }           AxisC_t;

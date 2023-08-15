@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- *	SBGC32 Serial API Library v1.0
+ *	SBGC32 Serial API Library v1.1
  *
  *	@file		adjunct.h
  *
@@ -164,6 +164,40 @@ typedef enum
 									((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
 #define		rawconstrain_(val, min, max, raw)\
 									(((val) <= (min)) || ((val) >= (max)) ? (raw) : (val))
+#define		deadbandcross_(val, valOrg, db)\
+									((abs((val) - (valOrg)) > (db)) ? 1U : 0U)
+#define		toboolean_(val)			((val) && 1U)
+
+
+static inline ui8 ConvertTypeToByteNum (VarType_t varType)
+{
+	ui8 res = 0;
+
+	switch (varType & CLEAN_TYPE_MASK)
+	{
+		case _UNSIGNED_CHAR_ :
+		case _SIGNED_CHAR_ :
+		case _RESERVED_CHAR_ :
+			res = 1;
+			break;
+
+		case _UNSIGNED_SHORT_ :
+		case _SIGNED_SHORT_ :
+			res = 2;
+			break;
+
+		case _UNSIGNED_INT_ :
+		case _SIGNED_INT_ :
+		case _FLOAT_ :
+			res = 4;
+			break;
+
+		default :
+			break;
+	}
+
+	return res;
+}
 
 
 static inline ui16 ConvertValueBiniry16_FlagToDecade (ui16 flag)
@@ -180,37 +214,21 @@ static inline ui16 ConvertValueBiniry16_FlagToDecade (ui16 flag)
 }
 
 
+static inline double ConvertRadiansToDegrees (double radian)
+{
+	return radian * 180.0 / PI__;
+}
+
+
+static inline double ConvertDegreesToRadians (double degree)
+{
+	return degree * PI__ / 180;
+}
+
+
 static inline i32 SignedCeil (float value)
 {
 	return (value > 0) ? (ceil(value)) : -(ceil(abs(value)));
-}
-
-
-static inline i32 FilterDeltaValue (ui16 oldValue, ui16 newValue, ui16 revError, ui16 hysteresis, float divider)
-{
-	i32 delta = newValue - oldValue;
-
-	if ((abs(delta) <= revError) || (abs(delta) > hysteresis))
-		return 0;
-
-	else
-		return (((abs(delta) / divider) > 1.0F) ? (delta / divider) : ((delta > 0) ? 1 : -1));
-}
-
-
-static inline ui16 CalculateAverage (ui16 *buff, ui16 averagePow, ui16 newValue)
-{
-	ui32 resTemp;
-
-	for (ui16 i = 0; i < averagePow - 1; i++)
-	{
-		buff[i] = buff[i + 1];
-		resTemp += buff[i];
-	}
-
-	buff[averagePow - 1] = newValue;
-
-	return (resTemp + newValue) / averagePow;
 }
 
 

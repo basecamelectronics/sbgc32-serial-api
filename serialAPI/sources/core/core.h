@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  * 	@file		core.h
  *
@@ -116,7 +116,8 @@ typedef		int						(*SprintfFunc_t)(char* buffer, const char* format, ...);
 
 /* Other -------------------------------------------
  */
-#define		UNEXP_CMD_BUFFER_TOTAL_SIZE		(1 << (UNEXP_CMD_BUFFER_SIZE))
+#define		UNEXP_CMD_BUFFER_TOTAL_SIZE		(1 << UNEXP_CMD_BUFFER_SIZE)
+#define		UNEXP_CMD_BUFFER_SIZE_MASK		((UNEXP_CMD_BUFFER_TOTAL_SIZE) - 1)
 
 #define		RX_BUFFER_OVERFLOW_FLAG	0xFFFFU
 
@@ -152,6 +153,37 @@ typedef		int						(*SprintfFunc_t)(char* buffer, const char* format, ...);
 
 #define		RC_UNDEF				-10000
 #define		RC_UNDEF_HIGH_RES		-32768
+
+#define	 	ANGLE_FULL_TURN 		16384
+
+/* Conversion from degree/sec to units
+   that command understand */
+#define		SPEED_SCALE  			(1.0F / 0.1220740379F)
+#define		SPEED_TO_VALUE(val)		((val) * SPEED_SCALE)
+
+#define 	DEGREE_ANGLE_SCALE 		((float)ANGLE_FULL_TURN / 360.0F)
+#define 	ANGLE_DEGREE_SCALE 		(360.0F / (float)ANGLE_FULL_TURN)
+
+/* Conversions for angle in degrees to angle
+   in SBGC 14 bit representation, and back */
+#define 	DEGREE_TO_ANGLE(val) 	((val) * DEGREE_ANGLE_SCALE)
+#define 	ANGLE_TO_DEGREE(val) 	((val) * ANGLE_DEGREE_SCALE)
+
+/* Same thing, optimized for integers */
+#define 	DEGREE_TO_ANGLE_INT(val)\
+									(((i32)(val) * ANGLE_FULL_TURN) / 360)
+
+#define		DEGREE_01_TO_ANGLE_INT(val)\
+									(((i32)(val) * ANGLE_FULL_TURN) / 3600)
+
+#define 	ANGLE_TO_DEGREE_INT(val)\
+									(((i32)(val) * 360) / ANGLE_FULL_TURN)
+
+#define 	ANGLE_TO_DEGREE_01_INT(val)\
+									(((i32)(val) * 3600) / ANGLE_FULL_TURN)
+
+
+#define		getcommstatus_(st)		(((st == TX_RX_OK) || (st == RX_BUFFERED_COMMAND)) ? TRUE__ : FALSE__)
 
 
 #if (SBGC_REF_INFO)
@@ -426,8 +458,7 @@ typedef struct __PACKED__
  */
 typedef struct
 {
-	void 					*Drv;					/*!<  Main hardware driver object for STM32 and Linux OS.
-														  Fully initialized with a Driver_Init function									*/
+	void 					*Drv;					/*!<  Main hardware driver object													*/
 	TxFunc_t				TxFunc;					/*!<  Pointer to user-defined data buffer transfer function							*/
 	RxFunc_t				RxFunc;					/*!<  Pointer to a user-defined function to receive one byte of data				*/
 	AvailableBytesFunc_t	AvailableBytesFunc;		/*!<  Pointer to a user-defined function that returns the number of
@@ -459,7 +490,9 @@ typedef struct
 		ui16	_unexpectedCommandsBuffTail :
 				UNEXP_CMD_BUFFER_SIZE,				/*!<  Tail point of unexpected commands data buffer									*/
 				_unexpectedCommandsBuffHead :
-				UNEXP_CMD_BUFFER_SIZE;				/*!<  Head point of unexpected commands data buffer									*/
+				UNEXP_CMD_BUFFER_SIZE,				/*!<  Head point of unexpected commands data buffer									*/
+				_unexpectedCommandCurrentPointer :
+				UNEXP_CMD_BUFFER_SIZE;				/*!<  Point of currently-handle unexpected command at reading operations 			*/
 
 	#endif
 
@@ -974,6 +1007,10 @@ TxRxStatus_t SBGC32_FindCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *se
 /**	@addtogroup	Parser_Memory
  *	@{
  */
+#if (SYS_BIG_ENDIAN || SBGC_REF_INFO)
+	ui8 AssignStructFromParserMap (const ParameterReferenceInfo_t **buffArr, ParserMap_t parserMap);
+	void *GetStructureElementAddress (GeneralSBGC_t *generalSBGC, const void* structure, ParserMap_t parserMap, ui8 num);
+#endif
 ui8 ConvertWithPM (void *pDestination, const void *pSource, ui8 size, ParserMap_t parserMap);
 void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap);
 void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap);

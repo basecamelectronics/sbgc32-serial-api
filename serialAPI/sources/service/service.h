@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  * 	@file		service.h
  *
@@ -851,6 +851,7 @@ TxRxStatus_t SBGC32_ReadBoardInfo3 (GeneralSBGC_t *generalSBGC, BoardInfo3_t *bo
  * 	@{
  */
 TxRxStatus_t SBGC32_TuneAutoPID (GeneralSBGC_t *generalSBGC, const AutoPID_t *autoPID);
+TxRxStatus_t SBGC32_BreakAutoPID_Tuning (GeneralSBGC_t *generalSBGC);
 TxRxStatus_t SBGC32_TuneAutoPID2 (GeneralSBGC_t *generalSBGC, const AutoPID2_t *autoPID2);
 void SBGC32_ParseAutoPID_StateCmd (SerialCommand_t *cmd, AutoPID_State_t *autoPID_State);
 /**	@}

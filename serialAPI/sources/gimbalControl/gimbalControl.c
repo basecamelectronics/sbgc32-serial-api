@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  *	@file		gimbalControl.c
  *
@@ -111,6 +111,11 @@
  */
 /**	@brief	Controls gimbal movement
  *
+ *	@note	If ControlConfig_t.flags is set to
+ *			RTCCF_CONTROL_CONFIG_FLAG_CONFIRM,
+ *			SBGC32 will send confirmation commands
+ *			after each successful transfer
+ *
  * 	@param 	*generalSBGC - serial connection descriptor
  * 	@param 	*control - structure containing gimbal control data
  *
@@ -122,7 +127,6 @@ TxRxStatus_t SBGC32_Control (GeneralSBGC_t *generalSBGC, const Control_t *contro
 	InitCmdWrite(&cmd, CMD_CONTROL);
 	WriteBuff(&cmd, control, sizeof(Control_t), PM_CONTROL);
 	SBGC32_TX(generalSBGC, &cmd);
-	/** When setting the ControlConfig_t.flags, may send confirmation */
 	return generalSBGC->_parserCurrentStatus;
 }
 /**	@}

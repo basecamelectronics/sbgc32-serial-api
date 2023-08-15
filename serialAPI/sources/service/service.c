@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  *	@file		service.c
  *
@@ -268,13 +268,14 @@ TxRxStatus_t SBGC32_ReadBoardInfo3 (GeneralSBGC_t *generalSBGC, BoardInfo3_t *bo
  */
 /**	@brief	Starts automatic PID calibration
  *
- *	@attention	When finished, the controller sends
- *				a full set of tuned parameters:\n
- *				See @ref Profile_Params_Ext,\n
- *				@ref Profile_Params_Ext_2 and\n
- *				@ref Profile_Params_Ext_3 modules\n
- *				To interrupt currently running auto-tuning process
- *				send this command with zero values in autoPID structure
+ *	@note	When finished, the controller sends
+ *			a full set of tuned parameters:\n
+ *			See @ref Profile_Params_Ext,\n
+ *			@ref Profile_Params_Ext_2 and\n
+ *			@ref Profile_Params_Ext_3 modules.\n
+ *			To interrupt currently running auto-tuning process
+ *			send this command with zero values in autoPID structure
+ *			or use @ref SBGC32_BreakAutoPID_Tuning function
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*autoPID - structure with written auto-PID configurations
@@ -292,14 +293,34 @@ TxRxStatus_t SBGC32_TuneAutoPID (GeneralSBGC_t *generalSBGC, const AutoPID_t *au
 }
 
 
+/**	@brief	Interrupts PID tuning
+ *
+ *	@note	Applies to @ref SBGC32_TuneAutoPID function
+ *
+ *	@param	*generalSBGC - serial connection descriptor
+ *
+ *	@return	Communication status
+ */
+TxRxStatus_t SBGC32_BreakAutoPID_Tuning (GeneralSBGC_t *generalSBGC)
+{
+	AutoPID_t AutoPID = {0};
+	SerialCommand_t cmd;
+	InitCmdWrite(&cmd, CMD_AUTO_PID);
+	WriteBuff(&cmd, &AutoPID, sizeof(AutoPID_t), PM_AUTO_PID);
+	SBGC32_TX(generalSBGC, &cmd);
+	return generalSBGC->_parserCurrentStatus;
+}
+
+
 /**	@brief	Starts automatic PID calibration ver. 2
  *
- *	@attention	Firmware: 2.70+\n
- *				When finished, the controller sends
- *				a full set of tuned parameters:\n
- *				See @ref Profile_Params_Ext,\n
- *				@ref Profile_Params_Ext_2 and\n
- *				@ref Profile_Params_Ext_3 modules\n
+ *	@attention	Firmware: 2.70+
+ *
+ *	@note	When finished, the controller sends
+ *			a full set of tuned parameters:\n
+ *			See @ref Profile_Params_Ext,\n
+ *			@ref Profile_Params_Ext_2 and\n
+ *			@ref Profile_Params_Ext_3 modules
  *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*autoPID2 - structure with written auto-PID configurations
@@ -491,7 +512,7 @@ void SBGC32_ParseScriptDebugInfoCmd (SerialCommand_t *cmd, ScriptDebugInfo_t *sc
 /**	@brief	Writes system persistent state variables, cumulative
  * 			statistics and maintenance data
  *
- * 	@attention	Firmware: 2.68b7+ (“Extended” family only)
+ * 	@attention	Firmware: 2.68b7+ ("Extended" family only)
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*stateVars - structure with written var state parameters
@@ -519,7 +540,7 @@ TxRxStatus_t SBGC32_WriteStateVars (GeneralSBGC_t *generalSBGC, const StateVars_
 /**	@brief	Request reading system persistent state variables, cumulative
  * 			statistics and maintenance data
  *
- * 	@attention	Firmware: 2.68b7+ (“Extended” family only)
+ * 	@attention	Firmware: 2.68b7+ ("Extended" family only)
  *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*stateVars - structure for storing var state parameters

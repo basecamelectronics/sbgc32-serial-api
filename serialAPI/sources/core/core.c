@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- *	SBGC32 Serial API Library v1.0
+ *	SBGC32 Serial API Library v1.1
  *
  *	@file		core.c
  *
@@ -99,6 +99,53 @@
 
 		#endif
 
+		/* Overflow checking */
+		if (generalSBGC->_unexpectedCommandsBuffHead != generalSBGC->_unexpectedCommandsBuffTail)
+		{
+			ui16 headCounter = generalSBGC->_unexpectedCommandsBuffHead;
+			ui16 i = 0;
+			Boolean_t needShiftTailFlag = FALSE__;
+
+			for (; i < (serialCommand->payloadSize + 2); i++)
+			{
+				headCounter = ((headCounter + 1) & UNEXP_CMD_BUFFER_SIZE_MASK);
+
+				if (headCounter == generalSBGC->_unexpectedCommandsBuffTail)
+				{
+					needShiftTailFlag = TRUE__;
+					break;
+				}
+			}
+
+			if (needShiftTailFlag)
+			{
+				#if (UNEXP_CMD_OLD_PRIORITY)
+					/* Exit if buffer will overflows */
+					return;
+
+				#else
+
+					ui8 shiftTemp;
+
+					while (1)
+						/* Shift tail while command will fit */
+					{
+						shiftTemp = generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffTail + 1] + 2;
+
+						if (i <= shiftTemp)
+						{
+							generalSBGC->_unexpectedCommandsBuffTail += shiftTemp;
+							i += shiftTemp;
+						}
+
+						else
+							break;
+					}
+
+				#endif
+			}
+		}
+
 		generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffHead++] = serialCommand->commandID;
 
 		generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffHead++] = serialCommand->payloadSize;
@@ -110,8 +157,29 @@
 
 	/**	@note	Private function
 	 */
+	static ui8 DeleteUnexpectedCommand (GeneralSBGC_t *generalSBGC, ui16 buffPointer)
+	{
+		ui16 cmdPayloadSizePointer = (buffPointer + 1) & UNEXP_CMD_BUFFER_SIZE_MASK;
+		ui8 cmdSize = generalSBGC->_unexpectedCommandsBuff[cmdPayloadSizePointer] + 2;
+
+		/* Shifting */
+		if (((buffPointer + cmdSize) & UNEXP_CMD_BUFFER_SIZE_MASK) != generalSBGC->_unexpectedCommandsBuffHead)
+			/* If this command not latest */
+			for (ui16 i = 0; i < cmdSize; i++)
+				generalSBGC->_unexpectedCommandsBuff[buffPointer + i] = generalSBGC->_unexpectedCommandsBuff[buffPointer + cmdSize + i];
+
+		generalSBGC->_unexpectedCommandsBuffHead -= cmdSize;  // Shift head pointer
+
+		return cmdSize;
+	}
+
+
+	/**	@note	Private function
+	 */
 	static void ReadUnexpectedCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand)
 	{
+		generalSBGC->_unexpectedCommandCurrentPointer = generalSBGC->_unexpectedCommandsBuffTail;
+
 		serialCommand->commandID = generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffTail++];
 
 		serialCommand->payloadSize = generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffTail++];
@@ -119,6 +187,7 @@
 		for (ui16 i = 0; i < serialCommand->payloadSize; i++)
 			serialCommand->payload[i] = generalSBGC->_unexpectedCommandsBuff[generalSBGC->_unexpectedCommandsBuffTail++];
 	}
+
 
 #endif
 
@@ -182,7 +251,7 @@ TxRxStatus_t SBGC32_TX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
  *	@param	timeout - the value of the maximum possible waiting
  *			time for receiving one whole SerialCommand
  *
- *	@return	TX_RX_OK or last state of lastParserError variable
+ *	@return	TX_RX_OK or last state of lastParserStatus variable
  */
 TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, ui32 timeout)
 {
@@ -209,7 +278,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 		headBuff[0] is command ID || headBuff[1] is payload size || headBuff[2] is header checksum */
 		ui16 availableBytes;
 
-		TxRxStatus_t lastParserError = RX_START_PARSE;
+		TxRxStatus_t lastParserStatus = RX_START_PARSE;
 		ParserState_t parserState = STATE_IDLE;
 
 		/* Launch timer */
@@ -233,11 +302,11 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 							parserState = STATE_CHECK_HEADER;
 
 						else
-							lastParserError = RX_START_PARSE;
+							lastParserStatus = RX_START_PARSE;
 					}
 
 					else
-						lastParserError = RX_EMPTY_BUFF_ERROR;
+						lastParserStatus = RX_EMPTY_BUFF_ERROR;
 
 					break;  // Passing to next state
 				}
@@ -253,14 +322,14 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 
 					else
 					{
-						lastParserError = RX_BUFFER_REALTIME_ERROR;
+						lastParserStatus = RX_BUFFER_REALTIME_ERROR;
 						break;
 					}
 
 					if (((headBuff[0] + headBuff[1]) % 256 != headBuff[2]) ||
 						(headBuff[0] == 0))
 					{
-						lastParserError = RX_HEADER_CHECKSUM_ERROR;
+						lastParserStatus = RX_HEADER_CHECKSUM_ERROR;
 						parserState = STATE_RESYNC;
 						break;
 					}
@@ -283,7 +352,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 
 					else
 					{
-						lastParserError = RX_BUFFER_REALTIME_ERROR;
+						lastParserStatus = RX_BUFFER_REALTIME_ERROR;
 						break;
 					}
 
@@ -292,7 +361,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 					{
 						if (complexBuff[3 + headBuff[1]] != Modulo256_Calculate(&complexBuff[3], headBuff[1]))
 						{
-							lastParserError = RX_PAYLOAD_CHECKSUM_ERROR;
+							lastParserStatus = RX_PAYLOAD_CHECKSUM_ERROR;
 							parserState = STATE_RESYNC;
 							break;
 						}
@@ -306,7 +375,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 						if (((CRC_Res & 0x00FF) != complexBuff[3 + headBuff[1]]) &&
 						   (((CRC_Res >> 8) & 0x00FF) != complexBuff[3 + headBuff[1] + 1]))
 						{
-							lastParserError = RX_PAYLOAD_CHECKSUM_ERROR;
+							lastParserStatus = RX_PAYLOAD_CHECKSUM_ERROR;
 							parserState = STATE_RESYNC;
 							break;
 						}
@@ -323,7 +392,7 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
 
 			/* Timeout checking */
 			if ((generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime) >= timeout)
-				return lastParserError;
+				return lastParserStatus;
 		}
 	}
 }
@@ -340,73 +409,20 @@ TxRxStatus_t SBGC32_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialComma
  */
 TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, SBGC_Command_t cmdID)
 {
+	TxRxStatus_t lastParserStatus;
+
 	/* Send request */
-	if (SBGC32_TX(generalSBGC, serialCommand) != TX_RX_OK)
-		return TX_BUFFER_OVERFLOW_ERROR;
+	lastParserStatus = SBGC32_TX(generalSBGC, serialCommand);
 
-	else
-	{
-		#if (UNEXP_CMD_BUFFER)
-			ui16 unexpCmdShiftTemp = 0;
-		#endif
+	if (lastParserStatus != TX_RX_OK)
+		return lastParserStatus;
 
-		TxRxStatus_t lastParserStatus;
-		ui32 currentTime = generalSBGC->GetTimeFunc(generalSBGC->Drv);
+	lastParserStatus = SBGC32_FindCommand(generalSBGC, serialCommand, cmdID, generalSBGC->txrxTimeout);
 
-		while (1)
-		{
-			lastParserStatus = SBGC32_RX(generalSBGC, serialCommand, generalSBGC->rxTimeout);
+	if (getcommstatus_(lastParserStatus) == FALSE__)
+		generalSBGC->_missedCommandCount++;
 
-			/* Has correct command parsed */
-			if (((lastParserStatus == TX_RX_OK) || (lastParserStatus == RX_BUFFERED_COMMAND)) &&
-			    (serialCommand->commandID == cmdID || cmdID == 0))
-			{
-				#if (UNEXP_CMD_BUFFER)
-					generalSBGC->_unexpectedCommandsBuffTail -= unexpCmdShiftTemp;  // Return buffer tail
-				#endif
-
-				return lastParserStatus;
-			}
-
-			#if (UNEXP_CMD_BUFFER)
-
-				/* Has wrong command parsed */
-				else if (
-						#if (UNEXP_CMD_ALWAYS_SAVE)
-							((lastParserStatus == TX_RX_OK) || (lastParserStatus == RX_BUFFERED_COMMAND)) &&
-						#else
-							(lastParserStatus == TX_RX_OK) &&
-						#endif
-
-							(serialCommand->commandID != cmdID))
-				{
-					SaveUnexpectedCommand(generalSBGC, serialCommand);
-
-					if (lastParserStatus == RX_BUFFERED_COMMAND)
-					{
-						generalSBGC->_unexpectedCommandsBuffTail += serialCommand->payloadSize + 2;
-						unexpCmdShiftTemp += serialCommand->payloadSize + 2;
-					}
-				}
-
-			#endif
-
-			/* Timeout checking */
-			if ((generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime) >= generalSBGC->txrxTimeout)
-			{
-				generalSBGC->_missedCommandCount++;
-
-				#if (UNEXP_CMD_BUFFER)
-					generalSBGC->_unexpectedCommandsBuffTail -= unexpCmdShiftTemp;  // Return buffer tail
-				#endif
-
-				if (serialCommand->commandID != cmdID)
-					return RX_TIMEOUT_ERROR;
-
-				return lastParserStatus;
-			}
-		}
-	}
+	return lastParserStatus;
 }
 
 
@@ -424,7 +440,7 @@ TxRxStatus_t SBGC32_TX_RX (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCo
 TxRxStatus_t SBGC32_FindCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *serialCommand, SBGC_Command_t cmdID, ui32 timeout)
 {
 	#if (UNEXP_CMD_BUFFER)
-		ui16 unexpCmdShiftTemp = 0;
+		ui16 unexpectedCommandsBuffTailTemp = generalSBGC->_unexpectedCommandsBuffTail;
 	#endif
 
 	TxRxStatus_t lastParserStatus;
@@ -434,11 +450,28 @@ TxRxStatus_t SBGC32_FindCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *se
 	{
 		lastParserStatus = SBGC32_RX(generalSBGC, serialCommand, generalSBGC->rxTimeout);
 
-		if (((lastParserStatus == TX_RX_OK) || (lastParserStatus == RX_BUFFERED_COMMAND)) &&
+		if (getcommstatus_(lastParserStatus) &&
 			(serialCommand->commandID == cmdID))
+			/* Has correct command parsed */
 		{
 			#if (UNEXP_CMD_BUFFER)
-				generalSBGC->_unexpectedCommandsBuffTail -= unexpCmdShiftTemp;  // Return buffer tail
+
+				if (lastParserStatus == RX_BUFFERED_COMMAND)
+				{
+					ui8 deletedCmdSize = 0;
+
+					deletedCmdSize = DeleteUnexpectedCommand(generalSBGC, generalSBGC->_unexpectedCommandCurrentPointer);
+
+					if (generalSBGC->_unexpectedCommandCurrentPointer ==
+						((generalSBGC->_unexpectedCommandsBuffTail - deletedCmdSize) & UNEXP_CMD_BUFFER_SIZE_MASK))
+						/* If this command was latest it is need to shift tail by deletedCmdSize backward */
+						generalSBGC->_unexpectedCommandsBuffTail -= deletedCmdSize;
+
+					unexpectedCommandsBuffTailTemp = generalSBGC->_unexpectedCommandsBuffTail;
+				}
+
+				generalSBGC->_unexpectedCommandsBuffTail = unexpectedCommandsBuffTailTemp;
+
 			#endif
 
 			return lastParserStatus;
@@ -446,34 +479,31 @@ TxRxStatus_t SBGC32_FindCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *se
 
 		#if (UNEXP_CMD_BUFFER)
 
-			/* Has wrong command parsed */
-			else if (((lastParserStatus == TX_RX_OK) || (lastParserStatus == RX_BUFFERED_COMMAND)) &&
-					 (serialCommand->commandID != cmdID))
+			if (serialCommand->commandID != cmdID)
+				/* Has wrong command parsed */
 			{
-				SaveUnexpectedCommand(generalSBGC, serialCommand);
-
-				if (lastParserStatus == RX_BUFFERED_COMMAND)
+				if (lastParserStatus == TX_RX_OK)
 				{
-					generalSBGC->_unexpectedCommandsBuffTail += serialCommand->payloadSize + 2;
-					unexpCmdShiftTemp += serialCommand->payloadSize + 2;
+					/* Remember old tail temp pointer before new command saving */
+					generalSBGC->_unexpectedCommandsBuffTail = unexpectedCommandsBuffTailTemp;
+
+					SaveUnexpectedCommand(generalSBGC, serialCommand);
+
+					/* Rewrite to new tail pointer */
+					unexpectedCommandsBuffTailTemp = generalSBGC->_unexpectedCommandsBuffTail;
 				}
 			}
 
 		#endif
 
 		/* Timeout checking */
-		if (generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime >= timeout)
+		if ((generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime) >= timeout)
 		{
-			generalSBGC->_missedCommandCount++;
-
 			#if (UNEXP_CMD_BUFFER)
-				generalSBGC->_unexpectedCommandsBuffTail -= unexpCmdShiftTemp;  // Return buffer tail
+				generalSBGC->_unexpectedCommandsBuffTail = unexpectedCommandsBuffTailTemp;
 			#endif
 
-			if (serialCommand->commandID != cmdID)
-				return RX_TIMEOUT_ERROR;
-
-			return lastParserStatus;
+			return RX_TIMEOUT_ERROR;
 		}
 	}
 }
@@ -487,61 +517,9 @@ TxRxStatus_t SBGC32_FindCommand (GeneralSBGC_t *generalSBGC, SerialCommand_t *se
 /**	@addtogroup	Parser_Memory
  *	@{
  */
-/**	@brief	Common data-endian converting function
- *
- *	@param	*pDestination - where data will be written
- *	@param	*pSource - data origin
- *	@param	size - data size
- *	@param	parserMap - data type required for correct parsing
- *
- *	@return	size of written data
- */
-ui8 ConvertWithPM (void *pDestination, const void *pSource, ui8 size, ParserMap_t parserMap)
-{
-	if (size == 0)
-		return 0;
-
-	memcpy(pDestination, pSource, size);
-	SwapBytesInStruct((ui8*)pDestination, size, parserMap);
-	return size;
-}
-
-
-/**	@brief	Writes a data buffer to a SerialCommand's payload buffer
- *
- * 	@param	*cmd - writable SerialCommand
- * 	@param	*buff - write data
- * 	@param	size - write data size
- * 	@param	parserMap - data type required for correct parsing
- */
-void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap)
-{
-	if (cmd->payloadSize > MAX_BUFF_SIZE - size)
-		return;  // data will not fit
-	
-	cmd->payloadSize += ConvertWithPM(&cmd->payload[cmd->payloadSize], buff, size, parserMap);
-}
-
-
-/**	@brief	Reads a SerialCommand's payload buffer to data buffer
- *
- *	@param	*cmd - readable SerialCommand
- *	@param	*buff - read data buffer
- *	@param	size - read data size
- *	@param	parserMap - data type required for correct parsing
- */
-void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap)
-{
-	if (size > (MAX_BUFF_SIZE - cmd->readPos))
-		return;  // data will not fit
-	
-	cmd->readPos += ConvertWithPM(buff, &cmd->payload[cmd->readPos], size, parserMap);
-}
-
-
 #if (SYS_BIG_ENDIAN || SBGC_REF_INFO)
 
-	/**	@brief Appoints Serial API reference structure
+	/**	@brief	Appoints Serial API reference structure
 	 *
 	 *	@param	**buffArr - pointer to undefined structure
 	 *	@param	parserMap - structure type for assign
@@ -743,7 +721,94 @@ void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap
 		return 0;
 	}
 
+
+	/**	@brief	Gives address of structure element by number
+	 *
+	 *	@param	*generalSBGC - serial connection descriptor
+	 *	@param 	*structure - command structure where finding is
+	  *	@param	parserMap - data type required for correct parsing
+	 *	@param	num - number of structure element
+	 *
+	 *	@return	Address of chosen element
+	 */
+	void *GetStructureElementAddress (GeneralSBGC_t *generalSBGC, const void* structure, ParserMap_t parserMap, ui8 num)
+	{
+		ui8 *structureTemp = (ui8*)structure;
+		ui32 currentAddrOffset = 0;
+
+		const ParameterReferenceInfo_t *parameterReferenceInfo = NULL;
+		ui8 parameterReferenceInfoElCnt = AssignStructFromParserMap(&parameterReferenceInfo, parserMap);
+
+		ui8 parameterSize;
+
+		for (ui8 i = 0; i < parameterReferenceInfoElCnt; i++)
+		{
+			/* Obtain an element type for made correct structure moving */
+			parameterSize = ConvertTypeToByteNum(parameterReferenceInfo[i].type);
+
+			if (i == num)
+				return (void*)(structureTemp + currentAddrOffset);
+
+			for (ui8 k = 0; k < parameterReferenceInfo[i].length; k++)
+				currentAddrOffset += parameterSize;
+		}
+
+		return NULL;
+	}
+
 #endif
+
+
+/**	@brief	Common data-endian converting function
+ *
+ *	@param	*pDestination - where data will be written
+ *	@param	*pSource - data origin
+ *	@param	size - data size
+ *	@param	parserMap - data type required for correct parsing
+ *
+ *	@return	size of written data
+ */
+ui8 ConvertWithPM (void *pDestination, const void *pSource, ui8 size, ParserMap_t parserMap)
+{
+	if (size == 0)
+		return 0;
+
+	memcpy(pDestination, pSource, size);
+	SwapBytesInStruct((ui8*)pDestination, size, parserMap);
+	return size;
+}
+
+
+/**	@brief	Writes a data buffer to a SerialCommand's payload buffer
+ *
+ * 	@param	*cmd - writable SerialCommand
+ * 	@param	*buff - write data
+ * 	@param	size - write data size
+ * 	@param	parserMap - data type required for correct parsing
+ */
+void WriteBuff (SerialCommand_t *cmd, const void *buff, ui8 size, ParserMap_t parserMap)
+{
+	if (cmd->payloadSize > MAX_BUFF_SIZE - size)
+		return;  // data will not fit
+	
+	cmd->payloadSize += ConvertWithPM(&cmd->payload[cmd->payloadSize], buff, size, parserMap);
+}
+
+
+/**	@brief	Reads a SerialCommand's payload buffer to data buffer
+ *
+ *	@param	*cmd - readable SerialCommand
+ *	@param	*buff - read data buffer
+ *	@param	size - read data size
+ *	@param	parserMap - data type required for correct parsing
+ */
+void ReadBuff (SerialCommand_t *cmd, void *buff, ui8 size, ParserMap_t parserMap)
+{
+	if (size > (MAX_BUFF_SIZE - cmd->readPos))
+		return;  // data will not fit
+	
+	cmd->readPos += ConvertWithPM(buff, &cmd->payload[cmd->readPos], size, parserMap);
+}
 
 
 /**	@brief	Rearranges data depending on the
@@ -788,28 +853,7 @@ void SwapBytesInStruct (ui8 *structure, ui8 size, ParserMap_t parserMap)
 
 		for (ui8 i = 0; i < parameterReferenceInfoElCnt; i++)
 		{
-			switch (parameterReferenceInfo[i].type)
-			{
-				case _UNSIGNED_CHAR_ :
-				case _SIGNED_CHAR_ :
-				case _RESERVED_CHAR_ :
-					parameterSize = 1;
-					break;
-
-				case _UNSIGNED_SHORT_ :
-				case _SIGNED_SHORT_ :
-					parameterSize = 2;
-					break;
-
-				case _UNSIGNED_INT_ :
-				case _SIGNED_INT_ :
-				case _FLOAT_ :
-					parameterSize = 4;
-					break;
-
-				default :
-					break;
-			}
+			parameterSize = ConvertTypeToByteNum(parameterReferenceInfo[i].type)
 
 			for (ui8 k = 0; k < parameterReferenceInfo[i].length; k++)
 			{
@@ -1095,7 +1139,7 @@ TxRxStatus_t SBGC32_ManualInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, RxF
 	InitCmdWrite(&cmd, CMD_BOARD_INFO);
 	WriteWord(&cmd, 0);  // cfg = 0
 
-	if (CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_BOARD_INFO), "Board Info:") == TX_RX_OK)
+	if (getcommstatus_(CheckReceipt(generalSBGC, SBGC32_TX_RX(generalSBGC, &cmd, CMD_BOARD_INFO), "Board Info:")))
 	{
 		generalSBGC->_boardVersion = cmd.payload[0];
 		FromLittleEndian(&generalSBGC->_firmwareVersion, &cmd.payload[1], 2);
@@ -1118,7 +1162,7 @@ TxRxStatus_t SBGC32_ManualInit (GeneralSBGC_t *generalSBGC, TxFunc_t TxFunc, RxF
 		PrintMessage(generalSBGC, TEXT_SIZE_(" \n"));
 		PrintMessage(generalSBGC, TEXT_SIZE_("******************************\n"));
 
-		if (generalSBGC->_parserCurrentStatus == TX_RX_OK)
+		if (getcommstatus_(generalSBGC->_parserCurrentStatus))
 		{
 			PrintMessage(generalSBGC, TEXT_SIZE_("The system is ready to go!\n"));
 			PrintMessage(generalSBGC, TEXT_SIZE_((char*)"Board Version: "));
@@ -1187,11 +1231,10 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 
 		while (1)
 		{
-			lastParserStatus = SBGC32_RX(generalSBGC, &cmd, generalSBGC->txrxTimeout);
+			lastParserStatus = SBGC32_FindCommand(generalSBGC, &cmd, CMD_CONFIRM, generalSBGC->rxTimeout);
 
-			if (lastParserStatus == TX_RX_OK &&
-				((cmd.commandID == CMD_CONFIRM && cmdID == cmd.payload[0]) ||
-				(cmd.commandID == CMD_RESET)))
+			if (getcommstatus_(lastParserStatus) &&
+				((cmd.commandID == CMD_CONFIRM) && (cmdID == cmd.payload[0])))
 			{
 				generalSBGC->_confirmationParams.cmdID = ReadByte(&cmd);
 
@@ -1201,7 +1244,7 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 					generalSBGC->_confirmationParams.cmdData = ReadWord(&cmd);
 
 				#if (SBGC_DEBUG_MODE)
-					/* - - - - - - - User Confirm Handler - - - - - - - - */
+
 					if (cmd.payloadSize <= 1)
 						generalSBGC->SprintfFunc(debugStr, "CMD_CONFIRM #%d\n", generalSBGC->_confirmationParams.cmdID);
 					else
@@ -1209,7 +1252,7 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 																					 generalSBGC->_confirmationParams.cmdData);
 
 					PrintMessage(generalSBGC, debugStr, strlen(debugStr));
-					/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 				#endif
 
 				generalSBGC->_parserCurrentStatus = lastParserStatus;
@@ -1217,7 +1260,7 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 				break;
 			}
 
-			else if (lastParserStatus == TX_RX_OK && (cmd.commandID == CMD_ERROR))
+			else if (getcommstatus_(lastParserStatus) && (cmd.commandID == CMD_ERROR))
 			{
 				generalSBGC->_confirmationParams.errCode = ReadByte(&cmd);
 
@@ -1225,12 +1268,12 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 					ReadBuff(&cmd, &generalSBGC->_confirmationParams.errData, 4, PM_DEFAULT_8BIT);
 
 				#if (SBGC_DEBUG_MODE)
-					/* - - - - - - - - User Error Handler - - - - - - - - */
+
 					generalSBGC->SprintfFunc(debugStr, "CMD_ERROR: #%d (%d)\n", generalSBGC->_confirmationParams.errCode,
 																				generalSBGC->_confirmationParams.errData[0]);
 
 					PrintMessage(generalSBGC, debugStr, strlen(debugStr));
-					/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 				#endif
 
 				generalSBGC->_parserCurrentStatus = lastParserStatus;
@@ -1241,9 +1284,7 @@ TxRxStatus_t SBGC32_CheckConfirmation (GeneralSBGC_t *generalSBGC, SBGC_Command_
 			if (generalSBGC->GetTimeFunc(generalSBGC->Drv) - currentTime >= generalSBGC->txrxTimeout)
 			{
 				#if (SBGC_DEBUG_MODE)
-					/*  - - - - - - User Wait-Error Handler - - - - - - - */
 					PrintMessage(generalSBGC, TEXT_SIZE_("CONFIRM_TIMEOUT_ERROR!\n"));
-					/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
 				#endif
 
 				generalSBGC->_parserCurrentStatus = RX_TIMEOUT_ERROR;
@@ -1270,7 +1311,7 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
 {
 	generalSBGC->_parserCurrentStatus = receiveStatus;
 
-	if (generalSBGC->_parserCurrentStatus != TX_RX_OK)
+	if (getcommstatus_(generalSBGC->_parserCurrentStatus) == FALSE__)
 		generalSBGC->_rxErrorsCount++;
 
 	#if (SBGC_DEBUG_MODE)
@@ -1278,9 +1319,18 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
 		char totalStr [60];
 		ui8 pos = 0;
 
-		if (generalSBGC->_parserCurrentStatus != TX_RX_OK)
+		if (getcommstatus_(generalSBGC->_parserCurrentStatus))
 		{
-			/* - - - - - - - - User RX Errors Handler - - - - - - - - */
+			memcpy(totalStr, TEXT_SIZE_(message));
+			pos += strlen(message);
+			memcpy(&totalStr[pos], TEXT_SIZE_(" Receive OK!"));
+			pos += strlen(" Receive OK!");
+			totalStr[pos] = '\n';
+			totalStr[pos + 1] = '\0';
+		}
+
+		else
+		{
 			memcpy(totalStr, TEXT_SIZE_(message));
 			pos += strlen(message);
 			memcpy(&totalStr[pos], TEXT_SIZE_(" Receive Error: "));
@@ -1288,19 +1338,6 @@ TxRxStatus_t CheckReceipt (GeneralSBGC_t *generalSBGC, TxRxStatus_t receiveStatu
 			pos += ConvertErrorToString(generalSBGC->_parserCurrentStatus, &totalStr[pos]);
 			totalStr[pos] = '\n';
 			totalStr[pos + 1] = '\0';
-			/*  - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-		}
-
-		else
-		{
-			/*  - - - - - - - User RX Success Handler - - - - - - - - */
-			memcpy(totalStr, TEXT_SIZE_(message));
-			pos += strlen(message);
-			memcpy(&totalStr[pos], TEXT_SIZE_(" Receive OK!"));
-			pos += strlen(" Receive OK!");
-			totalStr[pos] = '\n';
-			totalStr[pos + 1] = '\0';
-			/*  - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 		}
 
 		PrintMessage(generalSBGC, TEXT_SIZE_(totalStr));
@@ -1561,29 +1598,8 @@ void PrintStructElement (GeneralSBGC_t *generalSBGC, void *pValue, const char *s
 
 		for (ui8 i = 0; i < parameterReferenceInfoElCnt; i++)
 		{
-			switch (parameterReferenceInfo[i].type)
 			/* Obtain an element type for made correct structure moving */
-			{
-				case _UNSIGNED_CHAR_ :
-				case _SIGNED_CHAR_ :
-				case _RESERVED_CHAR_ :
-					parameterSize = 1;
-					break;
-
-				case _UNSIGNED_SHORT_ :
-				case _SIGNED_SHORT_ :
-					parameterSize = 2;
-					break;
-
-				case _UNSIGNED_INT_ :
-				case _SIGNED_INT_ :
-				case _FLOAT_ :
-					parameterSize = 4;
-					break;
-
-				default :
-					break;
-			}
+			parameterSize = ConvertTypeToByteNum(parameterReferenceInfo[i].type);
 
 			for (ui8 k = 0; k < parameterReferenceInfo[i].length; k++)
 			{

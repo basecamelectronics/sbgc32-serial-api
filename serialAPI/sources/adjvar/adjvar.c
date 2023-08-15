@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  *	@file		adjvar.c
  *
@@ -82,7 +82,7 @@
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_ROLL_MIX_START),		0,			90,			_UNSIGNED_CHAR_
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FOLLOW_ROLL_MIX_RANGE),		0,			90,			_UNSIGNED_CHAR_
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_TRUST),					0,			255,		_UNSIGNED_CHAR_
-	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FRAME_HEADING),				-1800,		1800,		_SIGNED_SHORT_
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FRAME_HEADING_ANGLE),		-1800,		1800,		_SIGNED_SHORT_  // Note: Has a special value 0x7FFF
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_HEADING_CORR),			-20000,		20000,		_SIGNED_SHORT_
 	},{	ADJ_VAR_BLOCK_(ADJ_VAL_ACC_LIMITER_ROLL),			0,			1275,		_UNSIGNED_SHORT_
 	},{	ADJ_VAR_BLOCK_(ADJ_VAL_ACC_LIMITER_PITCH),			0,			1275,		_UNSIGNED_SHORT_

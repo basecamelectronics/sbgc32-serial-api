@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  * 	@file		serialAPI_ConfigTemplate.h
  *
@@ -85,8 +85,8 @@ extern 		"C" {
 #define		UNEXP_CMD_BUFFER		SET_OFF			/*!<  Disable or enable command buffering											*/
 	#define	UNEXP_CMD_BUFFER_SIZE	10				/*!<  1 Min --> 16 Max. Buffer size for received unexpected serial commands.
 														  Various powers of 2															*/
-	#define	UNEXP_CMD_ALWAYS_SAVE	SET_OFF			/*!<  Keep unexpected command in the buffer while standard parsing.
-	 	 	 	 	 	 	 	 	 	 	 	 	 	  See @ref SBGC32_TX_RX function												*/
+	#define	UNEXP_CMD_OLD_PRIORITY	SET_OFF			/*!<  If set on, a buffer wouldn't save the new commands to prevent overflow.
+ 	 	 	 	 	 	 	 	 	 	 	 	 	  	  In this case they should be taken manually by its corresponding functions		*/
 
 #define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the Serial API initialization												*/
@@ -204,7 +204,7 @@ extern 		"C" {
 	#endif
 
 	#if (DRV_USE_CUBEMX == SET_OFF)
-		#if (DRV_HAL_TIMER) || (DRV_HAL_NVIC_UART) || (DRV_HAL_DMA_UART)
+		#if (DRV_HAL_TIMER || DRV_HAL_NVIC_UART || DRV_HAL_DMA_UART)
 			#include		"stm32f7xx_hal.h"
 		#else
 			#include		"stm32f7xx.h"
@@ -214,14 +214,14 @@ extern 		"C" {
 			#include		"stm32f7xx_ll_tim.h"
 		#endif
 
-		#if (DRV_LL_TIMER) || (DRV_LL_NVIC_UART) || (DRV_LL_DMA_UART)
+		#if (DRV_LL_TIMER || DRV_LL_NVIC_UART || DRV_LL_DMA_UART)
 			#include				"stm32f7xx_ll_bus.h"
 			#include				"stm32f7xx_ll_pwr.h"
 			#include				"stm32f7xx_ll_rcc.h"
 			#include				"stm32f7xx_ll_system.h"
 			#include				"stm32f7xx_ll_utils.h"
 
-			#if (DRV_LL_NVIC_UART) || (DRV_LL_DMA_UART)
+			#if (DRV_LL_NVIC_UART || DRV_LL_DMA_UART)
 				#include			"stm32f7xx_ll_usart.h"
 				#include			"stm32f7xx_ll_gpio.h"
 
@@ -241,8 +241,8 @@ extern 		"C" {
 		the HAL_TIM_IRQHandler(&htimx)) function in
 		the stm32XXxx_it.c file:
 
-		if (GET_FLAG_TIM_SR_UIF(INTERNAL_MAIN_TIMER) &&
-			GET_FLAG_TIM_DIER_UIE(INTERNAL_MAIN_TIMER))
+		if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
+			GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
 			TimerDRV_CallBack(SBGC32_Device.Drv);
 
 		where the 'SBGC32_Device' is a general SBGC32
@@ -353,14 +353,14 @@ extern 		"C" {
 	 */
 	/* UART settings with CubeMX */
 	#if (DRV_USE_CUBEMX)
-		#if (DRV_HAL_NVIC_UART) || (DRV_HAL_DMA_UART)
+		#if (DRV_HAL_NVIC_UART || DRV_HAL_DMA_UART)
 			#define SBGC_SERIAL_PORT		&huart1	/*!<  HAL User defined UART object. Used to communicate with SBGC32 device 			*/
 
 			#if (DRV_USE_UART_DEBUG)
 				#define	DEBUG_SERIAL_PORT	&huart2	/*!<  HAL User defined UART object. Used to print debug data						*/
 			#endif
 
-		#elif (DRV_LL_NVIC_UART) || (DRV_LL_DMA_UART)
+		#elif (DRV_LL_NVIC_UART || DRV_LL_DMA_UART)
 			#define SBGC_SERIAL_PORT		USART1	/*!<  LL User defined UART object. Used to communicate with SBGC32 device 			*/
 
 			#if (DRV_USE_UART_DEBUG)
@@ -394,7 +394,7 @@ extern 		"C" {
 	/* UART settings without CubeMX */
 	#if (DRV_USE_CUBEMX == SET_OFF)
 		/* SBGC UART (DMA) objects settings */
-		#if (DRV_HAL_DMA_UART) || (DRV_HAL_NVIC_UART)
+		#if (DRV_HAL_DMA_UART || DRV_HAL_NVIC_UART)
 			#define	SBGC_UART_NAME	quart1			/*!<  User sample of HAL UART object												*/
 
 			#if (DRV_HAL_DMA_UART)
@@ -406,7 +406,7 @@ extern 		"C" {
 		#define	SBGC_UART_TX_GPIO_PORT		GPIOA	/*!<  SBGCs UART Tx port															*/
 		#define	SBGC_UART_RX_GPIO_PORT		GPIOA	/*!<  SBGCs UART Rx port															*/
 
-		#if (DRV_HAL_NVIC_UART) || (DRV_HAL_DMA_UART)
+		#if (DRV_HAL_NVIC_UART || DRV_HAL_DMA_UART)
 			/** SBGCs UART Tx pin */
 			#define	SBGC_UART_TX_PIN		GPIO_PIN_9
 
@@ -419,7 +419,7 @@ extern 		"C" {
 			/** SBGCs UART Rx pin alternate function */
 			#define	SBGC_UART_RX_PIN_AF		GPIO_AF7_USART1
 
-			/** SBGCs UART GPIO clock functions */
+			/* SBGCs UART GPIO clock functions */
 			#define	SBGC_UART_GPIO_CLOCK_ENABLE		__HAL_RCC_GPIOA_CLK_ENABLE()
 			#define	SBGC_UART_GPIO_CLOCK_DISABLE	__HAL_RCC_GPIOA_CLK_DISABLE()
 
@@ -436,7 +436,7 @@ extern 		"C" {
 			/** SBGCs UART Rx pin alternate function */
 			#define	SBGC_UART_RX_PIN_AF		LL_GPIO_AF_4
 
-			/** SBGCs UART GPIO clock functions */
+			/* SBGCs UART GPIO clock functions */
 			#define	SBGC_UART_GPIO_CLOCK_ENABLE		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB)
 			#define	SBGC_UART_GPIO_CLOCK_DISABLE	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_GPIOB)
 		#endif
@@ -458,7 +458,7 @@ extern 		"C" {
 			#define SBGC_UART_CLOCK_DISABLE	__HAL_RCC_USART1_CLK_DISABLE()
 
 		#else /* DRV_LL_NVIC_UART || DRV_LL_DMA_UART */
-			/** SBGCs UART clock functions */
+			/* SBGCs UART clock functions */
 			#define SBGC_UART_CLOCK_ENABLE	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1)
 			#define SBGC_UART_CLOCK_DISABLE	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART1)
 
@@ -493,7 +493,7 @@ extern 		"C" {
 				/** SBGCs UART DMA Rx base stream */
 				#define SBGC_UART_DMA_RX_INSTANCE	DMA2_Stream2
 
-				/** SBGCs UART DMA clock functions */
+				/* SBGCs UART DMA clock functions */
 				#define	SBGC_UART_DMA_CLOCK_ENABLE	__HAL_RCC_DMA2_CLK_ENABLE()
 				#define	SBGC_UART_DMA_CLOCK_DISABLE	__HAL_RCC_DMA2_CLK_DISABLE()
 			#else
@@ -503,7 +503,7 @@ extern 		"C" {
 				/** SBGCs UART DMA Rx channel. See LL DMA extension module file and DMAx request mapping in a reference manual */
 				#define SBGC_UART_DMA_RX_CHANNEL	LL_DMA_CHANNEL_4
 
-				/** SBGCs UART DMA clock functions */
+				/* SBGCs UART DMA clock functions */
 				#define	SBGC_UART_DMA_CLOCK_ENABLE	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA2)
 				#define	SBGC_UART_DMA_CLOCK_DISABLE	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_DMA2)
 			#endif
@@ -511,7 +511,7 @@ extern 		"C" {
 
 		/* Debug UART settings */
 		#if (DRV_USE_UART_DEBUG)
-			#if (DRV_HAL_DMA_UART) || (DRV_HAL_NVIC_UART)
+			#if (DRV_HAL_DMA_UART || DRV_HAL_NVIC_UART)
 				#define	DEBUG_UART_NAME		quart2	/*!<  User sample of HAL UART object												*/
 			#endif
 
@@ -537,7 +537,7 @@ extern 		"C" {
 				/** Debug UART Rx pin alternate function */
 				#define	DEBUG_UART_RX_PIN_AF		GPIO_AF7_USART2
 
-				/** Debug UART GPIO clock functions */
+				/* Debug UART GPIO clock functions */
 				#define	DEBUG_UART_GPIO_CLOCK_ENABLE\
 													__HAL_RCC_GPIOA_CLK_ENABLE()
 				#define	DEBUG_UART_GPIO_CLOCK_DISABLE\
@@ -556,19 +556,19 @@ extern 		"C" {
 				/** Debug UART Rx pin alternate function */
 				#define	DEBUG_UART_RX_PIN_AF		LL_GPIO_AF_7
 
-				/** Debug UART GPIO clock functions */
+				/* Debug UART GPIO clock functions */
 				#define	DEBUG_UART_GPIO_CLOCK_ENABLE\
 													LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA)
 				#define	DEBUG_UART_GPIO_CLOCK_DISABLE\
 													LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_GPIOA)
 			#endif
 
-			#if (DRV_HAL_NVIC_UART) || (DRV_HAL_DMA_UART)
-				/** Debug UART clock functions */
+			#if (DRV_HAL_NVIC_UART || DRV_HAL_DMA_UART)
+				/* Debug UART clock functions */
 				#define DEBUG_UART_CLOCK_ENABLE		__HAL_RCC_USART2_CLK_ENABLE()
 				#define DEBUG_UART_CLOCK_DISABLE	__HAL_RCC_USART2_CLK_DISABLE()
 			#else /* DRV_LL_NVIC_UART || DRV_LL_DMA_UART */
-				/** Debug UART clock functions */
+				/* Debug UART clock functions */
 				#define DEBUG_UART_CLOCK_ENABLE		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2)
 				#define DEBUG_UART_CLOCK_DISABLE	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_USART2)
 

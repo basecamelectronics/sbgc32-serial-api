@@ -1,10 +1,10 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ *	SBGC32 Serial API Library v1.1
  *
- * 	@file		sbgc32.h
+ *	@file		sbgc32.h
  *
- *	@brief 		Assembly header file of the Library
+ *	@brief		Assembly header file of the Library
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
@@ -44,8 +44,8 @@
 #ifndef		_SBGC32_H_
 #define		_SBGC32_H_
 
-#ifdef 		__cplusplus
-extern 		"C" {
+#ifdef		__cplusplus
+extern		"C" {
 #endif
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 

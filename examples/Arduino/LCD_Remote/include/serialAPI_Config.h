@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  * 	@file		serialAPI_Config.h
  *
@@ -85,8 +85,8 @@ extern 		"C" {
 #define		UNEXP_CMD_BUFFER		SET_OFF			/*!<  Disable or enable command buffering											*/
 	#define	UNEXP_CMD_BUFFER_SIZE	0				/*!<  1 Min --> 16 Max. Buffer size for received unexpected serial commands.
 														  Various powers of 2															*/
-	#define	UNEXP_CMD_ALWAYS_SAVE	SET_OFF			/*!<  Keep unexpected command in the buffer while standard parsing.
-	 	 	 	 	 	 	 	 	 	 	 	 	 	  See @ref SBGC32_TX_RX function												*/
+	#define	UNEXP_CMD_OLD_PRIORITY	SET_OFF			/*!<  If set on, a buffer wouldn't save the new commands to prevent overflow.
+	 	 	 	 	 	 	 	 	 	 	 	 	 	  In this case they should be taken manually by its corresponding functions		*/
 
 #define		SBGC_TX_WAITING			100				/*!<  Units: milliseconds. Data transfer wait parameter on SBGC32
 														  for the Serial API initialization												*/

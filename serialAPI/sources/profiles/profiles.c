@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  *	@file		profiles.c
  *
@@ -463,11 +463,11 @@ TxRxStatus_t SBGC32_UseDefaults (GeneralSBGC_t *generalSBGC, Profile_t profileID
  */
 /**	@brief	Write system configuration part 1
  *
+ *	@note	MainParams3_t.profileID is target profile slot.
+ *			After writing this profile will be active
+ *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParams3 - structure with written profile parameters
- *
- *	@note	MainParams3_t.profileID is target profile slot\n
- *			After writing this profile will be active
  *
  *	@return Communication status
  */
@@ -510,11 +510,11 @@ TxRxStatus_t SBGC32_ReadParams3 (GeneralSBGC_t *generalSBGC, MainParams3_t *main
  */
 /**	@brief	Write system configuration part 2
  *
+ *	@note	MainParams3_t.profileID is target profile slot.
+ *			After writing this profile will be active
+ *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParamsExt - structure with written profile parameters
- *
- *	@note	MainParamsExt_t.profileID is target profile slot\n
- *			After writing this profile will be active
  *
  *	@return Communication status
  */
@@ -557,11 +557,11 @@ TxRxStatus_t SBGC32_ReadParamsExt (GeneralSBGC_t *generalSBGC, MainParamsExt_t *
  */
 /**	@brief	Write system configuration part 3
  *
+ *	@note	MainParams3_t.profileID is target profile slot.
+ *			After writing this profile will be active
+ *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParamsExt2 - structure with written profile parameters
- *
- *	@note	MainParamsExt2_t.profileID is target profile slot\n
- *			After writing this profile will be active
  *
  *	@return Communication status
  */
@@ -606,11 +606,11 @@ TxRxStatus_t SBGC32_ReadParamsExt2 (GeneralSBGC_t *generalSBGC, MainParamsExt2_t
  *
  *	@attention	Firmware: 2.66+
  *
+ *	@note	MainParams3_t.profileID is target profile slot.
+ *			After writing this profile will be active
+ *
  *	@param	*generalSBGC - serial connection descriptor
  *	@param	*mainParamsExt3 - structure with written profile parameters
- *
- *	@note	MainParamsExt3_t.profileID is target profile slot\n
- *			After writing this profile will be active
  *
  *	@return Communication status
  */

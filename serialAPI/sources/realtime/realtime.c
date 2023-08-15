@@ -1,6 +1,6 @@
 /** ____________________________________________________________________
  *
- * 	SBGC32 Serial API Library v1.0
+ * 	SBGC32 Serial API Library v1.1
  *
  *	@file		realtime.c
  *
@@ -66,15 +66,15 @@
 	 */
 	const ParameterReferenceInfo_t realTimeDataReferenceInfoArray [] =
 	{
-		PARAM_BLOCK_(	"Acc Data [ROLL]",			_UNSIGNED_CHAR_				),  // 0
-		PARAM_BLOCK_(	"Gyro Data [ROLL]",			_UNSIGNED_CHAR_				),  // 1
-		PARAM_BLOCK_(	"Acc Data [PITCH]",			_UNSIGNED_CHAR_				),  // 2
-		PARAM_BLOCK_(	"Gyro Data [PITCH]",		_UNSIGNED_CHAR_				),  // 3
-		PARAM_BLOCK_(	"Acc Data [YAW]",			_UNSIGNED_CHAR_				),  // 4
-		PARAM_BLOCK_(	"Gyro Data [YAW]",			_UNSIGNED_CHAR_				),  // 5
+		PARAM_BLOCK_(	"Acc Data [ROLL]",			_SIGNED_SHORT_				),  // 0
+		PARAM_BLOCK_(	"Gyro Data [ROLL]",			_SIGNED_SHORT_				),  // 1
+		PARAM_BLOCK_(	"Acc Data [PITCH]",			_SIGNED_SHORT_				),  // 2
+		PARAM_BLOCK_(	"Gyro Data [PITCH]",		_SIGNED_SHORT_				),  // 3
+		PARAM_BLOCK_(	"Acc Data [YAW]",			_SIGNED_SHORT_				),  // 4
+		PARAM_BLOCK_(	"Gyro Data [YAW]",			_SIGNED_SHORT_				),  // 5
 		PARAM_BLOCK_(	"Serial Err Cnt",			_UNSIGNED_SHORT_			),  // 6
 		PARAM_BLOCK_(	"System Error",				_UNSIGNED_SHORT_			),  // 7
-		PARAM_BLOCK_(	"System Sub Error",			_UNSIGNED_SHORT_			),  // 8
+		PARAM_BLOCK_(	"System Sub Error",			_UNSIGNED_CHAR_				),  // 8
 		PARAMS_BLOCK_(	"Reserved",					_RESERVED_CHAR_,		3	),  // 9
 		PARAM_BLOCK_(	"RC ROLL",					_SIGNED_SHORT_				),  // 10
 		PARAM_BLOCK_(	"RC PITCH",					_SIGNED_SHORT_				),  // 11
@@ -236,7 +236,8 @@ TxRxStatus_t SBGC32_StopDataStream (GeneralSBGC_t *generalSBGC, DataStreamInterv
 TxRxStatus_t SBGC32_ParseDataStream (GeneralSBGC_t *generalSBGC, void *dataStreamStruct, SBGC_Command_t cmdID)
 {
 	SerialCommand_t cmd;
-	if (CheckReceipt(generalSBGC, SBGC32_RX(generalSBGC, &cmd, generalSBGC->rxTimeout), "Data Stream:") == TX_RX_OK)
+
+	if (getcommstatus_(CheckReceipt(generalSBGC, SBGC32_FindCommand(generalSBGC, &cmd, cmdID, generalSBGC->rxTimeout), "Data Stream:")))
 	{
 		switch (cmdID)
 		{
@@ -532,13 +533,13 @@ TxRxStatus_t SBGC32_GetAnglesExt (GeneralSBGC_t *generalSBGC, GetAnglesExt_t *ge
  */
 /**	@brief	Read values for the selected RC inputs
  *
+ *	@note	Must be set:\n
+ *			RC_Inputs_t.RC_Src
+ *
  * 	@param 	*generalSBGC - serial connection descriptor
  *	@param	*RC_Inputs - structure to send and store RC Inputs info
  *	@param	cfgFlags - RC configuration flags
  *	@param	srcQuan - quantity of RC sources
- *
- *	@note	Must be set:\n
- *			RC_Info_t.RC_Src
  *
  * 	@return Communication status
  */
