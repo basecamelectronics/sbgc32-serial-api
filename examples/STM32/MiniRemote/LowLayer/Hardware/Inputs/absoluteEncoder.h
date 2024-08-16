@@ -26,7 +26,7 @@
 #define		AS5048_HALF_TURN_VALUE	(AS5048_FULL_TURN_VALUE / 2.0F)
 
 /* Math coefficient for filter function */
-#define		AS5048_NONLINEAR_SENSITIVITY	1.3
+#define		AS5048_NONLINEAR_SENSITIVITY	2.0
 
 
 typedef enum
@@ -97,18 +97,17 @@ static inline i32 FilterEncoderValue (ui16 oldValue, ui16 newValue, float divide
 	i32 delta = newValue - oldValue;
 	ui16 deltaABS = abs(delta);
 
-	float deltaFeedbackCoeff = 0;
-
 	/* Check */
 	if ((deltaABS < AS5048_MAX_DISPERSION) || (deltaABS > AS5048_HALF_TURN_VALUE))
 		return 0;
 
 	/* Result */
-	else
-	{
-		deltaFeedbackCoeff = pow((AS5048_HALF_TURN_VALUE / deltaABS), AS5048_NONLINEAR_SENSITIVITY);
-		return (((deltaABS / divider) > 1.0F) ? ((delta * deltaFeedbackCoeff) / divider) : ((delta > 0) ? 1 : -1));
-	}
+	i32 res = delta > 0 ? 1 : -1;
+
+	if ((deltaABS / divider) > 1.0F)
+		res *= pow(((delta * 1.0) / divider), AS5048_NONLINEAR_SENSITIVITY);
+
+	return res;
 }
 
 

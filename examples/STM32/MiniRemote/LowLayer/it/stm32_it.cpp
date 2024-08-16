@@ -26,163 +26,136 @@
 #include "stm32_it.h"
 
 
-#if (DRV_USE_CUBEMX == SET_OFF)
-
-	/*  - - - - User SBGC32_General Object - - - - - */
-	extern SBGC32_System Gimbal;
-	/* - - - - - - - - - - - - - - - - - - - - - - - */
+/*  - - - - User SBGC32_General Object - - - - - */
+extern SBGC32_System Gimbal;
+/* - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-	void NMI_Handler (void)
-	{
-		while (1);
-	}
+void NMI_Handler (void)
+{
+	while (1);
+}
 
 
-	void HardFault_Handler (void)
-	{
-		#if (PROJ_NEED_FAULT_RESET)
-			NVIC_SystemReset();
-		#endif
-
-		while (1);
-	}
-
-
-	void MemManage_Handler (void)
-	{
-		while (1);
-	}
-
-
-	void BusFault_Handler (void)
-	{
-		while (1);
-	}
-
-
-	void UsageFault_Handler (void)
-	{
-		while (1);
-	}
-
-
-	void DebugMon_Handler (void)
-	{
-		;
-	}
-
-
-	#if (DRV_USE_FREERTOS == 0)
-
-		void SVC_Handler (void)
-		{
-			;
-		}
-
-
-		void PendSV_Handler (void)
-		{
-			;
-		}
-
-
-		void SysTick_Handler (void)
-		{
-			#if (DRV_HAL_TIMER)
-				HAL_IncTick();
-			#else
-				;
-			#endif
-		}
-
+void HardFault_Handler (void)
+{
+	#if (PROJ_NEED_FAULT_RESET)
+		NVIC_SystemReset();
 	#endif
 
-	#if (DRV_HAL_TIMER || DRV_LL_TIMER)
+	while (1);
+}
 
-		void SBGC_TIMER_IRQ_HANDLER (void)
-		{
-			/* - Main Timer Interrupt Flags Check - - */
 
-			if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
-				GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
-				TimerDRV_CallBack(SBGC32_Handy.Drv);
+void MemManage_Handler (void)
+{
+	while (1);
+}
 
-			/*  - - - - - - - - - - - - - - - - - - - */
 
-			#if (DRV_HAL_TIMER)
-				HAL_TIM_IRQHandler(SBGC_REFERENCE_TIMER);
-			#endif
-		}
+void BusFault_Handler (void)
+{
+	while (1);
+}
 
-	#endif
 
+void UsageFault_Handler (void)
+{
+	while (1);
+}
+
+
+void DebugMon_Handler (void)
+{
+	;
+}
+
+
+#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
 
 	void SBGC_UART_IRQ_HANDLER (void)
 	{
-		#if (DRV_USE_FREERTOS)
-			UART_DRV_TxCallBack(Gimbal.GetAddressGeneralSBGC_Driver());
-		#endif
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
 
-		#if (DRV_HAL_NVIC_UART) || (DRV_LL_NVIC_UART)
-			/*  - UART1 Interrupt Flags Check - - */
+		sbgcUART_IRQ_Handler(Gimbal.GetAddressGeneralSBGC());
 
-			if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
-				GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
-				UART_DRV_TxCallBack(SBGC32_Handy.Drv);
-
-			if (GET_FLAG_UART_ISR_RXNE(SBGC_SERIAL_PORT) &&
-				GET_FLAG_UART_CR1_RXNEIE(SBGC_SERIAL_PORT))
-				UART_DRV_RxCallBack(SBGC32_Handy.Drv);
-
-			if (GET_FLAG_UART_ISR_ORE(SBGC_SERIAL_PORT))
-				CLEAR_UART_ORE(SBGC_SERIAL_PORT);
-
-			/*  - - - - - - - - - - - - - - - - - */
-		#endif
-
-		#if (DRV_HAL_DMA_UART) || (DRV_HAL_NVIC_UART)
-			HAL_UART_IRQHandler(SBGC_SERIAL_PORT);
-		#endif
+		HAL_UART_IRQHandler(drv->uart);
 	}
 
 
-	#if (DRV_HAL_DMA_UART) || (DRV_LL_DMA_UART)
+	void SBGC_UART_DMA_TX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
 
-		void SBGC_UART_DMA_TX_CH_IRQ_HANDLER (void)
-		{
-			#if (DRV_HAL_DMA_UART)
-
-				Driver_t *drv = (Driver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
-
-				HAL_DMA_IRQHandler(drv->uart->hdmatx);
-
-			#else /* DRV_LL_DMA_UART */
-
-				if (GET_FLAG_DMA_HISR_TC_TX)
-					CLEAR_DMA_TC_TX;
-
-			#endif
-		}
+		HAL_DMA_IRQHandler(drv->uart->hdmatx);
+	}
 
 
-		void SBGC_UART_DMA_RX_CH_IRQ_HANDLER (void)
-		{
-			#if (DRV_HAL_DMA_UART)
+	void SBGC_UART_DMA_RX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
 
-				Driver_t *drv = (Driver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+		HAL_DMA_IRQHandler(drv->uart->hdmarx);
+	}
 
-				HAL_DMA_IRQHandler(drv->uart->hdmarx);
+#else
 
-			#else /* DRV_LL_DMA_UART */
+	/* The USRTs work by one and don't interfere each other */
+	void SBGC_UART1_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
 
-				if (GET_FLAG_DMA_HISR_TC_RX)
-					CLEAR_DMA_TC_RX;
+		if (__HAL_UART_GET_FLAG(drv->uart, UART_FLAG_TC) &&
+			__HAL_UART_GET_IT_SOURCE(drv->uart, UART_IT_TC))
+			DriverSBGC32_UART_TxCallBack((Gimbal.GetAddressGeneralSBGC())->_ll->drv);
 
-			#endif
-		}
+		HAL_UART_IRQHandler(drv->uart);
+	}
 
-	#endif
+
+	void SBGC_UART1_DMA_TX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+
+		HAL_DMA_IRQHandler(drv->uart->hdmatx);
+	}
+
+
+	void SBGC_UART1_DMA_RX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+
+		HAL_DMA_IRQHandler(drv->uart->hdmarx);
+	}
+
+
+	void SBGC_UART2_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+
+		if (__HAL_UART_GET_FLAG(drv->uart, UART_FLAG_TC) &&
+			__HAL_UART_GET_IT_SOURCE(drv->uart, UART_IT_TC))
+			DriverSBGC32_UART_TxCallBack((Gimbal.GetAddressGeneralSBGC())->_ll->drv);
+
+		HAL_UART_IRQHandler(drv->uart);
+	}
+
+
+	void SBGC_UART2_DMA_TX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+
+		HAL_DMA_IRQHandler(drv->uart->hdmatx);
+	}
+
+
+	void SBGC_UART2_DMA_RX_CH_IRQ_HANDLER (void)
+	{
+		sbgcDriver_t *drv = (sbgcDriver_t*)Gimbal.GetAddressGeneralSBGC_Driver();
+
+		HAL_DMA_IRQHandler(drv->uart->hdmarx);
+	}
+
 #endif
 
 

@@ -115,17 +115,17 @@ extern uint32_t SystemCoreClock;
 #define configGENERATE_RUN_TIME_STATS	1
 #define	portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()	\
 do {												\
-  TIM_HandleTypeDef htim5;							\
-  htim5.Instance = TIM5;							\
-  htim5.Init.Prescaler = 9999;						\
-  htim5.Init.Period = 0xFFFFFFFF;					\
+  TIM_HandleTypeDef htim11;							\
+  htim11.Instance = TIM11;							\
+  htim11.Init.Prescaler = 99;						\
+  htim11.Init.Period = 0xFFFF;						\
   	  	  	  	  	  	  	  	  	  	  			\
-  __HAL_RCC_TIM5_CLK_ENABLE();						\
-  HAL_TIM_Base_Init(&htim5);						\
-  HAL_TIM_Base_Start(&htim5);						\
+  __HAL_RCC_TIM11_CLK_ENABLE();						\
+  HAL_TIM_Base_Init(&htim11);						\
+  HAL_TIM_Base_Start(&htim11);						\
 } while(0)
 
-#define	portGET_RUN_TIME_COUNTER_VALUE()			(TIM5->CNT)
+#define	portGET_RUN_TIME_COUNTER_VALUE()			(TIM11->CNT)
 
 
 #define configMINIMAL_STACK_SIZE		( ( unsigned short ) 60 )

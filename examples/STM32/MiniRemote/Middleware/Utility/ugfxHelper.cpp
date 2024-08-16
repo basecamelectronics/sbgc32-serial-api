@@ -320,8 +320,8 @@ void gwinProgressbarDrawJoystickVisualMono (GWidgetObject *gw, void *param)
 	gdispGDrawLine(pPixmap, gw->g.width / 2 - 1, 1, gw->g.width / 2 - 1, gw->g.height, pcol->edge);
 	gdispGDrawLine(pPixmap, 0, gw->g.height / 2 - 1, gw->g.width, gw->g.height / 2 - 1, pcol->edge);
 
-	i16 x = gsw->pos / 100. * (gw->g.width - CALIB_CIRCLE_RADIUS) + 1;
-	i16 y = (1. - (*(i16*) param) / 100.) * (gw->g.height - CALIB_CIRCLE_RADIUS) + 1;
+	i16 x = gsw->pos / 100. * (gw->g.width - CALIB_CIRCLE_RADIUS) + ((CALIB_CIRCLE_RADIUS / 2) - 1);
+	i16 y = (1. - (*(i16*) param) / 100.) * (gw->g.height - CALIB_CIRCLE_RADIUS) + ((CALIB_CIRCLE_RADIUS / 2) - 1);
 
 	gdispGFillCircle(pPixmap, x, y, CALIB_CIRCLE_RADIUS, pcol->edge);
 
@@ -427,6 +427,7 @@ void gwinLabelDrawJustifiedCustomMono (GWidgetObject *gw, void *param)
 
 	gdispGDrawBox(pPixmap, 0, 0, gw->g.width, gw->g.height, (gw->g.flags & GWIN_FLG_SYSENABLED) ?
 				  gw->pstyle->enabled.edge : gw->pstyle->disabled.edge);
+
 
 	gdispGBlitArea(gw->g.display, gw->g.x, gw->g.y, gw->g.width, gw->g.height, 0, 0, gw->g.width, gdispPixmapGetBits(pPixmap));
 }

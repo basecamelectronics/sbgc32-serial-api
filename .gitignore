@@ -1,10 +1,11 @@
 # Folders
 doxygen/doc/
-examples/Arduino/LCD_RemoteUno/
 SBGC32_ArduinoDebug/
 SBGC32_LinuxDebug/
 SBGC32_STM32_Debug/
 SBGC32_STM32_NoCubeMX/
+SBGC32_STM32_FreeRTOS/
+SBGC32_STM32_AzureRTOS/
 
 *.launch
 *.bak
@@ -62,3 +63,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Other
+*.cyclo
+

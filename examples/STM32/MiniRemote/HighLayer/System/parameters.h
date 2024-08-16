@@ -15,6 +15,7 @@
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
+#include	"EEPROM.h"
 #include	"internalFlash.h"
 #include	"CRC32.h"
 
@@ -98,7 +99,12 @@ class Loader : public InternalFlashHandle
 		void				ReadSettings (void);
 
 		void				Save (void);
-		Boolean_t			Boot (void);
+		sbgcBoolean_t		Boot (void);
+
+		sbgcBoolean_t		SaveRemoteParameter (void *p);
+		sbgcBoolean_t		SaveGimbalParameter (void *p);
+		void				RecoverAdjVars (void);
+		void				ClearAll (void);
 
 		LoaderState_t		GetCurrentState (void) { return currentState; }
 

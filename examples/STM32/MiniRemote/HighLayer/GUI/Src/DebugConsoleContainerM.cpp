@@ -84,7 +84,7 @@ void CDebugConsoleContainerM::vTask (void *pvParameters)
 		/* System awaking */
 		MiniRemote.UpdateLastResponseTime();
 
-		vTaskDelay(CONTAINER_PROCESS_DELAY);
+		osDelay(CONTAINER_PROCESS_DELAY);
 
 		if (osSemaphoreTake(Gimbal.xSemaphoreDebugConsole, 0) != pdTRUE)
 			osSemaphoreTake(Gimbal.xSemaphoreDebugConsole, osMaxDelay);

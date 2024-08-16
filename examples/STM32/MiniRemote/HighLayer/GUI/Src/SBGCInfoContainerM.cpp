@@ -89,6 +89,7 @@ sMenuItem exsControlHandlerItems [] =
 	{ ITEM_TYPE_FUNCTION, "Speed", FUNC_EDIT_CONTROL_SPEED, 0, 0, 0 },
 	{ ITEM_TYPE_FUNCTION, "Low Pass Filter", FUNC_EDIT_CONTROL_LPF, 0, 0, 0 },
 	{ ITEM_TYPE_FUNCTION, "Sensitivity", FUNC_EDIT_CONTROL_SENS, 0, 0, 0 },
+	{ ITEM_TYPE_FUNCTION, "Exponent", FUNC_EDIT_CONTROL_EXP, 0, 0, 0 },
 	{ ITEM_TYPE_CHECKBOX, "Inversion", FUNC_EDIT_CONTROL_INVERSION, 0, 0, 0 },
 	{ ITEM_TYPE_MENU, "Attached Axis", 0, SBGC_MENU_CONTROL_ATTACHED_AXIS, &exsPrefControlAttachedAxis },
 	{ ITEM_TYPE_MENU, "Control Mode", 0, SBGC_MENU_CONTROL_MODE, &exsPrefControlMode }
@@ -357,14 +358,14 @@ sPrefMenu exsPrefSBGCInfo =
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													 Glue-Data Functions
  */
-static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* data, VarType_t dataType)
+static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* data, sbgcVarType_t dataType)
 {
 	char dataStrTemp [12];
 	ui8 dataStrCount;
 
 	switch (dataType)
 	{
-		case _UNSIGNED_CHAR_ :
+		case sbgcUCHAR :
 		{
 			ui8 dataTemp = *(ui8*)data;
 			dataStrCount = sprintf_(dataStrTemp, "%u", dataTemp);
@@ -372,7 +373,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _UNSIGNED_SHORT_ :
+		case sbgcUSHORT :
 		{
 			ui16 dataTemp = *(ui16*)data;
 			dataStrCount = sprintf_(dataStrTemp, "%u", dataTemp);
@@ -380,7 +381,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _UNSIGNED_INT_ :
+		case sbgcUINT :
 		{
 			ui32 dataTemp = *(ui32*)data;
 
@@ -393,7 +394,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _SIGNED_CHAR_ :
+		case sbgcCHAR :
 		{
 			i8 dataTemp = *(i8*)data;
 			dataStrCount = sprintf_(dataStrTemp, "%i", dataTemp);
@@ -401,7 +402,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _SIGNED_SHORT_ :
+		case sbgcSHORT :
 		{
 			i16 dataTemp = *(i16*)data;
 			dataStrCount = sprintf_(dataStrTemp, "%i", dataTemp);
@@ -409,7 +410,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _SIGNED_INT_ :
+		case sbgcINT :
 		{
 			i32 dataTemp = *(i32*)data;
 
@@ -422,7 +423,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 			break;
 		}
 
-		case _FLOAT_ :
+		case sbgcFLOAT :
 		{
 			float dataTemp = *(float*)data;
 			dataStrCount = sprintf_(dataStrTemp, "%.3f", dataTemp);  // .3f is default. May be changed
@@ -447,7 +448,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 static void BoardInfoMenuInit (void)
 {
 	/* Reading board info */
-	Gimbal.ReadBoardInfo(0);
+	Gimbal.ReadBoardInfo(0, SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 	if ((!Gimbal.GetCommunicationState()) &&
 		(MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
@@ -459,7 +460,7 @@ static void BoardInfoMenuInit (void)
 
 	for (; i < boardInfoReferenceInfoArrayElCnt; i++)
 	{
-		if (boardInfoReferenceInfoArray[i].type == _RESERVED_CHAR_)
+		if (boardInfoReferenceInfoArray[i].type == sbgcRCHAR)
 			reservedCount++;
 
 		else
@@ -483,7 +484,7 @@ static void BoardInfoMenuInit (void)
 
 	for (; i < boardInfo3_ReferenceInfoArrayElCnt; i++)
 	{
-		if (boardInfo3_ReferenceInfoArray[i].type != _RESERVED_CHAR_)
+		if (boardInfo3_ReferenceInfoArray[i].type != sbgcRCHAR)
 			ConvertDataToMenuElement(exsSBGC32_BoardInfoItems, (boardInfoReferenceInfoArrayElCnt - reservedCount) + i,
 									 Gimbal.GetStructureElement(Gimbal.GetAddressBoardInfo3(), PM_BOARD_INFO_3, i),
 									 boardInfo3_ReferenceInfoArray[i].type);
@@ -498,7 +499,7 @@ static void RealTimeMenuRewrite (void)
 
 	for (; elementsCount < realTimeDataReferenceInfoArrayElCnt; elementsCount++)
 	{
-		if (realTimeDataReferenceInfoArray[elementsCount].type != _RESERVED_CHAR_)
+		if (realTimeDataReferenceInfoArray[elementsCount].type != sbgcRCHAR)
 		{
 			if (realTimeDataReferenceInfoArray[elementsCount].length == 1)
 			{
@@ -511,7 +512,7 @@ static void RealTimeMenuRewrite (void)
 
 			else
 			{
-				ui8 valueSize = ConvertTypeToByteNum(realTimeDataReferenceInfoArray[elementsCount].type);
+				ui8 valueSize = Gimbal.GetAddressGeneralSBGC()->_api->typeToSize(realTimeDataReferenceInfoArray[elementsCount].type);
 
 				for (ui8 i = 0; i < realTimeDataReferenceInfoArray[elementsCount].length; i++)
 				{
@@ -541,26 +542,36 @@ static void ActiveAdjVarsMenuInit (void)
 	exsPrefSBGC32_AdjvarsData.nItems = 1;
 
 	/* Reading active adjvars */
-	if (MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY)
+	if ((MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY) &&
+		(!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 	{
-		Gimbal.ReadAllAdjVarValues();
+		Gimbal.ReadAllAdjVarValues(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 		if ((!Gimbal.GetCommunicationState()) && (MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
 			MiniRemote.SetDisconnectionMessageState(DM_NEED_TO_SHOW);
 	}
 
+	/* Set adjvars preset */
+	else if ((MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY) &&
+			 (!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
+	{
+		Gimbal.SetAllAdjVarValues(Gimbal.Presets.AdjVarGeneral, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+		if ((!Gimbal.GetCommunicationState()) && (MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
+			MiniRemote.SetDisconnectionMessageState(DM_NEED_TO_SHOW);
+	}
 
 	volatile ui8 elementsCount = 0;
 
-	for (ui8 i = 0; i < ADJ_VARS_QUANTITY; i++)
+	for (ui8 i = 0; i < SBGC_ADJ_VARS_MAX_QUANTITY; i++)
 	{
 		if (Gimbal.Presets.AdjVarGeneral[i].custom.activeFlag)
 		{
 			exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].ItemType = ITEM_TYPE_ADJVAR;
 			exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].param = (ui32)&Gimbal.Presets.AdjVarGeneral[i].ID;
 			ConvertDataToMenuElement(exsPrefSBGC32_AdjvarsData.Menu->psItems, elementsCount,
-									 &Gimbal.Presets.AdjVarGeneral[i].value, adjVarsReferenceInfoArray[i].varType);
-			exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].pTitle = &adjVarsReferenceInfoArray[i].name[ADJ_VAR_NAME_CUT];
+									 &Gimbal.Presets.AdjVarGeneral[i].value, sbgcSHORT);
+			exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].pTitle = &adjVarsReferenceInfoArray[i].name[SBGC_ADJ_VAR_NAME_CUT];
 			elementsCount++;
 		}
 	}
@@ -572,8 +583,13 @@ static void ActiveAdjVarsMenuInit (void)
 	elementsCount++;
 
 	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].ItemType = ITEM_TYPE_FUNCTION;
-	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].pTitle = "Save to EEPROM";
-	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].FuncID = FUNC_SAVE_ADJVARS;
+	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].pTitle = "Save to Gimbal";
+	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].FuncID = FUNC_SAVE_ADJVARS_TO_GIMBAL;
+	elementsCount++;
+
+	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].ItemType = ITEM_TYPE_FUNCTION;
+	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].pTitle = "Save to Remote";
+	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].FuncID = FUNC_SAVE_ADJVARS_TO_REMOTE;
 	elementsCount++;
 
 	exsPrefSBGC32_AdjvarsData.Menu->psItems[elementsCount].ItemType = ITEM_TYPE_FUNCTION;
@@ -584,9 +600,9 @@ static void ActiveAdjVarsMenuInit (void)
 	exsPrefSBGC32_AdjvarsData.Menu->nItems = elementsCount;
 
 	/* Comparing EEPROM and current adjvar values */
-	for (ui8 i = 0; i < ADJ_VARS_QUANTITY; i++)
+	for (ui8 i = 0; i < Gimbal.GetAdjVarsNumber(); i++)
 	{
-		if (Gimbal.EEPROM_AdjVarsValue[i] != Gimbal.Presets.AdjVarGeneral[i].value)
+		if (Gimbal.EEPROM_AdjVarValues[i] != Gimbal.Presets.AdjVarGeneral[i].value)
 		{
 			Gimbal.adjVarsSyncState = AVSS_NOT_SYNCHRONIZED;
 			return;
@@ -599,7 +615,7 @@ static void ActiveAdjVarsMenuInit (void)
 
 static void OtherAdjVarsMenuInit (void)
 {
-	ui8 otherAdjvarCount = ADJ_VARS_QUANTITY - Gimbal.CountActiveAdjVars();
+	ui8 otherAdjvarCount = SBGC_ADJ_VARS_MAX_QUANTITY - Gimbal.CountActiveAdjVars();
 
 	exsPrefSBGC32_AdjvarsDataOther.Menu = (sMenu*)osMalloc(sizeof(sMenu));
 
@@ -610,26 +626,38 @@ static void OtherAdjVarsMenuInit (void)
 	exsPrefSBGC32_AdjvarsDataOther.Menu->pszTitle = "Other Adj. Vars.";
 	exsPrefSBGC32_AdjvarsDataOther.nItems = 1;
 
-	/* Reading other adjvars */
-	if (MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY)
+	/* Reading active adjvars */
+	if ((MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY) &&
+		(!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 	{
-		Gimbal.ReadAllAdjVarValues();
-		if ((!Gimbal.GetCommunicationState()) && (MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
+		Gimbal.ReadAllAdjVarValues(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+		if ((!Gimbal.GetCommunicationState()) && (MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
+			MiniRemote.SetDisconnectionMessageState(DM_NEED_TO_SHOW);
+	}
+
+	/* Set adjvars preset */
+	else if ((MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY) &&
+			 (!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
+	{
+		Gimbal.SetAllAdjVarValues(Gimbal.Presets.AdjVarGeneral, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+		if ((!Gimbal.GetCommunicationState()) && (MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
 			MiniRemote.SetDisconnectionMessageState(DM_NEED_TO_SHOW);
 	}
 
 
 	volatile ui8 elementsCount = 0;
 
-	for (ui8 i = 0; i < ADJ_VARS_QUANTITY ; i++)
+	for (ui8 i = 0; i < SBGC_ADJ_VARS_MAX_QUANTITY ; i++)
 	{
 		if (!Gimbal.Presets.AdjVarGeneral[i].custom.activeFlag)
 		{
 			exsPrefSBGC32_AdjvarsDataOther.Menu->psItems[elementsCount].ItemType = ITEM_TYPE_ADJVAR;
 			exsPrefSBGC32_AdjvarsDataOther.Menu->psItems[elementsCount].param = (ui32)&Gimbal.Presets.AdjVarGeneral[i].ID;
 			ConvertDataToMenuElement(exsPrefSBGC32_AdjvarsDataOther.Menu->psItems, elementsCount,
-									 &Gimbal.Presets.AdjVarGeneral[i].value, adjVarsReferenceInfoArray[i].varType);
-			exsPrefSBGC32_AdjvarsDataOther.Menu->psItems[elementsCount].pTitle = &adjVarsReferenceInfoArray[i].name[ADJ_VAR_NAME_CUT];
+									 &Gimbal.Presets.AdjVarGeneral[i].value, sbgcSHORT);
+			exsPrefSBGC32_AdjvarsDataOther.Menu->psItems[elementsCount].pTitle = &adjVarsReferenceInfoArray[i].name[SBGC_ADJ_VAR_NAME_CUT];
 			elementsCount++;
 		}
 	}
@@ -637,9 +665,9 @@ static void OtherAdjVarsMenuInit (void)
 	exsPrefSBGC32_AdjvarsDataOther.Menu->nItems = elementsCount;
 
 	/* Comparing EEPROM and current adjvar values */
-	for (ui8 i = 0; i < ADJ_VARS_QUANTITY; i++)
+	for (ui8 i = 0; i < SBGC_ADJ_VARS_MAX_QUANTITY; i++)
 	{
-		if (Gimbal.EEPROM_AdjVarsValue[i] != Gimbal.Presets.AdjVarGeneral[i].value)
+		if (Gimbal.EEPROM_AdjVarValues[i] != Gimbal.Presets.AdjVarGeneral[i].value)
 		{
 			Gimbal.adjVarsSyncState = AVSS_NOT_SYNCHRONIZED;
 			return;
@@ -657,12 +685,12 @@ static void RC_InputValuesRewrite (void)
 
 	for (ui8 i = 0; i < MENU_RC_NUM_CHANNELS; i++)
 	{
-		if (Gimbal.GetAddressRC_Inputs()[i].RC_Src != RCMap_NO_SIGNAL)
+		if (Gimbal.GetAddressRC_Inputs()[i].RC_Src != sbgcRCMap_NO_SIGNAL)
 		{
 			percentValue = (Gimbal.GetAddressRC_Inputs()[i].RC_Val * 100) / 16384;
 
 			ConvertDataToMenuElement(exsPrefSBGC32_RC_Inputs.Menu->psItems, activeChannelsCounter,
-									 &percentValue, _SIGNED_SHORT_);
+									 &percentValue, sbgcSHORT);
 
 			activeChannelsCounter++;
 		}
@@ -675,33 +703,33 @@ static void RC_InputsMenuInit (void)
 	ui8 RC_InputsNum = MENU_RC_NUM_CHANNELS;
 	char RC_InputsNumBuff [12];
 
-	Gimbal.AppoinRC_InputSource(0, RCMap_RC_INPUT_ROLL);
-	Gimbal.AppoinRC_InputSource(1, RCMap_RC_INPUT_PITCH);
-	Gimbal.AppoinRC_InputSource(2, RCMap_EXT_FC_INPUT_ROLL);
-	Gimbal.AppoinRC_InputSource(3, RCMap_EXT_FC_INPUT_PITCH);
-	Gimbal.AppoinRC_InputSource(4, RCMap_RC_INPUT_YAW);
+	Gimbal.AppoinRC_InputSource(0, sbgcRCMap_RC_INPUT_ROLL);
+	Gimbal.AppoinRC_InputSource(1, sbgcRCMap_RC_INPUT_PITCH);
+	Gimbal.AppoinRC_InputSource(2, sbgcRCMap_EXT_FC_INPUT_ROLL);
+	Gimbal.AppoinRC_InputSource(3, sbgcRCMap_EXT_FC_INPUT_PITCH);
+	Gimbal.AppoinRC_InputSource(4, sbgcRCMap_RC_INPUT_YAW);
 
-	Gimbal.AppoinRC_InputSource(5, RCMap_ADC_1);
-	Gimbal.AppoinRC_InputSource(6, RCMap_ADC_2);
-	Gimbal.AppoinRC_InputSource(7, RCMap_ADC_3);
+	Gimbal.AppoinRC_InputSource(5, sbgcRCMap_ADC_1);
+	Gimbal.AppoinRC_InputSource(6, sbgcRCMap_ADC_2);
+	Gimbal.AppoinRC_InputSource(7, sbgcRCMap_ADC_3);
 
-	Gimbal.ReadRC_Inputs(ICF_TRY_TO_INIT_INPUT, RC_InputsNum);
+	Gimbal.ReadRC_Inputs(ICF_TRY_TO_INIT_INPUT, RC_InputsNum, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 	if (!Gimbal.GetCommunicationState())
 	/* Connection is lost */
 	{
 		for (ui8 i = 0; i < MENU_RC_NUM_CHANNELS; i++)
-			Gimbal.GetAddressRC_Inputs()[i].RC_Src = RCMap_NO_SIGNAL;
+			Gimbal.GetAddressRC_Inputs()[i].RC_Src = sbgcRCMap_NO_SIGNAL;
 
 		RC_InputsNum = 0;
 	}
 
 	else
 		for (ui8 i = 0; i < MENU_RC_NUM_CHANNELS; i++)
-			if ((Gimbal.GetAddressRC_Inputs()[i].RC_Val == RC_UNDEF_HIGH_RES) ||
-				(Gimbal.GetAddressRC_Inputs()[i].RC_Val == RC_UNDEF))
+			if ((Gimbal.GetAddressRC_Inputs()[i].RC_Val == SBGC_RC_UNDEF_HR) ||
+				(Gimbal.GetAddressRC_Inputs()[i].RC_Val == SBGC_RC_UNDEF))
 			{
-				Gimbal.GetAddressRC_Inputs()[i].RC_Src = RCMap_NO_SIGNAL;
+				Gimbal.GetAddressRC_Inputs()[i].RC_Src = sbgcRCMap_NO_SIGNAL;
 				RC_InputsNum--;
 			}
 
@@ -806,8 +834,10 @@ void CSBGCInfoContainerM::Init (void)
 void CSBGCInfoContainerM::vTask (void *pvParameters)
 {
 	if (!EnterPrefMenu((sPrefMenu*)pvParameters))
+	{
 		CStateManager::SetState({ PREVIOUS_STATE, 0 });
-
+		while (1);
+	}
 
 	gwinShow(ghContainer);
 
@@ -885,13 +915,15 @@ void CSBGCInfoContainerM::vTask (void *pvParameters)
 
 		else if ((GetState() == SBGC_MENU_REALTIME_DATA) && (!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 		{
-			if (osGetTickCount() - xRealTimeDataUpdateTime > REALTIME_DATA_UPDATE_TIME)
+			if ((osGetTickCount() - xRealTimeDataUpdateTime) > REALTIME_DATA_UPDATE_TIME)
 			{
-				Gimbal.ReadRealTimeData();
+				Gimbal.ReadRealTimeData(SCParam_NO, SCPrior_LOW, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 				RealTimeMenuRewrite();
 
 				for (ui8 i = 0; i < countof_(exsSBGC32_RealTimeDataItems); i++)
 					osFree(exsSBGC32_RealTimeDataItems[i].value);
+
+				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
 
 				xRealTimeDataUpdateTime = osGetTickCount();
 
@@ -901,9 +933,10 @@ void CSBGCInfoContainerM::vTask (void *pvParameters)
 
 		else if ((GetState() == SBGC_MENU_RC_INPUTS) && (!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 		{
-			if (osGetTickCount() - xRealTimeDataUpdateTime > REALTIME_DATA_UPDATE_TIME)
+			if ((osGetTickCount() - xRealTimeDataUpdateTime) > REALTIME_DATA_UPDATE_TIME)
 			{
-				Gimbal.ReadRC_Inputs(ICF_DONT_TRY_TO_INIT_INPUT, MENU_RC_NUM_CHANNELS);
+				Gimbal.ReadRC_Inputs(ICF_DONT_TRY_TO_INIT_INPUT, MENU_RC_NUM_CHANNELS,
+						SCParam_NO, SCPrior_LOW, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 				for (ui8 i = 0; i < Gimbal.GetRC_InputsActiveNum(); i++)
 					RC_InputValuesRewrite();
@@ -911,13 +944,14 @@ void CSBGCInfoContainerM::vTask (void *pvParameters)
 				for (ui8 i = 0; i < Gimbal.GetRC_InputsActiveNum(); i++)
 					osFree(exsPrefSBGC32_RC_Inputs.Menu->psItems[i].value);
 
+				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
+
 				xRealTimeDataUpdateTime = osGetTickCount();
 
 				MiniRemote.UpdateLastResponseTime();
 			}
 		}
 
-		/* Redrawing for update variable values and producing scroll animation */
 		((GMenuObject*)ghMenu)->class_obj->UpdateMenu((GWidgetObject*)ghMenu);
 
 		osDelay(CONTAINER_PROCESS_DELAY);
@@ -948,7 +982,7 @@ void CSBGCInfoContainerM::OnHide (void)
 			break;
 
 		case SBGC_MENU_OTHER_ADJVARS_DATA :
-			for (ui8 i = 0; i < (ADJ_VARS_QUANTITY - activeAdjVarsCount); i++)
+			for (ui8 i = 0; i < (SBGC_ADJ_VARS_MAX_QUANTITY - activeAdjVarsCount); i++)
 				osFree(exsPrefSBGC32_AdjvarsDataOther.Menu->psItems[i].value);
 
 			osFree(exsPrefSBGC32_AdjvarsDataOther.Menu->psItems);
@@ -1011,7 +1045,7 @@ void CSBGCInfoContainerM::Process (GimbalMenuState_t currentState)
 	switch (currentState)
 	{
 		case SBGC_MENU_BOARD_INFO :
-			Gimbal.ReadBoardInfo(0);
+			Gimbal.ReadBoardInfo(0, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 			BoardInfoMenuInit();
 
 			break;

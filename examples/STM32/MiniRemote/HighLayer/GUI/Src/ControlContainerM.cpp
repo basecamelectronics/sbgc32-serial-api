@@ -13,6 +13,7 @@
 #include "createWidget.h"
 #include "src/gdisp/gdisp_driver.h"
 #include "gimbal.h"
+#include "parameters.h"
 
 
 static void DrawPotentiometerCircle (gCoord x, gCoord y, gCoord r)
@@ -22,17 +23,17 @@ static void DrawPotentiometerCircle (gCoord x, gCoord y, gCoord r)
 	gdispDrawArc(x, y, r, 300, 240, GFX_LIGHT_GRAY);
 	gdispDrawArc(x, y, r - CONTROL_CIRCLE_THICK, 300, 240, GFX_LIGHT_GRAY);
 
-	x0_Temp = x - (r * sin(ConvertDegreesToRadians(30)));
-	y0_Temp = y + (r * cos(ConvertDegreesToRadians(30)));
-	x1_Temp = x - ((r - CONTROL_CIRCLE_THICK) * sin(ConvertDegreesToRadians(30)));
-	y1_Temp = y + ((r - CONTROL_CIRCLE_THICK) * cos(ConvertDegreesToRadians(30)));
+	x0_Temp = x - (r * sin(sbgcDegreeToRadians(30)));
+	y0_Temp = y + (r * cos(sbgcDegreeToRadians(30)));
+	x1_Temp = x - ((r - CONTROL_CIRCLE_THICK) * sin(sbgcDegreeToRadians(30)));
+	y1_Temp = y + ((r - CONTROL_CIRCLE_THICK) * cos(sbgcDegreeToRadians(30)));
 
 	gdispDrawLine(x0_Temp, y0_Temp, x1_Temp, y1_Temp, GFX_LIGHT_GRAY);
 
-	x0_Temp = x + (r * sin(ConvertDegreesToRadians(30)));
-	y0_Temp = y + (r * cos(ConvertDegreesToRadians(30)));
-	x1_Temp = x + ((r - CONTROL_CIRCLE_THICK) * sin(ConvertDegreesToRadians(30)));
-	y1_Temp = y + ((r - CONTROL_CIRCLE_THICK) * cos(ConvertDegreesToRadians(30)));
+	x0_Temp = x + (r * sin(sbgcDegreeToRadians(30)));
+	y0_Temp = y + (r * cos(sbgcDegreeToRadians(30)));
+	x1_Temp = x + ((r - CONTROL_CIRCLE_THICK) * sin(sbgcDegreeToRadians(30)));
+	y1_Temp = y + ((r - CONTROL_CIRCLE_THICK) * cos(sbgcDegreeToRadians(30)));
 
 	gdispDrawLine(x0_Temp, y0_Temp, x1_Temp, y1_Temp, GFX_LIGHT_GRAY);
 }
@@ -42,39 +43,39 @@ static void DrawPotentiometerArrow (gCoord x, gCoord y, gCoord length, double an
 {
 	ui8	x0_Temp, y0_Temp, x1_Temp, y1_Temp;
 
-	double	sinTemp = sin(ConvertDegreesToRadians(angle)),
-			cosTemp = cos(ConvertDegreesToRadians(angle));
+	double	sinTemp = sin(sbgcDegreeToRadians(angle)),
+			cosTemp = cos(sbgcDegreeToRadians(angle));
 
 	if (angle < 90)
 	{
 		x0_Temp = x + (length * cosTemp);
 		y0_Temp = y - (length * sinTemp);
-		x1_Temp = x + ((length - 6) * cosTemp);
-		y1_Temp = y - ((length - 6) * sinTemp);
+		x1_Temp = x + ((length - CONTROL_CIRCLE_ARROW_LENGHT) * cosTemp);
+		y1_Temp = y - ((length - CONTROL_CIRCLE_ARROW_LENGHT) * sinTemp);
 	}
 
 	else if (angle < 180)
 	{
 		x0_Temp = x + (length * cosTemp);
 		y0_Temp = y - (length * sinTemp);
-		x1_Temp = x + ((length - 6) * cosTemp);
-		y1_Temp = y - ((length - 6) * sinTemp);
+		x1_Temp = x + ((length - CONTROL_CIRCLE_ARROW_LENGHT) * cosTemp);
+		y1_Temp = y - ((length - CONTROL_CIRCLE_ARROW_LENGHT) * sinTemp);
 	}
 
 	else if (angle < 270)
 	{
 		x0_Temp = x + (length * cosTemp);
 		y0_Temp = y - (length * sinTemp);
-		x1_Temp = x + ((length - 6) * cosTemp);
-		y1_Temp = y - ((length - 6) * sinTemp);
+		x1_Temp = x + ((length - CONTROL_CIRCLE_ARROW_LENGHT) * cosTemp);
+		y1_Temp = y - ((length - CONTROL_CIRCLE_ARROW_LENGHT) * sinTemp);
 	}
 
 	else if (angle < 360)
 	{
 		x0_Temp = x + (length * cosTemp);
 		y0_Temp = y - (length * sinTemp);
-		x1_Temp = x + ((length - 6) * cosTemp);
-		y1_Temp = y - ((length - 6) * sinTemp);
+		x1_Temp = x + ((length - CONTROL_CIRCLE_ARROW_LENGHT) * cosTemp);
+		y1_Temp = y - ((length - CONTROL_CIRCLE_ARROW_LENGHT) * sinTemp);
 	}
 
 	gdispDrawLine(x1_Temp, y1_Temp, x0_Temp, y0_Temp, color);
@@ -89,11 +90,15 @@ void CControlContainerM::RewriteControlValues (void)
 	ui16 handlersRawValues [SBGC_CONTROL_HANDLERS_NUM];
 	ui16 handlersTolerances [SBGC_CONTROL_HANDLERS_NUM];
 
-	handlerControlValues[JOY_X] = (((xRes - 32768) / 65535.) * Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].sensitivity) *
+	handlerControlValues[JOY_X] = (ControlFilterExpo[JOY_X].Calculate(xRes - IN_MIDDLE_VALUE) / IN_MAX_VALUE *
+								  Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].sensitivity) *
 								  SBGC_CONTROL_SENS_MULTIPLIER * (Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].invert ? -1 : 1);
-	handlerControlValues[JOY_Y] = (((yRes - 32768) / 65535.) * Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].sensitivity) *
+
+	handlerControlValues[JOY_Y] = (ControlFilterExpo[JOY_Y].Calculate(yRes - IN_MIDDLE_VALUE) / IN_MAX_VALUE *
+								  Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].sensitivity) *
 								  SBGC_CONTROL_SENS_MULTIPLIER * (Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].invert ? -1 : 1);
-	handlerControlValues[POT] = ((ConvertPotentiometerValueToControl(pRes) / 65535.) *
+
+	handlerControlValues[POT] = (ControlFilterExpo[POT].Calculate(ConvertPotentiometerValueToControl(pRes) - IN_MIDDLE_VALUE) / IN_MAX_VALUE *
 								Gimbal.GetActiveControlProfile()->controlHandler[POT].sensitivity) * SBGC_CONTROL_SENS_MULTIPLIER *
 								(Gimbal.GetActiveControlProfile()->controlHandler[POT].invert ? -1 : 1);
 
@@ -113,7 +118,7 @@ void CControlContainerM::RewriteControlValues (void)
 		if (Gimbal.GetActiveControlProfile()->controlHandler[i].controlMode == GIMBAL_ABSOLUTE_CONTROL)
 		{
 			if (deadbandcross_(handlersRawValues[i], IN_MIDDLE_VALUE, handlersTolerances[i]))
-				Gimbal.Control.AxisC[attchAxis].angle = handlerControlValues[i];
+				Gimbal.Control.AxisC[attchAxis].angle = sbgcAngleToDegree(handlerControlValues[i]);
 
 			else
 				Gimbal.Control.AxisC[attchAxis].angle = 0;
@@ -122,7 +127,7 @@ void CControlContainerM::RewriteControlValues (void)
 		else
 		{
 			if (deadbandcross_(handlersRawValues[i], IN_MIDDLE_VALUE, handlersTolerances[i]))
-				Gimbal.Control.AxisC[attchAxis].speed = handlerControlValues[i];
+				Gimbal.Control.AxisC[attchAxis].speed = sbgcSpeedToValue(handlerControlValues[i]);
 
 			else
 				Gimbal.Control.AxisC[attchAxis].speed = 0;
@@ -288,7 +293,7 @@ void CControlContainerM::vTask (void *pvParameters)
 {
 	unused_(pvParameters);
 
-	ui32	dataStreamLastTime;
+	static ui32 dataStreamLastTime;
 
 	ui16	incrementalCounter,
 			incrementalCounterOld;
@@ -318,7 +323,7 @@ void CControlContainerM::vTask (void *pvParameters)
 
 	static AverageValue_t potentiometerAverage;
 
-	Boolean_t firstTimeShowing = TRUE__;
+	sbgcBoolean_t firstTimeShowing = sbgcTRUE;
 
 	/* Initialization */
 	if (!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState()))
@@ -330,7 +335,7 @@ void CControlContainerM::vTask (void *pvParameters)
 	gwinSetText(ghLabelGimbalProfile, (const char*)gimbalProfileBuff, FALSE);
 
 
-	snprintf_((char*)controlProfileBuff, sizeof(controlProfileBuff), "CP%d", Gimbal.GetActiveControlProfile()->number);
+	snprintf_((char*)controlProfileBuff, sizeof(controlProfileBuff), "CP%d", Gimbal.GetActiveControlProfile()->number + 1);
 	gwinSetText(ghLabelControlProfile, (const char*)controlProfileBuff, FALSE);
 
 
@@ -355,6 +360,9 @@ void CControlContainerM::vTask (void *pvParameters)
 
 	gwinShow(ghContainer);
 
+	for (ui8 i = 0; i < SBGC_CONTROL_HANDLERS_NUM; i++)
+		ControlFilterExpo[i].SetRate(Gimbal.GetActiveControlProfile()->controlHandler[i].exponent);
+
 	DrawPotentiometerCircle(CONTROL_CIRCLE_COORD_X, CONTROL_CIRCLE_COORD_Y, CONTROL_CIRCLE_RADIUS);
 	AverageInit(&potentiometerAverage, CONTROL_POT_AVERAGE_FACTOR);
 
@@ -364,8 +372,11 @@ void CControlContainerM::vTask (void *pvParameters)
 	potentiometerAverage.avgBuff = pRes << potentiometerAverage._factor;
 
 	/* Data stream init */
-	Gimbal.RunRealTimeDataCustomStream(CONROL_ANGLES_DATA_STREAM_RATE);
-	dataStreamLastTime = osGetTickCount();
+	if (!Gimbal.GetRealTimeDataCustomStreamStatus())
+	{
+		Gimbal.RunRealTimeDataCustomStream(CONROL_ANGLES_DATA_STREAM_RATE, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+		dataStreamLastTime = osGetTickCount();
+	}
 
 	ButtonState_t controlSenseToggleButton = BS_INIT;
 
@@ -375,7 +386,7 @@ void CControlContainerM::vTask (void *pvParameters)
 		if (((osGetTickCount() - dataStreamLastTime) > CONROL_ANGLES_DATA_STREAM_RATE) &&
 			(!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 		{
-			Gimbal.ParseRealTimeDataCustomStream();
+			Gimbal.ParseRealTimeDataCustomStream(SCParam_NO, SCPrior_LOW, CONROL_ANGLES_DATA_STREAM_RATE + SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 			dataStreamLastTime = osGetTickCount();
 		}
 
@@ -383,7 +394,7 @@ void CControlContainerM::vTask (void *pvParameters)
 		pResOld = pRes;
 		incrementalCounterOld = incrementalCounter;
 
-		MiniRemote.ProcessFunction(CSF_NAVIGATION_EXIT, &controlSenseToggleButton);  // Control sensitivity adjust for this container
+		MiniRemote.ProcessFunction(VSF_SC_MENU_ADJ_VARS, &controlSenseToggleButton);  // Control sensitivity adjust for this container
 		MiniRemote.ProcessFunction(CSF_NAVIGATION_X, &xRes);
 		MiniRemote.ProcessFunction(CSF_NAVIGATION_Y, &yRes);
 		MiniRemote.ProcessFunction(VSF_AXIS_CONTROL_SENS, &incrementalCounter);
@@ -400,7 +411,8 @@ void CControlContainerM::vTask (void *pvParameters)
 			if (Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].attachedAxis != NOT_ASSIGNED)
 			{
 				snprintf_((char*)angleX_Buff, sizeof(angleX_Buff), "%.1f°",
-						  ANGLE_TO_DEGREE(Gimbal.frameCamAngle[Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].attachedAxis]));
+						sbgcDegreeToAngle(Gimbal.DataStreamStruct.frameCamAngle[
+								Gimbal.GetActiveControlProfile()->controlHandler[JOY_X].attachedAxis]));
 				gwinSetText(ghLabelAngleX, (const char*)angleX_Buff, FALSE);
 			}
 
@@ -410,7 +422,8 @@ void CControlContainerM::vTask (void *pvParameters)
 			if (Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].attachedAxis != NOT_ASSIGNED)
 			{
 				snprintf_((char*)angleY_Buff, sizeof(angleY_Buff), "%.1f°",
-						  ANGLE_TO_DEGREE(Gimbal.frameCamAngle[Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].attachedAxis]));
+						sbgcDegreeToAngle(Gimbal.DataStreamStruct.frameCamAngle[
+								Gimbal.GetActiveControlProfile()->controlHandler[JOY_Y].attachedAxis]));
 				gwinSetText(ghLabelAngleY, (const char*)angleY_Buff, FALSE);
 			}
 
@@ -420,7 +433,8 @@ void CControlContainerM::vTask (void *pvParameters)
 			if (Gimbal.GetActiveControlProfile()->controlHandler[POT].attachedAxis != NOT_ASSIGNED)
 			{
 				snprintf_((char*)angleC_Buff, sizeof(angleC_Buff), "%.1f°",
-						  ANGLE_TO_DEGREE(Gimbal.frameCamAngle[Gimbal.GetActiveControlProfile()->controlHandler[POT].attachedAxis]));
+						sbgcDegreeToAngle(Gimbal.DataStreamStruct.frameCamAngle[
+								Gimbal.GetActiveControlProfile()->controlHandler[POT].attachedAxis]));
 				gwinSetText(ghLabelAngleP, (const char*)angleC_Buff, FALSE);
 			}
 
@@ -439,16 +453,25 @@ void CControlContainerM::vTask (void *pvParameters)
 			if (currentSensAdjState == CSA_NO)  // First enter
 				currentSensAdjState = CSA_AXIS_X;
 
-			incrementalCounterDelta = (incrementalCounter > incrementalCounterOld) ? 1 : -1;
+			if ((incrementalCounter == 16383) && (incrementalCounterOld == 0))
+				incrementalCounterDelta = (0) ? INCREMENTAL_ENCODER_LOGIC;
+
+			else if ((incrementalCounterOld == 16383) && (incrementalCounter == 0))
+				incrementalCounterDelta = (1) ? INCREMENTAL_ENCODER_LOGIC;
+
+			else
+				incrementalCounterDelta = (incrementalCounter > incrementalCounterOld) ? INCREMENTAL_ENCODER_LOGIC;
 
 			Gimbal.GetActiveControlProfile()->controlHandler[currentSensAdjState - 1].sensitivity =
 					constrain_(Gimbal.GetActiveControlProfile()->controlHandler[currentSensAdjState - 1].sensitivity +
 							incrementalCounterDelta, SBGC_CONTROL_SENS_MIN_VALUE, SBGC_CONTROL_SENS_MAX_VALUE);
 		}
 
-
 		if (controlSenseToggleButton == BS_PRESSED)
 		{
+			/* Save old parameter */
+			SettingsLoader.SaveGimbalParameter(&Gimbal.GetActiveControlProfile()->controlHandler[currentSensAdjState - 1].sensitivity);
+
 			currentSensAdjState = (ControlSensAdj_t)((currentSensAdjState + 1) & SBGC_CONTROL_HANDLERS_NUM);
 			sensAdjStateTemp = CSA_NO;
 
@@ -497,6 +520,9 @@ void CControlContainerM::vTask (void *pvParameters)
 		if ((osGetTickCount() - controlSensLastTime) > CONTROL_SENS_ADJ_TIMEOUT &&
 			(currentSensAdjState != CSA_NO))
 		{
+			/* Save parameter */
+			SettingsLoader.SaveGimbalParameter(&Gimbal.GetActiveControlProfile()->controlHandler[currentSensAdjState - 1].sensitivity);
+
 			sensAdjStateTemp = currentSensAdjState;
 			currentSensAdjState = CSA_NO;
 			gwinHide(ghLabelControlSens);
@@ -511,7 +537,7 @@ void CControlContainerM::vTask (void *pvParameters)
 			if (SBGC_ControlStateMask(Gimbal.GetCurrentState()))
 			{
 				RewriteControlValues();
-				Gimbal.ControlGimbal();
+				Gimbal.ControlGimbal(SCParam_NO, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 			}
 		}
 
@@ -543,7 +569,7 @@ void CControlContainerM::vTask (void *pvParameters)
 		}
 
 		if (firstTimeShowing)
-			firstTimeShowing = FALSE__;
+			firstTimeShowing = sbgcFALSE;
 
 
 		/* System awaking */

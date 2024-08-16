@@ -10,8 +10,8 @@
  *  ____________________________________________________________________
  */
 
-#ifndef		_ANALOGINPUTS_H_
-#define		_ANALOGINPUTS_H_
+#ifndef		_ANALOG_INPUTS_H_
+#define		_ANALOG_INPUTS_H_
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
@@ -66,7 +66,7 @@ class AnalogInput : public Input
 
 		/* Other */
 		static ui8			channelsNum;
-		static volatile ui32
+		static volatile ui16
 							*anValue;
 
 		static InputClockFunc_t
@@ -90,8 +90,12 @@ class AnalogInput : public Input
 };
 
 extern AnalogInput Potentiometer;
+extern AnalogInput AnalogJoystickChannelX;
+extern AnalogInput AnalogJoystickChannelY;
 
 
+void AnalogJoystickX_ChannelReadValue (void);
+void AnalogJoystickY_ChannelReadValue (void);
 void PotentiometerReadValue (void);
 
 
@@ -112,4 +116,4 @@ static inline double ConvertPotentiometerValueToAngle (ui16 value)
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-#endif		/* _ANALOGINPUTS_H_ */
+#endif		/* _ANALOG_INPUTS_H_ */

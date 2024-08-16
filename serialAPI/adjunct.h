@@ -1,6 +1,6 @@
-/** ____________________________________________________________________
+/**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v1.1
+ *	SBGC32 Serial API Library v2.0
  *
  *	@file		adjunct.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2023 BaseCam Electronics™.<br>
+ *				Copyright © 2024 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -29,26 +29,28 @@
  *	____________________________________________________________________
  */
 
-#ifndef		_ADJUNCT_H_
-#define		_ADJUNCT_H_
+#ifndef		SERIAL_API_ADJUNCT_H_
+#define		SERIAL_API_ADJUNCT_H_
 
-#ifdef 		__cplusplus
-extern 		"C" {
+#ifdef		__cplusplus
+extern		"C" {
 #endif
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-#include    "string.h"
-#include    "stdio.h"
-#include    "stdlib.h"
+#include	"string.h"
+#include	"stdint.h"
+#include	"stdio.h"
+#include	"stdlib.h"
 #include	"math.h"
+#include	"stdarg.h"
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
- *						 		 Types and Constants
+ *								 Types and Constants
  */
-#if (defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64))
+#if	(defined (__x86_64__) ||defined (__aarch64__) || defined (_M_ARM64))
 	#define	_long__
-	#define	_L32__
+	#define	L32__
 #else
 	#define	_long__					long
 #endif
@@ -63,55 +65,55 @@ typedef		short signed int		i16;
 typedef		_long__ signed int		i32;
 typedef		long long signed int	i64;
 
-#ifndef SET_OFF
-	#define	SET_OFF					(0)
+#ifndef sbgcOFF
+	#define	sbgcOFF					(0)
 #endif
 
-#ifndef SET_ON
-	#define	SET_ON					(-1)
+#ifndef sbgcON
+	#define	sbgcON					(-1)
 #endif
 
-#define		BIT_0_SET				(1U << 0)
-#define		BIT_1_SET				(1U << 1)
-#define		BIT_2_SET				(1U << 2)
-#define		BIT_3_SET				(1U << 3)
-#define		BIT_4_SET				(1U << 4)
-#define		BIT_5_SET				(1U << 5)
-#define		BIT_6_SET				(1U << 6)
-#define		BIT_7_SET				(1U << 7)
-#define		BIT_8_SET				(1U << 8)
-#define		BIT_9_SET				(1U << 9)
-#define		BIT_10_SET				(1U << 10)
-#define		BIT_11_SET				(1U << 11)
-#define		BIT_12_SET				(1U << 12)
-#define		BIT_13_SET				(1U << 13)
-#define		BIT_14_SET				(1U << 14)
-#define		BIT_15_SET				(1U << 15)
-#define		BIT_16_SET				(1U << 16)
-#define		BIT_17_SET				(1U << 17)
-#define		BIT_18_SET				(1U << 18)
-#define		BIT_19_SET				(1U << 19)
-#define		BIT_20_SET				(1U << 20)
-#define		BIT_21_SET				(1U << 21)
-#define		BIT_22_SET				(1U << 22)
-#define		BIT_23_SET				(1U << 23)
-#define		BIT_24_SET				(1U << 24)
-#define		BIT_25_SET				(1U << 25)
-#define		BIT_26_SET				(1U << 26)
-#define		BIT_27_SET				(1U << 27)
-#define		BIT_28_SET				(1U << 28)
-#define		BIT_29_SET				(1U << 29)
-#define		BIT_30_SET				(1U << 30)
-#define		BIT_31_SET				(1U << 31)
+#define		BIT_0_SET				0x1U
+#define		BIT_1_SET				0x2U
+#define		BIT_2_SET				0x4U
+#define		BIT_3_SET				0x8U
+#define		BIT_4_SET				0x10U
+#define		BIT_5_SET				0x20U
+#define		BIT_6_SET				0x40U
+#define		BIT_7_SET				0x80U
+#define		BIT_8_SET				0x100U
+#define		BIT_9_SET				0x200U
+#define		BIT_10_SET				0x400U
+#define		BIT_11_SET				0x800U
+#define		BIT_12_SET				0x1000U
+#define		BIT_13_SET				0x2000U
+#define		BIT_14_SET				0x4000U
+#define		BIT_15_SET				0x8000U
+#define		BIT_16_SET				0x10000U
+#define		BIT_17_SET				0x20000U
+#define		BIT_18_SET				0x40000U
+#define		BIT_19_SET				0x80000U
+#define		BIT_20_SET				0x100000U
+#define		BIT_21_SET				0x200000U
+#define		BIT_22_SET				0x400000U
+#define		BIT_23_SET				0x800000U
+#define		BIT_24_SET				0x1000000U
+#define		BIT_25_SET				0x2000000U
+#define		BIT_26_SET				0x4000000U
+#define		BIT_27_SET				0x8000000U
+#define		BIT_28_SET				0x10000000U
+#define		BIT_29_SET				0x20000000U
+#define		BIT_30_SET				0x40000000U
+#define		BIT_31_SET				0x80000000U
 
-#define		PI__					3.14159265
+#define		BUFF_SIZE_(buff)		buff, (sizeof(buff))
+#define		TEXT_LENGTH_(text)		text, (strlen(text))
+#define		DATA_BLOCK_(arr)		{ sizeof((arr)), countof_((arr)) }
+#define		VAR_BLOCK_(var)			{ sizeof((var)), 1 }
 
-#define		TEXT_SIZE_(text)		text, (strlen(text))
-#define 	DATA_BLOCK_(arr)		{ sizeof((arr)), countof_((arr)) }
-#define 	VAR_BLOCK_(var)			{ sizeof((var)), 1 }
-
-#define		__PACKED__				__attribute__((packed))
-#define		__WEAK__				__attribute__((weak))
+#define		PACKED__				__attribute__((packed))
+#define		WEAK__					__attribute__((weak))
+#define		NORETURN__				__attribute__((noreturn))
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -121,45 +123,46 @@ typedef		long long signed int	i64;
  */
 typedef enum
 {
-	FALSE__ 						= 0U,
-	TRUE__ 							= 1U
+	sbgcFALSE						= 0,
+	sbgcTRUE						= 1
 
-}	Boolean_t;
+}	sbgcBoolean_t;
 
 
 /**	@brief	Variable types
  */
 typedef enum
 {
-    _UNSIGNED_CHAR_					= 1,
-    _SIGNED_CHAR_					= 2,
+    sbgcUCHAR						= 1,
+    sbgcCHAR						= 2,
 
-    _UNSIGNED_SHORT_				= 3,
-    _SIGNED_SHORT_					= 4,
+    sbgcUSHORT						= 3,
+    sbgcSHORT						= 4,
 
-    _UNSIGNED_INT_					= 5,
-    _SIGNED_INT_					= 6,
+    sbgcUINT						= 5,
+    sbgcINT							= 6,
 
-    _FLOAT_							= 7,
+    sbgcFLOAT						= 7,
 
 	/* Var modes */
-	_FLAG_							= BIT_6_SET,	// This variable is flag. Uses only for reference info
-	_DUMMY_							= BIT_7_SET,	// This variable is empty or reserved. Uses only for reference info
+	sbgcFLAG						= BIT_6_SET,	// This variable is flag. Uses only for reference info
+	sbgcDUMMY						= BIT_7_SET,	// This variable is empty or reserved. Uses only for reference info
 
-	_RESERVED_CHAR_					= (_UNSIGNED_CHAR_ | _DUMMY_)
+	sbgcRCHAR						= (sbgcUCHAR | sbgcDUMMY)
 
-}   VarType_t;
+}   sbgcVarType_t;
 
-#define		CLEAN_TYPE_MASK			7				// Excluding all types under _FLOAT_ (0b00000111)
+#define		CLEAN_TYPE_MASK			7				// Excluding all under sbgcFLOAT (0b00000111)
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *						 Static Functions and Macros
  */
 #define		unused_(x)				((void)(x))
-#define 	nameof_(var)			(#var)
+#define		nameof_(var)			(#var)
 #define		countof_(arr)			(sizeof(arr) / sizeof(*(arr)))
 #define		offsetof_(pEnd, pStart)	(((ui8*)(pEnd)) - ((ui8*)(pStart)))
+#define		clearbuff_(p)			(memset(p, 0, sizeof(*(p))))
 #define		constrain_(val, min, max)\
 									((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
 #define		rawconstrain_(val, min, max, raw)\
@@ -167,74 +170,14 @@ typedef enum
 #define		deadbandcross_(val, valOrg, db)\
 									((abs((val) - (valOrg)) > (db)) ? 1U : 0U)
 #define		toboolean_(val)			((val) && 1U)
-
-
-static inline ui8 ConvertTypeToByteNum (VarType_t varType)
-{
-	ui8 res = 0;
-
-	switch (varType & CLEAN_TYPE_MASK)
-	{
-		case _UNSIGNED_CHAR_ :
-		case _SIGNED_CHAR_ :
-		case _RESERVED_CHAR_ :
-			res = 1;
-			break;
-
-		case _UNSIGNED_SHORT_ :
-		case _SIGNED_SHORT_ :
-			res = 2;
-			break;
-
-		case _UNSIGNED_INT_ :
-		case _SIGNED_INT_ :
-		case _FLOAT_ :
-			res = 4;
-			break;
-
-		default :
-			break;
-	}
-
-	return res;
-}
-
-
-static inline ui16 ConvertValueBiniry16_FlagToDecade (ui16 flag)
-{
-	for (ui8 i = 0; i < 16; i++)
-	{
-		if (flag == 1)
-			return i;
-
-		flag >>= 1;
-	}
-
-	return 0;
-}
-
-
-static inline double ConvertRadiansToDegrees (double radian)
-{
-	return radian * 180.0 / PI__;
-}
-
-
-static inline double ConvertDegreesToRadians (double degree)
-{
-	return degree * PI__ / 180;
-}
-
-
-static inline i32 SignedCeil (float value)
-{
-	return (value > 0) ? (ceil(value)) : -(ceil(abs(value)));
-}
+#define		lambdafunc_(body)		([](void) { body; } )
+#define		calcFreeSpaceFIFO(t, h, max)\
+									(((h) >= (t)) ? ((max) - ((h) - (t))) : ((t) - (h)))
 
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
-#ifdef 		__cplusplus
+#ifdef		__cplusplus
 			}
 #endif
 
-#endif		/* _ADJUNCT_H_ */
+#endif		/* SERIAL_API_ADJUNCT_H_ */

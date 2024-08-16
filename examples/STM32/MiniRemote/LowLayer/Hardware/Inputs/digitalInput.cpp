@@ -18,7 +18,7 @@ DigitalInput Encoder1_Button(	DIN_2POS_SWITCH,
 								PRPH_ENCODER1_BUTTON,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								Encoder1_ButtonReadValue);
 
 DigitalInput Encoder2_Button(	DIN_2POS_SWITCH,
@@ -26,7 +26,7 @@ DigitalInput Encoder2_Button(	DIN_2POS_SWITCH,
 								PRPH_ENCODER2_BUTTON,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 1],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								Encoder2_ButtonReadValue);
 
 DigitalInput Button1(			DIN_2POS_SWITCH,
@@ -34,7 +34,7 @@ DigitalInput Button1(			DIN_2POS_SWITCH,
 								PRPH_BUTTON1,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 2],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								Button1_ReadValue);
 
 DigitalInput Button2(			DIN_2POS_SWITCH,
@@ -42,7 +42,7 @@ DigitalInput Button2(			DIN_2POS_SWITCH,
 								PRPH_BUTTON2,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 3],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								Button2_ReadValue);
 
 DigitalInput ToggleSwitch1(		DIN_3POS_SWITCH,
@@ -50,7 +50,7 @@ DigitalInput ToggleSwitch1(		DIN_3POS_SWITCH,
 								PRPH_TOGGLE_SWITCH1,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 4],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								ToggleSwitch1_ReadValue);
 
 DigitalInput ToggleSwitch2(		DIN_3POS_SWITCH,
@@ -58,7 +58,7 @@ DigitalInput ToggleSwitch2(		DIN_3POS_SWITCH,
 								PRPH_TOGGLE_SWITCH2,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 5],
 								DIG_CH_PRPH_PINS_NUM,
-								lambafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
+								lambdafunc_(DIG_CH_GPIO_CLOCK_ENABLE()),
 								ToggleSwitch2_ReadValue);
 
 
@@ -96,13 +96,13 @@ static ui16 DigitalInputReadValueUni (const GPIO_Channel_t *GPIO_Channel, Digita
 
 		val = HAL_GPIO_ReadPin(GPIO_Channel->port, GPIO_Channel->pin);
 
-		offset = (ConvertValueBiniry16_FlagToDecade(GPIO_Channel->pin) * 2);
+		offset = (ConvertValueBinary16_FlagToDecade(GPIO_Channel->pin) * 2);
 		temp = GPIO_Channel->port->PUPDR;
 		temp &= ~(GPIO_PUPDR_PUPDR0 << offset);
 		temp |= ((GPIO_PULLDOWN) << offset);
 		GPIO_Channel->port->PUPDR = temp;
 
-		for (ui8 i = 0; i < 200; i++) __NOP();
+		for (ui8 i = 0; i < 0xFF; i++) __NOP();
 
 		if (val == HAL_GPIO_ReadPin(GPIO_Channel->port, GPIO_Channel->pin))
 			val = ((val ^ logic) ? TOGGLE_SWITCH_DOWN_VALUE : TOGGLE_SWITCH_UP_VALUE);

@@ -11,49 +11,49 @@
  */
 
 #include "createWidget.h"
-#include "gwinMenuPref.h"
+#include "parameters.h"
 
 
 sContainerDraw sParameterEditContainerDraw = { "", "" };
 
-static Boolean_t needDisplayUpdate = TRUE__;
+static sbgcBoolean_t needDisplayUpdate = sbgcTRUE;
 
 
-static Boolean_t ParameterValueComparation (ParameterHandle_t *parameterHandle)
+static sbgcBoolean_t ParameterValueComparation (ParameterHandle_t *parameterHandle)
 {
 	switch (parameterHandle->typeValue)
 	{
-		case _UNSIGNED_CHAR_ :
-		case _SIGNED_CHAR_ :
+		case sbgcUCHAR :
+		case sbgcCHAR :
 		{
 			if (parameterHandle->tempValue != (i8)round(*(i8*)parameterHandle->operatingValue / parameterHandle->origDivider))
-				return TRUE__;
+				return sbgcTRUE;
 
 			break;
 		}
 
-		case _UNSIGNED_SHORT_ :
-		case _SIGNED_SHORT_ :
+		case sbgcUSHORT :
+		case sbgcSHORT :
 		{
 			if (parameterHandle->tempValue != (i16)round(*(i16*)parameterHandle->operatingValue / parameterHandle->origDivider))
-				return TRUE__;
+				return sbgcTRUE;
 
 			break;
 		}
 
-		case _UNSIGNED_INT_ :
-		case _SIGNED_INT_ :
+		case sbgcUINT :
+		case sbgcINT :
 		{
 			if (parameterHandle->tempValue != (i32)round(*(i32*)parameterHandle->operatingValue / parameterHandle->origDivider))
-				return TRUE__;
+				return sbgcTRUE;
 
 			break;
 		}
 
-		case _FLOAT_ :
+		case sbgcFLOAT :
 		{
 			if (parameterHandle->tempValue != (float)(*(float*)parameterHandle->operatingValue / parameterHandle->origDivider))
-				return TRUE__;
+				return sbgcTRUE;
 
 			break;
 		}
@@ -62,7 +62,7 @@ static Boolean_t ParameterValueComparation (ParameterHandle_t *parameterHandle)
 			break;
 	}
 
-	return FALSE__;
+	return sbgcFALSE;
 }
 
 
@@ -85,7 +85,7 @@ static void ParameterProcessOperating (ParameterHandle_t *parameterHandle, Butto
 		parameterHandle->tempValue = parameterHandle->initValue;
 
 	/* Output handle */
-	if (needDisplayUpdate == FALSE__)
+	if (needDisplayUpdate == sbgcFALSE)
 	/* If external event set it to true, it doesn't to updates now */
 		needDisplayUpdate = ParameterValueComparation(parameterHandle);
 
@@ -113,8 +113,8 @@ static void ParameterProcessOperating (ParameterHandle_t *parameterHandle, Butto
 				break;
 
 			case FUNC_EDIT_PARAMETER :
-				/* Attention! An <operatingValue> pointer must include 32-bit value.
-				   Otherwise, third argument of memcpy can be chosen by parameter value type */
+				/* Attention! An <operatingValue> pointer must include 32-bit value only.
+				   Otherwise, a third argument of memcpy can be chosen by parameter value type */
 				memcpy(parameterHandle->operatingValue, &parameterHandle->tempValue, 4);
 				break;
 
@@ -123,6 +123,7 @@ static void ParameterProcessOperating (ParameterHandle_t *parameterHandle, Butto
 				break;
 
 			case FUNC_EDIT_CONTROL_LPF :
+			case FUNC_EDIT_CONTROL_EXP :
 				*(ui8*)parameterHandle->operatingValue = parameterHandle->tempValue * parameterHandle->origDivider;
 				break;
 
@@ -217,36 +218,53 @@ void CParameterEditContainerM::Init (void)
 
 void CParameterEditContainerM::OnHide (void)
 {
-	;
+	if (parameterHandle->type == FUNC_EDIT_SYSTEM_BRIGHTNESS)
+	{
+		parameterHandle->operatingValue = &MiniRemote.Presets.activeBrightness;
+		MiniRemote.SetTempBrightness(MiniRemote.Presets.activeBrightness);
+	}
+
+	if (parameterHandle->membership == PMS_REMOTE)
+		SettingsLoader.SaveRemoteParameter(parameterHandle->operatingValue);
+
+	else
+		SettingsLoader.SaveGimbalParameter(parameterHandle->operatingValue);
 }
 
 
 void CParameterEditContainerM::vTask (void *pvParameters)
 {
-	ParameterHandle_t ParameterHandle = *(ParameterHandle_t*)pvParameters;
+	parameterHandle = (ParameterHandle_t*)pvParameters;
 
-	if (!ParameterHandle.origDivider)
-		ParameterHandle.origDivider = 1.0F;
+	if (!parameterHandle->origDivider)
+		parameterHandle->origDivider = 1.0F;
 
-	ParameterHandle.initValue = round(ParameterHandle.initValue / ParameterHandle.origDivider);
-	ParameterHandle.tempValue = ParameterHandle.initValue;
-	ParameterHandle.divider = (ParameterHandle.maxValue - ParameterHandle.minValue) * ParameterHandle.sensitivity;
+	parameterHandle->initValue = round(parameterHandle->initValue / parameterHandle->origDivider);
+	parameterHandle->tempValue = parameterHandle->initValue;
+	parameterHandle->divider = (parameterHandle->maxValue - parameterHandle->minValue) * parameterHandle->sensitivity;
 
-	MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
+	MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &parameterHandle->newControlValue);
+	parameterHandle->oldControlValue = parameterHandle->newControlValue;
 
 	char	valueTempBuff [7],
 			nameBuff [25];
 
-	memcpy(nameBuff, ParameterHandle.name, strlen(ParameterHandle.name));
-	gwinSetText(ghLabelName, ParameterHandle.name, FALSE);
+	memcpy(nameBuff, parameterHandle->name, strlen(parameterHandle->name));
+	gwinSetText(ghLabelName, parameterHandle->name, FALSE);
 
-	snprintf_((char*)valueTempBuff, sizeof(valueTempBuff), "%i", ParameterHandle.tempValue);
-	gwinSetText(ghLabelValue, (const char*)valueTempBuff, FALSE);
+	if ((parameterHandle->type == FUNC_EDIT_SYSTEM_EE_TIMER) && (parameterHandle->tempValue >= ENERGY_ECONOMIC_TIMER_MAX))
+		gwinSetText(ghLabelValue, "Inf.", FALSE);
 
-	gwinProgressbarSetPosition(ghValueProgressbar, ParameterHandle.tempValue);
-	gwinProgressbarSetRange(ghValueProgressbar, ParameterHandle.minValue, ParameterHandle.maxValue);
+	else
+	{
+		snprintf_((char*)valueTempBuff, sizeof(valueTempBuff), "%i", parameterHandle->tempValue);
+		gwinSetText(ghLabelValue, (const char*)valueTempBuff, FALSE);
+	}
 
-	needDisplayUpdate = TRUE__;
+	gwinProgressbarSetPosition(ghValueProgressbar, parameterHandle->tempValue);
+	gwinProgressbarSetRange(ghValueProgressbar, parameterHandle->minValue, parameterHandle->maxValue);
+
+	needDisplayUpdate = sbgcTRUE;
 
 	gwinShow(ghContainer);
 
@@ -268,26 +286,26 @@ void CParameterEditContainerM::vTask (void *pvParameters)
 		if ((nav == ND_LEFT) || (exitButton == BS_PRESSED))
 		{
 			gwinSetText(ghLabelTitle, "Parameter Edit", FALSE);
-			osFree(ParameterHandle.location);
-			__DelayMs(10);
+			osFree(parameterHandle);
+			osDelay(50);  // Necessary delay
 			CStateManager::SetState({ PREVIOUS_STATE, 0 });
 			while (1);
 		}
 
 		/* Control handle */
-		ParameterProcessOperating(&ParameterHandle, enterButton);
+		ParameterProcessOperating(parameterHandle, enterButton);
 
 		/* Display processing */
 		if (needDisplayUpdate)
 		{
-			if ((ParameterHandle.type == FUNC_EDIT_SYSTEM_EE_TIMER) &&  ParameterHandle.tempValue == ENERGY_ECONOMIC_TIMER_MAX)
+			if ((parameterHandle->type == FUNC_EDIT_SYSTEM_EE_TIMER) && (parameterHandle->tempValue >= ENERGY_ECONOMIC_TIMER_MAX))
 			{
-				gwinProgressbarSetPosition(ghValueProgressbar, ParameterHandle.tempValue);
+				gwinProgressbarSetPosition(ghValueProgressbar, parameterHandle->tempValue);
 				gwinSetText(ghLabelValue, "Inf.", FALSE);
 
-				if (ParameterHandle.initValue != ParameterHandle.tempValue)
+				if (parameterHandle->initValue != parameterHandle->tempValue)
 				{
-					if ((ParameterHandle.initValue != 0xFFFF) && (ParameterHandle.tempValue != ENERGY_ECONOMIC_TIMER_MAX))
+					if ((parameterHandle->initValue != 0xFFFF) && (parameterHandle->tempValue != ENERGY_ECONOMIC_TIMER_MAX))
 						gwinSetText(ghLabelTitle, "Parameter Edit*", FALSE);
 				}
 
@@ -297,32 +315,36 @@ void CParameterEditContainerM::vTask (void *pvParameters)
 
 			else
 			{
-				gwinProgressbarSetPosition(ghValueProgressbar, ParameterHandle.tempValue);
-				snprintf_((char*)valueTempBuff, sizeof(valueTempBuff), "%i", ParameterHandle.tempValue);
+				gwinProgressbarSetPosition(ghValueProgressbar, parameterHandle->tempValue);
+				snprintf_((char*)valueTempBuff, sizeof(valueTempBuff), "%i", parameterHandle->tempValue);
 				gwinSetText(ghLabelValue, (const char*)valueTempBuff, FALSE);
 
-				if (ParameterHandle.initValue != ParameterHandle.tempValue)
+				if (parameterHandle->initValue != parameterHandle->tempValue)
 					gwinSetText(ghLabelTitle, "Parameter Edit*", FALSE);
 
 				else
 					gwinSetText(ghLabelTitle, "Parameter Edit", FALSE);
 			}
 
-			needDisplayUpdate = FALSE__;
+			needDisplayUpdate = sbgcFALSE;
 		}
 
 		/* Control handle */
-		ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
-		MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
+		MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &parameterHandle->newControlValue);
 
-		ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
-													EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
-		ParameterHandle.tempValue = constrain_((ParameterHandle.tempValue + SignedCeil(ParameterHandle.filter)),
-												ParameterHandle.minValue, ParameterHandle.maxValue);
+		if ((abs(parameterHandle->newControlValue - parameterHandle->oldControlValue)) > AS5048_MAX_DISPERSION)
+		{
+			parameterHandle->filter = FilterEncoderValue(parameterHandle->oldControlValue, parameterHandle->newControlValue,
+														 EDIT_FILTER_DIVIDER_CONSTANT) * parameterHandle->divider;
+			parameterHandle->tempValue = constrain_((parameterHandle->tempValue + CalculateSignedCeil(parameterHandle->filter)),
+													parameterHandle->minValue, parameterHandle->maxValue);
+
+			parameterHandle->oldControlValue = parameterHandle->newControlValue;
+		}
 
 
-		if ((ParameterHandle.type == FUNC_EDIT_SYSTEM_BRIGHTNESS) || (ParameterHandle.type == FUNC_EDIT_SYSTEM_EE_TIMER) ||
-			(ParameterHandle.type == FUNC_EDIT_SYSTEM_EE_RATIO))
+		if ((parameterHandle->type == FUNC_EDIT_SYSTEM_BRIGHTNESS) || (parameterHandle->type == FUNC_EDIT_SYSTEM_EE_TIMER) ||
+			(parameterHandle->type == FUNC_EDIT_SYSTEM_EE_RATIO))
 			MiniRemote.UpdateLastResponseTime();
 
 		osDelay(CONTAINER_PROCESS_DELAY);

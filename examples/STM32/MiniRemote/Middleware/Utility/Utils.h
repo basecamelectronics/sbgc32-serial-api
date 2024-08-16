@@ -25,6 +25,13 @@ void* operator new(size_t numBytes) throw();
 
 void operator delete(void* ptr) throw();
 
+
+static inline i32 CalculateSignedCeil (float value)
+{
+	return (value > 0.) ? (ceil(value)) : -(ceil(abs(value)));
+}
+
+
 #endif /* __STD_NEW_OPERATOR */
 
 
@@ -44,6 +51,38 @@ public:
 
     static void showLogo (void);
 };
+
+
+class Expo
+{
+	private:
+
+		float maxVal;
+		float k1;
+		float k3;
+
+
+	public:
+
+		inline Expo (void) { ; }
+
+		// Parameters:
+		// max - estimated range of input parameter. Outside this range, output becomes linear
+		inline Expo (float _max) : maxVal(_max) { ; }
+
+		void SetRate (ui8 rate);
+		float Calculate (float x);
+		inline void Configure (ui8 rate, float _max)
+		{
+			maxVal = _max;
+			SetRate(rate);
+		}
+
+		inline float GetMax (void) { return maxVal; }
+
+};
+
+extern Expo ControlFilterExpo [3];
 
 
 #endif //__cplusplus

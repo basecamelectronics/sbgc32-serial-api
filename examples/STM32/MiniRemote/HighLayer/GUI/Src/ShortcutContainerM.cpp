@@ -12,6 +12,7 @@
 
 #include "createWidget.h"
 #include "gimbal.h"
+#include "parameters.h"
 
 
 ShortcutParameters_t shortcutParametersReferenceArray [] =
@@ -41,7 +42,43 @@ volatile bool PID_AutoTuneFinishFlag = true;
 static ui32 lastResetTime = 0;
 
 static TaskHandle_t TaskScriptExeFinishWaitHandle = NULL;
-static volatile bool ScriptExeFinishFlag = true;
+
+
+void SBGC32_CalibrationFinishSC_Callback (void *gSBGC)
+{
+	Gimbal.GetAddressCalibInfo()->progress = 0;
+	gwinProgressbarSetPosition(exCShortcutContainerM.ghProgressbar, Gimbal.GetAddressCalibInfo()->progress);
+
+	Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
+	Gimbal.processStatus = PROCESS_FINISHED;
+
+	gwinHide(exCShortcutContainerM.ghProgressbar);
+}
+
+
+void SBGC32_PID_AutoTuneFinishCallback (void *params)
+{
+	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)params;
+	serialAPI_Command_t *serialCommand = gSBGC->_api->currentSerialCommand;
+	sbgcMainParams3_t MainRarams3;
+
+	gSBGC->_api->convWithPM(&MainRarams3, serialCommand->_payload, serialCommand->_payloadSize, PM_MAIN_PARAMS_3);
+	Gimbal.UpdatePID_EEPROM_AdjVars(&MainRarams3);
+
+	PID_AutoTuneFinishFlag = true;
+}
+
+
+void SBGC32_ScriptExeFinishWaitCallback (void *flag)
+{
+	sbgcBoolean_t *deleteCommandFlag = (sbgcBoolean_t*)flag;
+
+	if (Gimbal.GetAddressGeneralSBGC()->_api->currentSerialCommand->_state != SCState_PROCESSED)
+		*deleteCommandFlag = sbgcTRUE;
+
+	else
+		*deleteCommandFlag = sbgcFALSE;
+}
 
 
 void CShortcutContainerM::Init (void)
@@ -104,7 +141,7 @@ void CShortcutContainerM::Init (void)
 		memcpy((void*)shortcut[i].imagePath, shortcutParametersReferenceArray[i].imagePath, strlenTemp);
 	}
 
-	ui8 xCoordPointer = SIDE_ARROW_IMAGE_WIDTH + SIDE_ARROW_IMAGE_CLEARANCE;
+	ui8 xCoordPointer = (SHORTCUT_IMAGE_CLEARANCE * 2) + 1;
 
 	/* Pre-loading */
 	for (ui8 i = 0; i < INITIAL_SHORTCUT_NUM; i++)
@@ -143,7 +180,7 @@ void CShortcutContainerM::Init (void)
 	/* Down arrow */
 	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_ARROW_DOWN]);
 	wi.g.x = (DISPLAY_WIDTH / 2) - (SELECT_ARROW_SIZE / 2) - 1;
-	wi.g.y = SELECT_SC_ARROW_Y_POS;
+	wi.g.y = DOWN_ARROW_Y_POS;
 	wi.g.height = imageBuff->height;
 	wi.g.width = imageBuff->width;
 	wi.text = "";
@@ -188,12 +225,10 @@ void CShortcutContainerM::vTask (void *pvParameters)
 {
 	unused_(pvParameters);
 
-	ui32 calibrationExitTimeout = osGetTickCount();
-
 	static ui8 currentPositionTemp = 0xFF;
 	static ShortcutCurrentStatus_t shortcutCurrentStatusTempArray [SHORTCUT_TOTAL_NUM];  // for replacing effects
 
-	static Boolean_t needReturnShortcutStatusesFlag = FALSE__;
+	static sbgcBoolean_t needReturnShortcutStatusesFlag = sbgcFALSE;
 
 	/* Initialization container by communication parameters */
 	CommunicationInit();
@@ -247,6 +282,7 @@ void CShortcutContainerM::vTask (void *pvParameters)
 
 					/* Saving an order at exit */
 					MiniRemote.Presets.shortcutsOrderArr[i] = (ShortcutList_t)shortcut[i].currentPosition;
+					SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.shortcutsOrderArr[i]);
 				}
 
 				containerStatus = !containerStatus;
@@ -279,14 +315,18 @@ void CShortcutContainerM::vTask (void *pvParameters)
 				Gimbal.processStatus = PROCESS_READY;
 
 			if (containerStatus)
-				needReturnShortcutStatusesFlag = TRUE__;
+				needReturnShortcutStatusesFlag = sbgcTRUE;
 
 			else
-				/* Shortcuts don't replacing anymore */
+			/* Shortcuts don't replacing anymore */
 			{
-				TurnOnAllShortcuts();
+				ReturnPreviousStatuses();
+
 				SetStatusAndTrigger(FindActiveShortcut(), SCS_NORMAL);
-				needReturnShortcutStatusesFlag = FALSE__;
+				SetStatusAndTrigger(FindShortcut(SHORTCUT_MOTOR_SWITCH),
+									(Gimbal.GetAddressRealTimeData()->RT_DataFlags == RTDF_MOTORS_ON) ? SCS_TURNED_ON : SCS_NORMAL);
+
+				needReturnShortcutStatusesFlag = sbgcFALSE;
 			}
 		}
 
@@ -321,7 +361,7 @@ void CShortcutContainerM::vTask (void *pvParameters)
 		if (((osGetTickCount() - lastCalibInfoTime) > CALIB_INFO_UPDATE_TIME) &&
 			SBGC_CalibrationStateMask(Gimbal.GetCurrentState()))
 		{
-			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU);
+			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 			if (Gimbal.GetCommunicationState())
 				lastCalibInfoTime = osGetTickCount();
@@ -341,31 +381,6 @@ void CShortcutContainerM::vTask (void *pvParameters)
 
 				gwinShow(ghProgressbar);
 			}
-
-			else  // Calibration finished or broke
-			{
-				SerialCommand_t cmd;
-				Gimbal.FindCommand(&cmd, CMD_CONFIRM, SBGC_REQ_WAITING);
-
-				if (cmd.commandID == CMD_CONFIRM)  // Calibration is finished successfully
-				{
-					Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
-					gwinHide(ghProgressbar);
-					Gimbal.processStatus = PROCESS_FINISHED;
-				}
-
-				CommunicationInit();
-			}
-
-			calibrationExitTimeout = osGetTickCount();
-		}
-
-		if (((osGetTickCount() - calibrationExitTimeout) > CALIBRATION_TIMEOUT_WAITING) &&
-			(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())))
-		{
-			Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
-			gwinHide(ghProgressbar);
-			Gimbal.processStatus = PROCESS_FINISHED;
 		}
 
 		/* PID auto tune handle */
@@ -376,9 +391,12 @@ void CShortcutContainerM::vTask (void *pvParameters)
 			Gimbal.processStatus = PROCESS_FINISHED;
 
 			if (TaskPID_AutoTuneFinishCheckHandle != NULL)
+			{
 				osTaskDelete(TaskPID_AutoTuneFinishCheckHandle);
+				TaskPID_AutoTuneFinishCheckHandle = NULL;
+			}
 
-			TaskPID_AutoTuneFinishCheckHandle = NULL;
+			PID_AutoTuneFinishFlag = true;
 		}
 
 		/* Reset timeout handle */
@@ -388,14 +406,9 @@ void CShortcutContainerM::vTask (void *pvParameters)
 			Gimbal.ClearCurrentState(SBGC_REBOOT);
 			Gimbal.processStatus = PROCESS_FINISHED;
 
-			for (ui8 i = 0; i < SHORTCUT_TOTAL_NUM; i++)
-				SetStatusAndTrigger(&shortcut[i], SCS_NORMAL);
-
-			SetStatusAndTrigger(FindShortcut(SHORTCUT_MOTOR_SWITCH), SCS_TURNED_ON);
-
-			if (Gimbal.GetCommunicationState())
+			if (Gimbal.ReadRealTimeData(SCParam_FREEZE, SCPrior_NORMAL, 200, SBGC_NO_CALLBACK_))
 			{
-				Gimbal.ConfigGimbalControl();  // Return control configurations
+				Gimbal.ConfigGimbalControl(SCParam_NO, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);  // Return control configurations
 				lastResetTime = osGetTickCount();
 			}
 		}
@@ -561,7 +574,7 @@ void CShortcutContainerM::UpdateShortcutsImages (void)
 }
 
 
-void CShortcutContainerM::DrawLeftArrow (Boolean_t color)
+void CShortcutContainerM::DrawLeftArrow (sbgcBoolean_t color)
 {
 	gColor arrowColor;
 
@@ -576,7 +589,7 @@ void CShortcutContainerM::DrawLeftArrow (Boolean_t color)
 }
 
 
-void CShortcutContainerM::DrawRightArrow (Boolean_t color)
+void CShortcutContainerM::DrawRightArrow (sbgcBoolean_t color)
 {
 	gColor arrowColor;
 
@@ -591,7 +604,7 @@ void CShortcutContainerM::DrawRightArrow (Boolean_t color)
 	gdispDrawLine((DISPLAY_WIDTH - 1), (DISPLAY_HEIGHT / 2), (DISPLAY_WIDTH - 1 - (SIDE_ARROW_IMAGE_WIDTH - 1)),
 				(DISPLAY_HEIGHT / 2) - SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
 
-	if (color == FALSE__)
+	if (color == sbgcFALSE)
 		ghContainer->color = GFX_LIGHT_GRAY;
 }
 
@@ -601,39 +614,46 @@ void CShortcutContainerM::SideArrowsHandle (void)
 {
 	/* Left arrow */
 	if ((currentPosition - (displayPosition - 3)) > (INITIAL_SHORTCUT_NUM - 2))
-		DrawLeftArrow(TRUE__);
+		DrawLeftArrow(sbgcTRUE);
 
 	else
-		DrawLeftArrow(FALSE__);
+		DrawLeftArrow(sbgcFALSE);
 
 	/* Right arrow */
 	if ((currentPosition - (displayPosition - 3)) < (SHORTCUT_TOTAL_NUM - 2))
-		DrawRightArrow(TRUE__);
+		DrawRightArrow(sbgcTRUE);
 
 	else
-		DrawRightArrow(FALSE__);
+		DrawRightArrow(sbgcFALSE);
 }
 
 
 void CShortcutContainerM::CommunicationInit (void)
 {
-	static Boolean_t disconnectionCaseFlag = FALSE__;
+	static sbgcBoolean_t disconnectionCaseFlag = sbgcFALSE;
 	static ShortcutList_t activatedRecentlyShortcutTemp = NO_SHORTCUT;  // Needed in case when link was interrupted during active process
 
 	/* Progressbar handle */
 	if ((Gimbal.processStatus == PROCESS_STARTED) &&
 		(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())))
+	{
 		gwinShow(ghProgressbar);  // Calibration in progress
+
+		/* Delete CMD_CONFIRM waiting command in case of gyro or acc calibrating */
+		Gimbal.DeleteSerialCommand(CMD_CONFIRM);
+
+		/* Create a new CMD_CONFIRM command to enter to another callback */
+		Gimbal.ExpectCommand(CMD_CONFIRM, SCParam_NO, SCPrior_NORMAL, SCTimeout_MAX, SBGC32_CalibrationFinishSC_Callback, NULL);
+	}
 
 	else
 		gwinHide(ghProgressbar);
 
-	Gimbal.ReadRealTimeData();
 
-	/* Connection is lost */
-	if ((!Gimbal.GetCommunicationState()) ||
-		SBGC_NoConnectionStateMask(Gimbal.GetCurrentState()))
+	if ((Gimbal.ReadRealTimeData(SCParam_FREEZE, SCPrior_NORMAL, 200, SBGC_NO_CALLBACK_) != sbgcCOMMAND_OK) ||
+		 SBGC_NoConnectionStateMask(Gimbal.GetCurrentState()))
 	{
+		/* Connection is lost */
 		if (FindActiveShortcut() != NULL)
 			activatedRecentlyShortcutTemp = FindActiveShortcut()->number;
 
@@ -647,7 +667,7 @@ void CShortcutContainerM::CommunicationInit (void)
 			Gimbal.processStatus = PROCESS_FINISHED;
 		}
 
-		disconnectionCaseFlag = TRUE__;
+		disconnectionCaseFlag = sbgcTRUE;
 	}
 
 	/* Connection is OK */
@@ -662,12 +682,12 @@ void CShortcutContainerM::CommunicationInit (void)
 					SetStatusAndTrigger(&shortcut[i], SCS_NORMAL);
 			}
 
-			disconnectionCaseFlag = FALSE__;
+			disconnectionCaseFlag = sbgcFALSE;
 		}
 
 		if (activatedRecentlyShortcutTemp != NO_SHORTCUT)
 		{
-			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU);
+			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 			if (Gimbal.GetAddressCalibInfo()->progress || (!PID_AutoTuneFinishFlag))
 			/* If calibration was finished during a loss of connection */
@@ -684,6 +704,22 @@ void CShortcutContainerM::CommunicationInit (void)
 
 		else
 			SetStatusAndTrigger(FindShortcut(SHORTCUT_MOTOR_SWITCH), SCS_NORMAL);
+
+		/* Check the scripts */
+		if (!Gimbal.GetAddressBoardInfo3()->scriptSlot1_Size)
+			SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_1), SCS_NOT_ACTIVE);
+
+		if (!Gimbal.GetAddressBoardInfo3()->scriptSlot2_Size)
+			SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_2), SCS_NOT_ACTIVE);
+
+		if (!Gimbal.GetAddressBoardInfo3()->scriptSlot3_Size)
+			SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_3), SCS_NOT_ACTIVE);
+
+		if (!Gimbal.GetAddressBoardInfo3()->scriptSlot4_Size)
+			SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_4), SCS_NOT_ACTIVE);
+
+		if (!Gimbal.GetAddressBoardInfo3()->scriptSlot5_Size)
+			SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_5), SCS_NOT_ACTIVE);
 	}
 }
 
@@ -711,10 +747,11 @@ void CShortcutContainerM::DisplayShortcutInit (void)
 	if (Gimbal.GetCommunicationState() && (Gimbal.processStatus != PROCESS_STARTED) &&
 		(!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 	{
+		/* Turn off inactive shortcuts */
 		for (ui8 i = 0; i < INITIAL_SHORTCUT_NUM; i++)
 			if (buffShortcut[i]->status & SCS_NOT_ACTIVE)
 			{
-				pstyle = &CWidgetStyle::MonoImgStyleNormal;
+				pstyle = &CWidgetStyle::MonoImgStyleInactive;
 				gwinSetStyle(ghImageShortcut[i], pstyle);
 			}
 	}
@@ -726,20 +763,20 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 	switch (shortcut->number)
 	{
 		case SHORTCUT_GYRO_CALIB :
-			Gimbal.CalibGyro();
-
-			if (Gimbal.GetCommunicationState())
+			if (Gimbal.CalibGyro(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK )
 			{
 				Gimbal.AddCurrentState(SBGC_CALIBRATE_IMU);
 				Gimbal.processStatus = PROCESS_STARTED;
 
 				/* Shortcuts status changing */
+				SaveCurrentStatuses();
+
 				TurnOffAllShortcuts();
 				SetStatusAndTrigger(shortcut, SCS_ACTIVE);
 
 				lastCalibInfoTime = osGetTickCount();
 
-				exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Don't touch the gimbal during calibration"),
+				exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Don't touch the gimbal during calibration"),
 													  MW_GIMBAL_GYRO_CALIB_STATE, MW_MEDIUM_FONT, 0);
 				CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 				while (1);
@@ -748,17 +785,15 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 			break;
 
 		case SHORTCUT_ACC_CALIB :
-			Gimbal.TurnOffMotors();
-
-			if (Gimbal.GetConfirmationCurrentStatus() == CONFIRMATION_OK)
+			if (Gimbal.CalibAcc(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK )
 			{
-				Gimbal.GetAddressRealTimeData()->RT_DataFlags = RTDF_MOTORS_OFF;  // Implicit value assignment to private struct field
-
 				/* Shortcuts status changing */
+				SaveCurrentStatuses();
+
 				TurnOffAllShortcuts();
 				SetStatusAndTrigger(shortcut, SCS_ACTIVE);
 
-				exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Don't touch the gimbal during calibration"),
+				exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Don't touch the gimbal during calibration"),
 													  MW_GIMBAL_ACC_CALIB_STATE, MW_MEDIUM_FONT, 0);
 				CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 				while (1);
@@ -767,44 +802,45 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 			break;
 
 		case SHORTCUT_MOTOR_SWITCH :
-			Gimbal.ToggleMotors();
+			Gimbal.ToggleMotors(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
-			if (Gimbal.GetAddressGeneralSBGC()->_confirmationStatus == CONFIRMATION_OK)
+			if (Gimbal.GetCommunicationState())
 			{
-				Gimbal.GetAddressRealTimeData()->RT_DataFlags ^= RTDF_MOTORS_ON;  // Implicit value assignment to private struct field
+				Gimbal.ReadRealTimeData(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
-				if (Gimbal.GetAddressRealTimeData()->RT_DataFlags == RTDF_MOTORS_OFF)
+				if (Gimbal.GetAddressRealTimeData()->RT_DataFlags == RTDF_MOTORS_ON)
 				{
-					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_1), SCS_NORMAL);
-					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_2), SCS_NORMAL);
-					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_3), SCS_NORMAL);
-					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_4), SCS_NORMAL);
-					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_5), SCS_NORMAL);
-					SetStatusAndTrigger(shortcut, SCS_NORMAL);
-					Gimbal.AddCurrentState(SBGC_MOTORS_OFF);
+					ReturnPreviousStatuses();
+
+					SetStatusAndTrigger(shortcut, SCS_TURNED_ON);
+					Gimbal.ClearCurrentState(SBGC_MOTORS_OFF);
 				}
 
 				else
 				{
+					SaveCurrentStatuses();
+
 					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_1), SCS_NOT_ACTIVE);
 					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_2), SCS_NOT_ACTIVE);
 					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_3), SCS_NOT_ACTIVE);
 					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_4), SCS_NOT_ACTIVE);
 					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_5), SCS_NOT_ACTIVE);
-					SetStatusAndTrigger(shortcut, SCS_TURNED_ON);
-					Gimbal.ClearCurrentState(SBGC_MOTORS_OFF);
+					SetStatusAndTrigger(shortcut, SCS_NORMAL);
+					Gimbal.AddCurrentState(SBGC_MOTORS_OFF);
 				}
 			}
 
 			break;
 
 		case SHORTCUT_AUTO_PID :
-			Gimbal.TuneAutoPID();
+			Gimbal.TuneAutoPID(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
-			if (Gimbal.GetAddressGeneralSBGC()->_confirmationStatus == CONFIRMATION_OK)
+			if (Gimbal.GetConfirmStatus() == sbgcCONFIRM_RECEIVED)
 			{
 				Gimbal.AddCurrentState(SBGC_PID_AUTOTUNE);
 				Gimbal.processStatus = PROCESS_STARTED;
+
+				SaveCurrentStatuses();
 
 				/* Shortcuts status changing */
 				TurnOffAllShortcuts();
@@ -813,17 +849,10 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 				PID_AutoTuneFinishFlag = false;
 				lastAutoTuneTime = osGetTickCount();
 
-				osTaskCreate(	TaskPID_AutoTuneFinishCheck,
-								"AutoTuneFinishWait",
-								configMINIMAL_STACK_SIZE * 5,
-								NULL,
-								OS_LOW_PRIORITY,
-								&TaskPID_AutoTuneFinishCheckHandle);
+				Gimbal.ExpectCommand(CMD_READ_PARAMS_3, SCParam_NO, SCPrior_LOW, SCTimeout_MAX, SBGC32_PID_AutoTuneFinishCallback, NULL);
+				Gimbal.ReadRealTimeData(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
-				osDelay(5);
-				Gimbal.ReadRealTimeData();
-
-				exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Don't touch the gimbal during calibration"),
+				exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Don't touch the gimbal during calibration"),
 													  MW_GIMBAL_PID_TUNE_STATE, MW_MEDIUM_FONT, 0);
 				CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 				while (1);
@@ -832,15 +861,32 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 			break;
 
 		case SHORTCUT_RESET :
-			Gimbal.Reset();
-
-			if (Gimbal.GetCommunicationState())
+			if (Gimbal.Reset(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
 			{
+				/* Check the scripts */
+				if (Gimbal.GetAddressBoardInfo3()->scriptSlot1_Size)
+					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_1), SCS_NORMAL);
+
+				if (Gimbal.GetAddressBoardInfo3()->scriptSlot2_Size)
+					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_2), SCS_NORMAL);
+
+				if (Gimbal.GetAddressBoardInfo3()->scriptSlot3_Size)
+					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_3), SCS_NORMAL);
+
+				if (Gimbal.GetAddressBoardInfo3()->scriptSlot4_Size)
+					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_4), SCS_NORMAL);
+
+				if (Gimbal.GetAddressBoardInfo3()->scriptSlot5_Size)
+					SetStatusAndTrigger(FindShortcut(SHORTCUT_SCRIPT_5), SCS_NORMAL);
+
+				SaveCurrentStatuses();
+
 				for (ui8 i = 0; i < SHORTCUT_TOTAL_NUM; i++)
 					SetStatusAndTrigger(&this->shortcut[i], SCS_NOT_ACTIVE);
 
 				Gimbal.AddCurrentState(SBGC_REBOOT);
 				Gimbal.processStatus = PROCESS_STARTED;
+
 				SetStatusAndTrigger(shortcut, SCS_ACTIVE);
 				SetStatusAndTrigger(FindShortcut(SHORTCUT_MOTOR_SWITCH), SCS_NORMAL);
 
@@ -854,15 +900,14 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 		case SHORTCUT_SCRIPT_3 :
 		case SHORTCUT_SCRIPT_4 :
 		case SHORTCUT_SCRIPT_5 :
-			if ((Gimbal.processStatus == PROCESS_READY) &&
+			if ((Gimbal.processStatus == PROCESS_READY) && (shortcut->status != SCS_NOT_ACTIVE) &&
 				(!SBGC_ScriptExeStateMask(Gimbal.GetCurrentState())))
 			{
-				Gimbal.RunScript((ScriptSlotNum_t)(shortcut->number - SHORTCUT_SCRIPT_1));
+				Gimbal.RunScript((sbgcScriptSlotNum_t)(shortcut->number - SHORTCUT_SCRIPT_1),
+								 SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 				if (Gimbal.GetCommunicationState())
 				{
-					ScriptExeFinishFlag = false;
-
 					osTaskCreate(	TaskScriptExeFinishWait,
 									"ScriptExeFinishWait",
 									configMINIMAL_STACK_SIZE * 5,
@@ -875,6 +920,8 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 					Gimbal.AddCurrentState(SBGC_SCRIPT_EXE);
 					Gimbal.processStatus = PROCESS_STARTED;
 
+					SaveCurrentStatuses();
+
 					/* Shortcuts status changing */
 					TurnOffAllShortcuts();
 					SetStatusAndTrigger(shortcut, SCS_ACTIVE);
@@ -884,18 +931,19 @@ void CShortcutContainerM::ExecuteShortcutAssignedFunction (ShortcutParameters_t 
 			else if ((Gimbal.processStatus == PROCESS_STARTED) &&
 					 (SBGC_ScriptExeStateMask(Gimbal.GetCurrentState())))
 			{
-				Gimbal.StopScript((ScriptSlotNum_t)(shortcut->number - SHORTCUT_SCRIPT_1));
+				Gimbal.StopScript((sbgcScriptSlotNum_t)(shortcut->number - SHORTCUT_SCRIPT_1),
+								  SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 				if (Gimbal.GetCommunicationState())
 				{
 					Gimbal.ClearCurrentState(SBGC_SCRIPT_EXE);
 					Gimbal.processStatus = PROCESS_FINISHED;
 
-					/* Shortcuts status changing */
-					TurnOnAllShortcuts();
-
 					if (TaskScriptExeFinishWaitHandle != NULL)
+					{
 						osTaskDelete(TaskScriptExeFinishWaitHandle);
+						osDelay(5);
+					}
 
 					TaskScriptExeFinishWaitHandle = NULL;
 				}
@@ -1036,63 +1084,30 @@ void CShortcutContainerM::ShortcutLengthProcess (void)
 }
 
 
-void TaskPID_AutoTuneFinishCheck (void *params)
-{
-	SerialCommand_t cmd;
-
-	while (1)
-	{
-		Gimbal.SetParserCurrentStatus(Gimbal.FindCommand(&cmd, CMD_READ_PARAMS_3, SBGC_REQ_WAITING));
-
-		if (Gimbal.GetCommunicationState() &&
-			(cmd.commandID == CMD_READ_PARAMS_3))
-		{
-			MainParams3_t MainRarams3;
-
-			ConvertWithPM(&MainRarams3, cmd.payload, cmd.payloadSize, PM_MAIN_PARAMS_3);
-			Gimbal.UpdatePID_EEPROM_AdjVars(&MainRarams3);
-
-			PID_AutoTuneFinishFlag = true;
-			while (1);  // Delete waiting
-		}
-
-		osDelay(CONTAINER_PROCESS_DELAY);
-	}
-}
-
-
 void TaskScriptExeFinishWait (void *params)
 {
-	SerialCommand_t cmd;
-	ScriptDebugInfo_t ScriptDebugInfo;
+	sbgcScriptDebugInfo_t ScriptDebugInfo;
 
-	ui32 lastScriptInfoTime = osGetTickCount();
+	sbgcBoolean_t deleteCommandFlag = sbgcFALSE;
+	sbgcBoolean_t finishCommandFlag = sbgcFALSE;
+	sbgcTicks_t lastScriptInfoTime = osGetTickCount();
 
 	while (1)
 	{
-		Gimbal.SetParserCurrentStatus(Gimbal.FindCommand(&cmd, CMD_SCRIPT_DEBUG, SBGC_REQ_WAITING));
+		Gimbal.ReadScriptDebugInfo(&ScriptDebugInfo, SCParam_FORCE_CALLBACK, SCPrior_LOW, SCTimeout_DEFAULT,
+								   SBGC32_ScriptExeFinishWaitCallback, &deleteCommandFlag);
 
-		if (Gimbal.GetCommunicationState())
-		{
-			SBGC32_ParseScriptDebugInfoCmd(&cmd, &ScriptDebugInfo);
-
-			if (ScriptDebugInfo.curComCounter == 0)
-			{
-				ScriptExeFinishFlag = true;
-				Gimbal.ClearCurrentState(SBGC_SCRIPT_EXE);
-				Gimbal.processStatus = PROCESS_FINISHED;
-				TaskScriptExeFinishWaitHandle = NULL;
-				osTaskDelete(NULL);
-				while (1);  // Delete waiting
-			}
-
+		if (deleteCommandFlag == sbgcFALSE)
+		/* Update error time if the command responds successful */
 			lastScriptInfoTime = osGetTickCount();
-		}
 
-		else if ((osGetTickCount() - lastScriptInfoTime) > SCRIPT_FINISH_CMD_PARSER_WAIT)
-			/* If communication was interrupted */
+		if (ScriptDebugInfo.curComCounter > 0)
+			finishCommandFlag = sbgcTRUE;
+
+		if ((ScriptDebugInfo.curComCounter == 0) && finishCommandFlag)
+		/* Close script successful */
 		{
-			ScriptExeFinishFlag = true;
+			/* Delete task */
 			Gimbal.ClearCurrentState(SBGC_SCRIPT_EXE);
 			Gimbal.processStatus = PROCESS_FINISHED;
 			TaskScriptExeFinishWaitHandle = NULL;
@@ -1100,6 +1115,16 @@ void TaskScriptExeFinishWait (void *params)
 			while (1);  // Delete waiting
 		}
 
-		osDelay(CONTAINER_PROCESS_DELAY);
+		else if (((osGetTickCount() - lastScriptInfoTime) > SCRIPT_FINISH_CMD_PARSER_WAIT) && deleteCommandFlag)
+			/* If communication was interrupted */
+		{
+			Gimbal.ClearCurrentState(SBGC_SCRIPT_EXE);
+			Gimbal.processStatus = PROCESS_FINISHED;
+			TaskScriptExeFinishWaitHandle = NULL;
+			osTaskDelete(NULL);
+			while (1);  // Delete waiting
+		}
+
+		osDelay(500);
 	}
 }

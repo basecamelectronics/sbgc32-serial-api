@@ -149,9 +149,20 @@ typedef struct GMenuObject
 }	GMenuObject;
 
 
+typedef enum
+{
+	PMS_REMOTE				= 0,
+	PMS_GIMBAL
+
+}	ParameterMembership_t;
+
+
 typedef struct
 {
 	FuncIdEnum_t	type;
+
+	ParameterMembership_t
+					membership;
 
 	void			*operatingValue;
 	float			origDivider;
@@ -161,7 +172,7 @@ typedef struct
 					minValue,
 					maxValue;
 
-	VarType_t		typeValue;
+	sbgcVarType_t	typeValue;
 
 	const char		*name;
 
@@ -171,8 +182,6 @@ typedef struct
 
 	ui16			oldControlValue,
 					newControlValue;
-
-	void			*location;
 
 }	ParameterHandle_t;
 

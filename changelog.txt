@@ -1,7 +1,50 @@
 
 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-				 Releases
+                                Releases
 ________________________________________________________________________
+
+### Release 2.0 (incompatible with old version)  - - - - - - - - - - - -
+
+- Two new operating modes added to the library: non-blocking and OS-compatible
+- The configuration file significantly updated with many new settings added
+- A large note added to file sbgc32.h, providing a more detailed description of the library's features
+- A new example, 'QuickStart' has been added for all systems
+- In the new operating modes, SBGC32_ functions are provided with additional arguments
+- Many object and type names renamed to create a custom namespace - sbgc_ and serialAPI_
+- Many helper functions and macros added
+- Each protocol function now includes additional documentation and a mini-example of its usage
+- The main protocol functions modified as follows:
+	* SBGC32_SetAdjVarValue - added
+	* SBGC32_GetAdjVarValues - now processes up to 40 adjustable variables
+	* SBGC32_RequestAdjVarsInfo - added
+	* SBGC32_CalibExtGain - deleted
+	* SBGC32_CalibCogging - added
+	* SBGC32_ControlExt - added
+	* SBGC32_ControlQuat - added
+	* SBGC32_ControlQuatConfig - added
+	* SBGC32_SendCmdToExtSens - added
+	* SBGC32_RequestDataStream renamed to SBGC32_StartDataStream
+	* SBGC32_ParseDataStream renamed to SBGC32_ReadDataStream. New parameter 'size' added
+	* SBGC32_RequestRealTimeDataCustom - 'flags' parameter deleted. New parameter 'size' added
+	* SBGC32_RequestDebugVarInfo3 - operation principle changed. New parameters 'startIndex' and 'varQuan' added
+	* SBGC32_ControlQuatStatus - added
+	* SBGC32_TuneAutoPID2 - now works starting with 2.73.1+ controller firmware
+	* SBGC32_ParseAutoPID_StateCmd renamed to SBGC32_ReadAutoPID_StateCmd. Operation principle changed also
+	* SBGC32_SynchronizeMotors - added
+	* SBGC32_RequestMotorState - added
+	* SBGC32_ReadMotorState - added
+	* SBGC32_ParseScriptDebugInfoCmd renamed to SBGC32_ReadScriptDebugInfo
+	* SBGC32_SetDebugPort - added
+	* SBGC32_ReadDebugPort - added
+	* SBGC32_SendTransparentCommand - added
+	* SBGC32_ReadTransparentCommand - added
+	* SBGC32_ParseEventCmd - deleted
+	* SBGC32_CAN_DeviceScan - added
+- It's possible now to send serial commands manually using SBGC32_SendRawCommand function
+- Protocol functions handling confirmation now accept an additional parameter — a confirmation structure
+- Now it is possible to define a custom sprintf function using SerialAPI_LinkSprintf()
+- An exponential filter for gimbal control added to the MiniRemote project
+- Bugfix and grammar correction
 
 ### Release 1.1  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

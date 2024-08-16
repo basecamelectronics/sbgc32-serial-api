@@ -8,6 +8,15 @@
 #include "ctype.h"
 
 
+Expo ControlFilterExpo [SBGC_CONTROL_HANDLERS_NUM] =
+{
+	Expo(IN_MIDDLE_VALUE),
+	Expo(IN_MIDDLE_VALUE),
+	Expo(IN_MIDDLE_VALUE)
+
+};
+
+
 void* operator new(size_t numBytes) throw(){
 
 	//C++ stardard 5.3.4.8 requires that a valid pointer be returned for
@@ -21,6 +30,7 @@ void* operator new(size_t numBytes) throw(){
 	}
 	return p;
 }
+
 
 void operator delete(void* ptr) throw() {
 	osFree(ptr);
@@ -101,4 +111,22 @@ void Utils::showLogo (void)
 	gdispImageDraw(img, (gdispGetWidth() - img->width) / 2, (gdispGetHeight() - img->height) / 2, img->width, img->height, 0, 0);
 	ExeDisplayBuf();
 	Utils::imageCloseFile(img);
+}
+
+/* Set expo rate, 0..100 */
+void Expo::SetRate (ui8 _rate)
+{
+    float rate = _rate;
+    k3 = rate / (100.0F * (float)maxVal * (float)maxVal);
+    k1 = (100.0F - rate) / 100.0F;
+}
+
+/* Calculate exponent value for given x */
+float Expo::Calculate (float x)
+{
+    if (k3 == 0 || x == 0)
+        return x;
+
+    // Math: y = x*x*x  (rate / (100*max_val*max_val)) + x  ((100 - rate)/(100))
+    return x * x * x * k3 + x * k1;
 }

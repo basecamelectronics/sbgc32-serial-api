@@ -3757,7 +3757,7 @@ gColor gdispContrastColor(gColor color) {
 
 
 /* qEdit */
-void gdispGFillStringBoxSimple (GDisplay *g, gCoord x, gCoord y, gCoord cx, gCoord cy, char* str,
+void gdispGFillStringBoxSimple (GDisplay *g, gCoord x, gCoord y, gCoord cx, gCoord cy, const char* str,
 								gFont font, gColor color, gColor bgcolor, gJustify justify)
 {
 	gCoord		totalHeight;

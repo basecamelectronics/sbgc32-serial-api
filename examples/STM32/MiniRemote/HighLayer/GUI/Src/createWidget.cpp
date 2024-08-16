@@ -250,7 +250,7 @@ void CStateManager::vTaskSetState (void *pvParameters)
 					osTaskCreate([](void* o) { static_cast<CXContainer*>(o)->vTask((void*)TaskParam); },
 								"GUI Container", configMINIMAL_STACK_SIZE * 10, container, OS_MEDIUM_PRIORITY, &container->pxTask);
 
-					MiniRemote.SetRedrawPrimitiveObjectsFlag(TRUE__);
+					MiniRemote.SetRedrawPrimitiveObjectsFlag(sbgcTRUE);
 				}
 
 				currentState = newState;

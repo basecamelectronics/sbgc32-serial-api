@@ -28,6 +28,7 @@ extern		"C"
 #include	<stdlib.h>
 #include	"createWidget.h"
 #include	"colors.h"
+#include	"parameters.h"
 
 
 // Macro's to assist in data type conversions
@@ -36,7 +37,7 @@ extern		"C"
 #define		ple						((GEventGWinMenu *)pe)
 
 
-extern AdjVarReferenceInfo_t AdjVarsReferenceInfoArray [];
+extern sbgcAdjVarReferenceInfo_t AdjVarsReferenceInfoArray [];
 
 
 static const gwidgetVMT menuVMT =
@@ -112,7 +113,8 @@ void CGWIN_Menu::ButtonUp (GWidgetObject *gw)
 	if (--SelectedItemIdx < 0)
 		SelectedItemIdx = backupSelectedItemIdx;
 
-	MiniRemote.SetRedrawPrimitiveObjectsFlag(TRUE__);
+	MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
+	MiniRemote.SetRedrawPrimitiveObjectsFlag(sbgcTRUE);
 
 	ViewItem(gw);
 	_gwinUpdate(&gw->g);
@@ -126,7 +128,8 @@ void CGWIN_Menu::ButtonDown (GWidgetObject *gw)
 	if (++SelectedItemIdx >= nItemsTotal)
 		SelectedItemIdx = backupSelectedItemIdx;
 
-	MiniRemote.SetRedrawPrimitiveObjectsFlag(TRUE__);
+	MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
+	MiniRemote.SetRedrawPrimitiveObjectsFlag(sbgcTRUE);
 
 	ViewItem(gw);
 	_gwinUpdate(&gw->g);
@@ -149,13 +152,8 @@ void CGWIN_Menu::ButtonLeft (GWidgetObject *gw)
 			break;
 	}
 
-	ViewItem(gw);
-	_gwinUpdate(&gw->g);
-}
+	MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
 
-
-void CGWIN_Menu::UpdateMenu (GWidgetObject *gw)
-{
 	ViewItem(gw);
 	_gwinUpdate(&gw->g);
 }
@@ -177,6 +175,8 @@ void CGWIN_Menu::ButtonRigth (GWidgetObject* gw)
 			break;
 	}
 
+	MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
+
 	ViewItem(gw);
 	_gwinUpdate(&gw->g);
 }
@@ -185,6 +185,13 @@ void CGWIN_Menu::ButtonRigth (GWidgetObject* gw)
 void CGWIN_Menu::ButtonEnter (GWidgetObject *gw)
 {
 	Enter(gw);
+	_gwinUpdate(&gw->g);
+}
+
+
+void CGWIN_Menu::UpdateMenu (GWidgetObject *gw)
+{
+	ViewItem(gw);
 	_gwinUpdate(&gw->g);
 }
 
@@ -208,289 +215,345 @@ void CGWIN_Menu::Enter (GWidgetObject *gw)
 	if (psCurrentItem == 0)
 		return;
 
-	MiniRemote.SetRedrawPrimitiveObjectsFlag(TRUE__);
+	MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
+	MiniRemote.SetRedrawPrimitiveObjectsFlag(sbgcTRUE);
 
 	switch (psCurrentItem->ItemType)
+	{
+		case ITEM_TYPE_CHECKBOX :
+			switch (psCurrentItem->FuncID)
+			{
+				case FUNC_SWITCH_AV_SYNC_PRIORITY :
+					if (MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY)
+						MiniRemote.Presets.adjVarsSync = AVS_GIMBAL_PRIORITY;
+
+					else if (MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY)
+						MiniRemote.Presets.adjVarsSync = AVS_REMOTE_PRIORITY;
+
+					SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.adjVarsSync);
+
+					break;
+
+				case FUNC_SWITCH_COMMUNICATION_WAY :
+					if (MiniRemote.Presets.communicationWay == CW_UART)
+						MiniRemote.Presets.communicationWay = CW_RS422;
+
+					else if (MiniRemote.Presets.communicationWay == CW_RS422)
+						MiniRemote.Presets.communicationWay = CW_UART;
+
+					SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.communicationWay);
+
+					break;
+
+				case FUNC_EDIT_CONTROL_INVERSION :
+					Gimbal.GetChosenControlHandler()->invert = (sbgcBoolean_t)!Gimbal.GetChosenControlHandler()->invert;
+					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlHandler()->invert);
+					break;
+
+				case FUNC_TURN_ATTACHED_AXIS :
+					if (SelectedItemIdx != NOT_ASSIGNED)
+					{
+						/* It's need to swap axes */
+						if (Gimbal.GetChosenControlHandler()->attachedAxis != NOT_ASSIGNED)
+						{
+							Gimbal.GetHandlerOfActiveControlProfileByAxis(SelectedItemIdx)->attachedAxis =
+									Gimbal.GetChosenControlHandler()->attachedAxis;
+						}
+
+						else
+						/* else at least one of axes is free */
+							Gimbal.GetHandlerOfActiveControlProfileByAxis(SelectedItemIdx)->attachedAxis =
+									Gimbal.GetFreeFromHandlerAxisInActiveProfile();
+					}
+
+					Gimbal.GetChosenControlHandler()->attachedAxis = SelectedItemIdx;  // ROLL : PITCH : YAW
+
+					if (Gimbal.GetChosenControlHandler()->attachedAxis == NOT_ASSIGNED)
+					{
+						Gimbal.GetChosenControlHandler()->controlMode = GIMBAL_NO_CONTROL;
+						Gimbal.ConfigGimbalControl(SCParam_NO, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+					}
+
+					else
+						if (Gimbal.GetChosenControlHandler()->controlMode == GIMBAL_NO_CONTROL)
+							/* Turn to default mode */
+							Gimbal.GetChosenControlHandler()->controlMode = SBGC_DEFAULT_CONTROL_MODE;
+
+					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlProfile()->controlHandler[ROLL].attachedAxis);
+					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlProfile()->controlHandler[PITCH].attachedAxis);
+					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlProfile()->controlHandler[YAW].attachedAxis);
+
+					break;
+
+				case FUNC_TURN_CONTROL_MODE :
+					if (Gimbal.GetChosenControlHandler()->controlMode != GIMBAL_NO_CONTROL)
+					{
+						Gimbal.GetChosenControlHandler()->controlMode = (GimbalControlMode_t)(SelectedItemIdx + 1);  // ABS : INC : RC
+						Gimbal.ConfigGimbalControl(SCParam_NO, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+					}
+
+					else
+						psCurrentItem->param = 1;  // And then it be inverted to 0
+
+					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlHandler()->controlMode);
+
+					break;
+
+				default :
+					break;
+			}
+
+			/* Toggling */
+			if (psCurrentItem->param <= 0xFF)
+				psCurrentItem->param = !psCurrentItem->param;
+
+			else
+			{
+				ui8 paramTemp = *(ui8*)psCurrentItem->param;
+				*(ui8*)psCurrentItem->param = !paramTemp;
+			}
+
+			break;
+
+		case ITEM_TYPE_MENU:
+			if (psCurrentItem->pSubMenu != 0)
+			{
+				psCurrentItem->pSubMenu->nSelect = 0;
+
+				if (MenuType == MENU_SBGC_INFO)
+					CStateManager::SetState((sDevState){ GIMBAL_MENU_STATE, (ui32)psCurrentItem->pSubMenu });
+
+				else if (MenuType == MENU_REMOTE)
+					CStateManager::SetState((sDevState){ REMOTE_MENU_STATE, (ui32)psCurrentItem->pSubMenu });
+			}
+
+			break;
+
+		case ITEM_TYPE_FUNCTION:
 		{
-			case ITEM_TYPE_CHECKBOX :
-				switch (psCurrentItem->FuncID)
-				{
-					case FUNC_SWITCH_AV_SYNC_PRIORITY :
-						if (MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY)
-							MiniRemote.Presets.adjVarsSync = AVS_GIMBAL_PRIORITY;
-
-						else if (MiniRemote.Presets.adjVarsSync == AVS_GIMBAL_PRIORITY)
-							MiniRemote.Presets.adjVarsSync = AVS_REMOTE_PRIORITY;
-
-						break;
-
-					case FUNC_EDIT_CONTROL_INVERSION :
-						Gimbal.GetChosenControlHandler()->invert = (Boolean_t)!Gimbal.GetChosenControlHandler()->invert;
-						break;
-
-					case FUNC_TURN_ATTACHED_AXIS :
-						if (SelectedItemIdx != NOT_ASSIGNED)
-						{
-							/* It's need to swap axes */
-							if (Gimbal.GetChosenControlHandler()->attachedAxis != NOT_ASSIGNED)
-								Gimbal.GetHandlerOfActiveControlProfileByAxis(SelectedItemIdx)->attachedAxis =
-										Gimbal.GetChosenControlHandler()->attachedAxis;
-
-							else
-							/* else at least one of axes is free */
-								Gimbal.GetHandlerOfActiveControlProfileByAxis(SelectedItemIdx)->attachedAxis =
-										Gimbal.GetFreeFromHandlerAxisInActiveProfile();
-						}
-
-						Gimbal.GetChosenControlHandler()->attachedAxis = SelectedItemIdx;  // ROLL : PITCH : YAW
-
-						if (Gimbal.GetChosenControlHandler()->attachedAxis == NOT_ASSIGNED)
-						{
-							Gimbal.GetChosenControlHandler()->controlMode = GIMBAL_NO_CONTROL;
-							Gimbal.ConfigGimbalControl();
-						}
-
-						else
-							if (Gimbal.GetChosenControlHandler()->controlMode == GIMBAL_NO_CONTROL)
-								/* Turn to default mode */
-								Gimbal.GetChosenControlHandler()->controlMode = SBGC_DEFAULT_CONTROL_MODE;
-
-						break;
-
-					case FUNC_TURN_CONTROL_MODE :
-						if (Gimbal.GetChosenControlHandler()->controlMode != GIMBAL_NO_CONTROL)
-						{
-							Gimbal.GetChosenControlHandler()->controlMode = (GimbalControlMode_t)(SelectedItemIdx + 1);  // ABS : INC : RC
-							Gimbal.ConfigGimbalControl();
-						}
-
-						else
-							psCurrentItem->param = 1;  // And then it be inverted to 0
-
-						break;
-
-					default :
-						break;
-				}
-
-				/* Toggling */
-				if (psCurrentItem->param <= 0xFF)
-					psCurrentItem->param = !psCurrentItem->param;
-
-				else
-				{
-					ui8 paramTemp = *(ui8*)psCurrentItem->param;
-					*(ui8*)psCurrentItem->param = !paramTemp;
-				}
-
-				break;
-
-			case ITEM_TYPE_MENU:
-				if (psCurrentItem->pSubMenu != 0)
-				{
-					psCurrentItem->pSubMenu->nSelect = 0;
-
-					if (MenuType == MENU_SBGC_INFO)
-						CStateManager::SetState((sDevState){ GIMBAL_MENU_STATE, (ui32)psCurrentItem->pSubMenu });
-
-					else if (MenuType == MENU_REMOTE)
-						CStateManager::SetState((sDevState){ REMOTE_MENU_STATE, (ui32)psCurrentItem->pSubMenu });
-				}
-
-				break;
-
-			case ITEM_TYPE_FUNCTION:
+			switch (psCurrentItem->FuncID)
 			{
-				switch (psCurrentItem->FuncID)
+				/* Remote parameters and functions */
+				case FUNC_RESTART :
+					NVIC_SystemReset();
+					break;
+
+				case FUNC_CLEAR_EEPROM :
+					SettingsLoader.ClearAll();
+					break;
+
+				case FUNC_SET_STATE :
+					CStateManager::ExeFunction(psCurrentItem->FuncID, psCurrentItem->param);
+					while (1);
+					break;
+
+				case FUNC_EDIT_SYSTEM_BRIGHTNESS :
 				{
-					/* Remote parameters and functions */
-					case FUNC_RESTART :
-						NVIC_SystemReset();
-						break;
+					MiniRemote.SwitchDisplayToNormalState();
 
-					case FUNC_SET_STATE :
-						CStateManager::ExeFunction(psCurrentItem->FuncID, psCurrentItem->param);
-						while (1);
-						break;
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 
-					case FUNC_EDIT_SYSTEM_BRIGHTNESS :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+					parameterHandle->type = FUNC_EDIT_SYSTEM_BRIGHTNESS;
+					parameterHandle->membership = PMS_REMOTE;
+					parameterHandle->operatingValue = MiniRemote.GetAddressBrightness();
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = MiniRemote.GetBrightness();
+					parameterHandle->minValue = BRIGHTNESS_MIN_VALUE;
+					parameterHandle->maxValue = BRIGHTNESS_MAX_VALUE;
+					parameterHandle->typeValue = sbgcUCHAR;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
 
-						parameterHandle->type = FUNC_EDIT_SYSTEM_BRIGHTNESS;
-						parameterHandle->operatingValue = MiniRemote.GetAddressBrightness();
-						parameterHandle->origDivider = 1.0F;
-						parameterHandle->initValue = MiniRemote.GetBrightness();
-						parameterHandle->minValue = BRIGHTNESS_MIN_VALUE;
-						parameterHandle->maxValue = BRIGHTNESS_MAX_VALUE;
-						parameterHandle->typeValue = _UNSIGNED_CHAR_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
 
-						parameterHandle->location = parameterHandle;
+				case FUNC_EDIT_SYSTEM_EE_RATIO :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
+					parameterHandle->type = FUNC_EDIT_SYSTEM_EE_RATIO;
+					parameterHandle->membership = PMS_REMOTE;
+					parameterHandle->operatingValue = MiniRemote.GetAddressDimmedBrightnessRatio();
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = MiniRemote.GetDimmedBrightnessRatio();
+					parameterHandle->minValue = ENERGY_ECONOMIC_RATIO_MIN;
+					parameterHandle->maxValue = ENERGY_ECONOMIC_RATIO_MAX;
+					parameterHandle->typeValue = sbgcUSHORT;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
 
-					case FUNC_EDIT_SYSTEM_EE_RATIO :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
 
-						parameterHandle->type = FUNC_EDIT_SYSTEM_EE_RATIO;
-						parameterHandle->operatingValue = MiniRemote.GetAddressDimmedBrightnessRatio();
-						parameterHandle->origDivider = 1.0F;
-						parameterHandle->initValue = MiniRemote.GetDimmedBrightnessRatio();
-						parameterHandle->minValue = ENERGY_ECONOMIC_RATIO_MIN;
-						parameterHandle->maxValue = ENERGY_ECONOMIC_RATIO_MAX;
-						parameterHandle->typeValue = _UNSIGNED_SHORT_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+				case FUNC_EDIT_SYSTEM_EE_TIMER :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 
-						parameterHandle->location = parameterHandle;
+					parameterHandle->type = FUNC_EDIT_SYSTEM_EE_TIMER;
+					parameterHandle->membership = PMS_REMOTE;
+					parameterHandle->operatingValue = MiniRemote.GetAddressBrightnessTimer();
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = MiniRemote.GetBrightnessTimer();
+					parameterHandle->minValue = ENERGY_ECONOMIC_TIMER_MIN;
+					parameterHandle->maxValue = ENERGY_ECONOMIC_TIMER_MAX;
+					parameterHandle->typeValue = sbgcUSHORT;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
 
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
 
-					case FUNC_EDIT_SYSTEM_EE_TIMER :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+				case FUNC_EDIT_PARAMETER :
+				{
+					/* Mixers */
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 
-						parameterHandle->type = FUNC_EDIT_SYSTEM_EE_TIMER;
-						parameterHandle->operatingValue = MiniRemote.GetAddressBrightnessTimer();
-						parameterHandle->origDivider = 1.0F;
-						parameterHandle->initValue = MiniRemote.GetBrightnessTimer();
-						parameterHandle->minValue = ENERGY_ECONOMIC_TIMER_MIN;
-						parameterHandle->maxValue = ENERGY_ECONOMIC_TIMER_MAX;
-						parameterHandle->typeValue = _UNSIGNED_SHORT_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+					memcpy(parameterHandle, (void*)psCurrentItem->param, sizeof(ParameterHandle_t));
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
 
-						parameterHandle->location = parameterHandle;
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
 
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
-
-					case FUNC_EDIT_PARAMETER :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
-
-						memcpy(parameterHandle, (void*)psCurrentItem->param, sizeof(ParameterHandle_t));
-
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
-						parameterHandle->location = parameterHandle;
-
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
-
-					case FUNC_SAVE_ADJVARS :
-						Gimbal.SaveAllAdjVarsToEEPROM();
-
-						if (Gimbal.GetConfirmationCurrentStatus() == CONFIRMATION_OK)
-						{
-							Gimbal.adjVarsSyncState = AVSS_SYNCHRONIZED;
-
+				case FUNC_SAVE_ADJVARS_TO_GIMBAL :
+				{
+					if (gimbalConnected_)
+						if (Gimbal.SaveAllAdjVarsToEEPROM(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
 							/* Getting EEPROM adjustable variable values */
-							Gimbal.UpdateEEPROM_AdjVars();
-						}
+							Gimbal.UpdateEEPROM_AdjVars(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
-						break;
+					CStateManager::SetState((sDevState){ REFRESH_THE_STATE, 0 });
+					while (1);
+					break;
+				}
+				case FUNC_SAVE_ADJVARS_TO_REMOTE :
+				{
+					for (ui8 i = 0; i < SBGC_ADJ_VARS_MAX_QUANTITY; i++)
+						SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[i].value);
 
-					case FUNC_RESET_ADJVARS :
-						Gimbal.ReadProfileParams((Profile_t)Gimbal.GetAddressRealTimeData()->curProfile);
-						CStateManager::SetState((sDevState){ REFRESH_THE_STATE, 0 });
-						while (1);
-						break;
-
-
-					/* Gimbal parameters */
-					case FUNC_EDIT_CONTROL_SPEED :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
-
-						parameterHandle->type = FUNC_EDIT_CONTROL_SPEED;
-						parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->speed;
-						parameterHandle->origDivider = SBGC_CONTROL_SPEED_DIVIDER;
-						parameterHandle->initValue = Gimbal.GetChosenControlHandler()->speed;
-						parameterHandle->minValue = SBGC_CONTROL_SPEED_MIN_VALUE;
-						parameterHandle->maxValue = SBGC_CONTROL_SPEED_MAX_VALUE;
-						parameterHandle->typeValue = _UNSIGNED_SHORT_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
-
-						parameterHandle->location = parameterHandle;
-
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
-
-					case FUNC_EDIT_CONTROL_LPF :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
-
-						parameterHandle->type = FUNC_EDIT_CONTROL_LPF;
-						parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->LPF;
-						parameterHandle->origDivider = 1.0F;
-						parameterHandle->initValue = Gimbal.GetChosenControlHandler()->LPF;
-						parameterHandle->minValue = SBGC_CONTROL_LPF_MIN_VALUE;
-						parameterHandle->maxValue = SBGC_CONTROL_LPF_MAX_VALUE;
-						parameterHandle->typeValue = _UNSIGNED_CHAR_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
-
-						parameterHandle->location = parameterHandle;
-
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
-
-					case FUNC_EDIT_CONTROL_SENS :
-					{
-						ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
-
-						parameterHandle->type = FUNC_EDIT_CONTROL_SENS;
-						parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->sensitivity;
-						parameterHandle->origDivider = 1.0F;
-						parameterHandle->initValue = Gimbal.GetChosenControlHandler()->sensitivity;
-						parameterHandle->minValue = SBGC_CONTROL_SENS_MIN_VALUE;
-						parameterHandle->maxValue = SBGC_CONTROL_SENS_MAX_VALUE;
-						parameterHandle->typeValue = _UNSIGNED_CHAR_;
-						parameterHandle->name = psCurrentItem->pTitle;
-						parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
-
-						parameterHandle->location = parameterHandle;
-
-						CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
-						while (1);
-						break;
-					}
-
-					default :
-						break;
+					CStateManager::SetState((sDevState){ REFRESH_THE_STATE, 0 });
+					while (1);
+					break;
 				}
 
-				break;
+				case FUNC_RESET_ADJVARS :
+					if (MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY)
+						SettingsLoader.RecoverAdjVars();
+
+					else if (gimbalConnected_)
+						Gimbal.ReadProfileParams((sbgcProfile_t)Gimbal.GetAddressRealTimeData()->curProfile,
+												 SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+					CStateManager::SetState((sDevState){ REFRESH_THE_STATE, 0 });
+					while (1);
+					break;
+
+
+				/* Gimbal parameters */
+				case FUNC_EDIT_CONTROL_SPEED :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+
+					parameterHandle->type = FUNC_EDIT_CONTROL_SPEED;
+					parameterHandle->membership = PMS_GIMBAL;
+					parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->speed;
+					parameterHandle->origDivider = SBGC_CONTROL_SPEED_DIVIDER;
+					parameterHandle->initValue = Gimbal.GetChosenControlHandler()->speed;
+					parameterHandle->minValue = SBGC_CONTROL_SPEED_MIN_VALUE;
+					parameterHandle->maxValue = SBGC_CONTROL_SPEED_MAX_VALUE;
+					parameterHandle->typeValue = sbgcUSHORT;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
+
+				case FUNC_EDIT_CONTROL_LPF :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+
+					parameterHandle->type = FUNC_EDIT_CONTROL_LPF;
+					parameterHandle->membership = PMS_GIMBAL;
+					parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->LPF;
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = Gimbal.GetChosenControlHandler()->LPF;
+					parameterHandle->minValue = SBGC_CONTROL_LPF_MIN_VALUE;
+					parameterHandle->maxValue = SBGC_CONTROL_LPF_MAX_VALUE;
+					parameterHandle->typeValue = sbgcUCHAR;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
+
+				case FUNC_EDIT_CONTROL_SENS :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+
+					parameterHandle->type = FUNC_EDIT_CONTROL_SENS;
+					parameterHandle->membership = PMS_GIMBAL;
+					parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->sensitivity;
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = Gimbal.GetChosenControlHandler()->sensitivity;
+					parameterHandle->minValue = SBGC_CONTROL_SENS_MIN_VALUE;
+					parameterHandle->maxValue = SBGC_CONTROL_SENS_MAX_VALUE;
+					parameterHandle->typeValue = sbgcUCHAR;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
+
+				case FUNC_EDIT_CONTROL_EXP :
+				{
+					ParameterHandle_t *parameterHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
+
+					parameterHandle->type = FUNC_EDIT_CONTROL_EXP;
+					parameterHandle->membership = PMS_GIMBAL;
+					parameterHandle->operatingValue = &Gimbal.GetChosenControlHandler()->exponent;
+					parameterHandle->origDivider = 1.0F;
+					parameterHandle->initValue = Gimbal.GetChosenControlHandler()->exponent;
+					parameterHandle->minValue = SBGC_CONTROL_EXP_MIN_VALUE;
+					parameterHandle->maxValue = SBGC_CONTROL_EXP_MAX_VALUE;
+					parameterHandle->typeValue = sbgcUCHAR;
+					parameterHandle->name = psCurrentItem->pTitle;
+					parameterHandle->sensitivity = EDIT_SENS_PARAMETER_ADJUST;
+
+					CStateManager::SetState((sDevState){ (ui8)PARAMETER_EDIT_STATE, (ui32)parameterHandle });
+					while (1);
+					break;
+				}
+
+				default :
+					break;
 			}
 
-			case ITEM_TYPE_ADJVAR :
-			{
-				CStateManager::SetState((sDevState){ (ui8)ADJ_VAR_EDIT_STATE, (ui32)psCurrentItem->param });
-				while (1);
-				break;
-			}
-
-			default:
-				break;
+			break;
 		}
+
+		case ITEM_TYPE_ADJVAR :
+		{
+			CStateManager::SetState((sDevState){ (ui8)ADJ_VAR_EDIT_STATE, (ui32)psCurrentItem->param });
+			while (1);
+			break;
+		}
+
+		default:
+			break;
+	}
 }
 #pragma GCC pop_options
 
@@ -582,7 +645,7 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	coord_t iheight;
 	const GColorSet *ps;
 
-	if (gw->g.vmt != (gwinVMT *) &menuVMT)
+	if (gw->g.vmt != (gwinVMT*)&menuVMT)
 		return;
 
 	ps = (gw->g.flags & GWIN_FLG_SYSENABLED) ? &gw->pstyle->enabled : &gw->pstyle->disabled;
@@ -606,9 +669,9 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	coord_t y = 0;
 
 	/* Animation variables */
-	static Boolean_t scrollFinishDelayFlag = FALSE__;
+	static sbgcBoolean_t scrollFinishDelayFlag = sbgcFALSE;
 	static TickType_t scrollDelayTimer = osGetTickCount();
-	static Boolean_t scrollApplyFlag = FALSE__;
+	static sbgcBoolean_t scrollApplyFlag = sbgcFALSE;
 
 	static ui16 scrollingMargin = 0;
 	static i16 scrollingMarginTemp = 0;
@@ -616,9 +679,9 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 
 	if (selectedItemTemp != psSelectedItem)
 	{
-		scrollFinishDelayFlag = FALSE__;
+		scrollFinishDelayFlag = sbgcFALSE;
 		scrollDelayTimer = osGetTickCount();
-		scrollApplyFlag = FALSE__;
+		scrollApplyFlag = sbgcFALSE;
 
 		selectedItemScroll = 0;
 	}
@@ -626,13 +689,13 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	selectedItemTemp = psSelectedItem;
 
 
-	if (scrollFinishDelayFlag == FALSE__)
+	if (scrollFinishDelayFlag == sbgcFALSE)
 	{
 		scrollingMarginTemp = DISPLAY_WIDTH - gdispGetStringWidth(psSelectedItem->value, MiniRemote.GetMediumFont()) -
 							  MENU_ITEM_VALUE_MIN_SPACING - 16 - gdispGetStringWidth(psSelectedItem->pTitle, MiniRemote.GetMediumFont());
 
 		if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_DELAY)
-			scrollApplyFlag = TRUE__;
+			scrollApplyFlag = sbgcTRUE;
 
 		if (scrollingMarginTemp < 0)
 			scrollingMargin = abs(scrollingMarginTemp);
@@ -640,12 +703,12 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 		else
 			scrollingMargin = 0;
 
-		if ((selectedItemScroll < scrollingMargin) && (scrollApplyFlag == TRUE__))
+		if ((selectedItemScroll < scrollingMargin) && (scrollApplyFlag == sbgcTRUE))
 			selectedItemScroll += STRING_SCROLLING_SPEED;
 
 		if (selectedItemScroll >= scrollingMargin)
 		{
-			scrollFinishDelayFlag = TRUE__;
+			scrollFinishDelayFlag = sbgcTRUE;
 			scrollDelayTimer = osGetTickCount();
 		}
 	}
@@ -654,12 +717,15 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	{
 		if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_DELAY)
 		{
-			scrollFinishDelayFlag = FALSE__;
+			scrollFinishDelayFlag = sbgcFALSE;
 			selectedItemScroll = 0;
-			scrollApplyFlag = FALSE__;
+			scrollApplyFlag = sbgcFALSE;
 			scrollDelayTimer = osGetTickCount();
 		}
 	}
+
+	if ((!scrollApplyFlag) && (!MiniRemote.GetRedrawMenuFlag()))
+		return;
 
 	/* Processing */
 	for (ui8 i = 0; i < sMenuCount; i++)
@@ -699,7 +765,7 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 				if ((psItem->ItemType == ITEM_TYPE_VALUE) || (psItem->ItemType == ITEM_TYPE_ADJVAR) ||
 					(psItem->ItemType == ITEM_TYPE_CHECKBOX))
 				{
-					;  // Dummy for rest cases
+					;  // Dummy for another cases
 				}
 
 				else
@@ -766,7 +832,9 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	st = xTaskGetTickCount() - st;
 	st++;
 
-	MiniRemote.SetRedrawPrimitiveObjectsFlag(FALSE__);
+
+	MiniRemote.SetRedrawMenuFlag(sbgcFALSE);
+	MiniRemote.SetRedrawPrimitiveObjectsFlag(sbgcFALSE);
 }
 
 

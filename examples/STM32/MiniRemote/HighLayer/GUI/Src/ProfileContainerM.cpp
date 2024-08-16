@@ -18,6 +18,12 @@
 static const char *emptyProfileNames [] = { "Profile 1", "Profile 2", "Profile 3", "Profile 4", "Profile 5" };
 
 
+void SBGC32_ProfileChangeCallback (void *nProf)
+{
+	Gimbal.GetAddressRealTimeData()->curProfile = *((ui8*)nProf);
+}
+
+
 void CProfileContainerM::Init (void)
 {
 	gdispImage *imageBuff;
@@ -47,11 +53,11 @@ void CProfileContainerM::Init (void)
 	ghLabelProfileName = gwinLabelCreate(0, &wi);
 
 	/* Profile button labels */
-	const char *nums [PROFILES_QUANTITY] = { "1", "2", "3", "4", "5" };
+	const char *nums [SBGC_PROFILES_NUM] = { "1", "2", "3", "4", "5" };
 
-	wi.g.x = PROFILE_BUTTON_MARGINS;
+	wi.g.x = PROFILE_BUTTON_MARGINS + (PROFILE_BUTTONS_WIDTH / 2);
 
-	for (ui8 i = 0; i < PROFILES_QUANTITY; i++)
+	for (ui8 i = 0; i < SBGC_PROFILES_NUM; i++)
 	{
 		wi.g.width = PROFILE_BUTTONS_WIDTH;
 		wi.g.height = PROFILE_BUTTONS_HEIGHT;
@@ -90,7 +96,7 @@ void CProfileContainerM::vTask (void *pvParameters)
 {
 	unused_(pvParameters);
 
-	Gimbal.ReadRealTimeData();
+	Gimbal.ReadRealTimeData(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 	ui8 nProf = Gimbal.GetAddressRealTimeData()->curProfile;
 
@@ -114,11 +120,14 @@ void CProfileContainerM::vTask (void *pvParameters)
 		MiniRemote.ProcessFunction(CSF_NAVIGATION_EXIT, &exitButton);
 
 		if ((nav == ND_DOWN) || exitButton == BS_PRESSED)
+		{
 			CStateManager::SetState({ PREVIOUS_STATE, 0 });
+			while (1);
+		}
 
 
 		if ((nav == ND_RIGHT) || (nav == (ND_RIGHT | ND_CONTINUOUS)))
-			if (nProf<(PROFILES_QUANTITY - 1))
+			if (nProf < (SBGC_PROFILES_NUM - 1))
 			{
 				gwinMove(ghImageArrow, ghImageArrow->x + PROFILE_BUTTON_X_STEP, ghImageArrow->y);
 				nProf++;
@@ -140,37 +149,40 @@ void CProfileContainerM::vTask (void *pvParameters)
 			switch (nProf)
 			{
 				case 0 :
-					Gimbal.ExecuteMenu(MENU_CMD_PROFILE1);
+					Gimbal.ExecuteMenu(MENU_CMD_PROFILE1, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									   SBGC32_ProfileChangeCallback, &nProf);
 					break;
 
 				case 1 :
-					Gimbal.ExecuteMenu(MENU_CMD_PROFILE2);
+					Gimbal.ExecuteMenu(MENU_CMD_PROFILE2, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									   SBGC32_ProfileChangeCallback, &nProf);
 					break;
 
 				case 2 :
-					Gimbal.ExecuteMenu(MENU_CMD_PROFILE3);
+					Gimbal.ExecuteMenu(MENU_CMD_PROFILE3, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									   SBGC32_ProfileChangeCallback, &nProf);
 					break;
 
 				case 3 :
-					Gimbal.ExecuteMenu(MENU_CMD_PROFILE4);
+					Gimbal.ExecuteMenu(MENU_CMD_PROFILE4, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									   SBGC32_ProfileChangeCallback, &nProf);
 					break;
 
 				case 4 :
-					Gimbal.ExecuteMenu(MENU_CMD_PROFILE5);
+					Gimbal.ExecuteMenu(MENU_CMD_PROFILE5, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									   SBGC32_ProfileChangeCallback, &nProf);
 					break;
 
 				default :
 					break;
 			}
-
-			if (Gimbal.GetAddressGeneralSBGC()->_confirmationStatus == CONFIRMATION_OK)
-				Gimbal.GetAddressRealTimeData()->curProfile = nProf;  // Implicit value assignment to private struct field
 		}
 
 		/* Drawing buttons */
-		for (ui8 i = 0; i < PROFILES_QUANTITY; i++)
+		for (ui8 i = 0; i < SBGC_PROFILES_NUM; i++)
 		{
-			if (i == Gimbal.GetAddressRealTimeData()->curProfile)
+			if ((i == Gimbal.GetAddressRealTimeData()->curProfile) &&
+				(!SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
 				gwinSetStyle(ghLabelProfileButtons[i], &CWidgetStyle::MonoImgStyleLabelInvert);
 
 			else if (i == nProf)
@@ -180,11 +192,11 @@ void CProfileContainerM::vTask (void *pvParameters)
 				gwinSetStyle(ghLabelProfileButtons[i], &CWidgetStyle::MonoImgStyleLabelNormal);
 		}
 
-		if (*Gimbal.GetAddressProfileNames((Profile_t)nProf) == '\0')
+		if (*Gimbal.GetAddressProfileNames((sbgcProfile_t)nProf) == '\0')
 			gwinSetText(ghLabelProfileName, emptyProfileNames[nProf], FALSE);
 
 		else
-			gwinSetText(ghLabelProfileName, (const char*)Gimbal.GetAddressProfileNames((Profile_t)nProf), FALSE);
+			gwinSetText(ghLabelProfileName, (const char*)Gimbal.GetAddressProfileNames((sbgcProfile_t)nProf), FALSE);
 
 
 		osDelay(CONTAINER_PROCESS_DELAY);

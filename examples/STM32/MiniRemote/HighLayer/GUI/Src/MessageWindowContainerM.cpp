@@ -19,6 +19,23 @@ extern ui32 lastAutoTuneTime;
 extern volatile bool PID_AutoTuneFinishFlag;
 
 
+void SBGC32_CalibrationFinishMW_Callback (void *gSBGC)
+{
+	Gimbal.GetAddressCalibInfo()->progress = 0;
+	gwinProgressbarSetPosition(exCMessageWindowContainerM.ghProgressbar, Gimbal.GetAddressCalibInfo()->progress);
+
+	Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
+	Gimbal.processStatus = PROCESS_FINISHED;
+
+	/* Exit */
+	gwinHide(exCMessageWindowContainerM.ghProgressbar);
+	gwinHide(exCMessageWindowContainerM.ghImageReturn);
+	osDelay(10);
+	CStateManager::SetState({ PREVIOUS_STATE, 0 });
+	osDelay(15);
+}
+
+
 void CMessageWindowContainerM::Init (void)
 {
 	static GWidgetInit wi;
@@ -272,7 +289,7 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 				}
 
 				/* Doing calibration */
-				Gimbal.CalibAcc();
+				Gimbal.CalibAcc(SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 				if (Gimbal.GetCommunicationState())
 				{
@@ -293,10 +310,12 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 			}
 
 			case MW_GIMBAL_GYRO_CALIB_STATE :
+
+				Gimbal.ExpectCommand(CMD_CONFIRM, SCParam_NO, SCPrior_NORMAL, SCTimeout_MAX, SBGC32_CalibrationFinishMW_Callback, NULL);
+
 			case MW_GIMBAL_PID_TUNE_STATE :
 			{
 				ui32 lastCalibInfoTime = false;
-				ui32 calibrationExitTimeout = osGetTickCount();
 
 				gwinProgressbarSetPosition(ghProgressbar, 0);
 				gwinHide(ghProgressbar);
@@ -319,6 +338,7 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 					/* Navigation handle */
 					MiniRemote.ProcessNavigationDirection();
 					nav = MiniRemote.GetNavigationDirection();
+					MiniRemote.ProcessFunction(CSF_NAVIGATION_EXIT, &exitButton);
 
 					/* Exit */
 					if ((nav == ND_LEFT) || (exitButton == BS_PRESSED))
@@ -345,9 +365,8 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 						(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())) &&
 						PID_AutoTuneFinishFlag)  // It's not PID calibration
 					{
-						Gimbal.RequestCalibInfo(SBGC_TARGET_IMU);
-
-						if (Gimbal.GetCommunicationState())
+						if (Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+									SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
 							lastCalibInfoTime = osGetTickCount();
 					}
 
@@ -365,52 +384,6 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 
 							gwinShow(ghProgressbar);
 						}
-
-						else  // Calibration finished or broke
-						{
-							SerialCommand_t cmd;
-							ClearCmd(&cmd);
-
-							Gimbal.FindCommand(&cmd, CMD_CONFIRM, SBGC_REQ_WAITING);
-
-							if (cmd.commandID == CMD_CONFIRM)  // Calibration is finished successfully
-							{
-								gwinHide(ghProgressbar);
-								osDelay(10);
-								Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
-								Gimbal.processStatus = PROCESS_FINISHED;
-								CStateManager::SetState({ PREVIOUS_STATE, 0 });
-								while (1);
-							}
-						}
-
-						Gimbal.ReadRealTimeData();  // Getting real-time data for motors state info
-
-						calibrationExitTimeout = osGetTickCount();
-					}
-
-					if (((osGetTickCount() - calibrationExitTimeout) > CALIBRATION_TIMEOUT_WAITING) &&
-						(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())))
-					{
-						gwinHide(ghProgressbar);
-						osDelay(10);
-						Gimbal.ClearCurrentState(SBGC_CALIBRATE_IMU);
-						Gimbal.processStatus = PROCESS_FINISHED;
-						CStateManager::SetState({ PREVIOUS_STATE, 0 });
-						while (1);
-					}
-
-
-					/* Disconnection handle */
-					if (SBGC_NoConnectionStateMask(Gimbal.GetCurrentState()))
-					{
-						gwinHide(ghProgressbar);
-						gwinHide(ghImageReturn);
-						osDelay(10);
-						SetCurrentState(MW_NOTE_STATE);
-						MiniRemote.SetDisconnectionMessageState(DM_SHOWED);
-						SetMessage(TEXT_SIZE_("Connection is lost"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
-						break;
 					}
 
 					osDelay(CONTAINER_PROCESS_DELAY);
@@ -421,17 +394,17 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 
 			case MW_GIMBAL_INIT_OK_STATE :
 			{
-				char	boardVersionStr [4],
-						firmwareVersionStr [7],
+				char	boardVersionStr [5],
+						firmwareVersionStr [8],
 						curProfileStr [2],
 
 						totalBuff [100];
 
-				FormatBoardVersion(Gimbal.GetAddressGeneralSBGC(),
-								   Gimbal.GetAddressGeneralSBGC()->_boardVersion, boardVersionStr);
-				FormatFirmwareVersion(Gimbal.GetAddressGeneralSBGC(),
-									  Gimbal.GetAddressGeneralSBGC()->_firmwareVersion, firmwareVersionStr);
-				Gimbal.GetAddressGeneralSBGC()->SprintfFunc
+				ParserSBGC32_FormatBoardVersion(Gimbal.GetAddressGeneralSBGC(),
+												Gimbal.GetAddressGeneralSBGC()->_api->boardVersion, BUFF_SIZE_(boardVersionStr));
+				ParserSBGC32_FormatFirmwareVersion(Gimbal.GetAddressGeneralSBGC(),
+												   Gimbal.GetAddressGeneralSBGC()->_api->firmwareVersion, BUFF_SIZE_(firmwareVersionStr));
+				Gimbal.GetAddressGeneralSBGC()->_ll->debugSprintf
 				(curProfileStr, "%u", (Gimbal.GetAddressRealTimeData()->curProfile + 1));
 
 				sprintf_(totalBuff,

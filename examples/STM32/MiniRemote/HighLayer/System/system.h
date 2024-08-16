@@ -83,7 +83,7 @@ typedef enum
 typedef enum
 {
 	AVS_REMOTE_PRIORITY				= 0,
-	AVS_GIMBAL_PRIORITY
+	AVS_GIMBAL_PRIORITY				= 1
 
 }	AdjVarsSync_t;
 
@@ -112,7 +112,7 @@ typedef enum
 typedef enum
 {
 	CW_UART							= 0,
-	CW_RS422
+	CW_RS422						= 1
 
 }	CommunicationWay_t;
 
@@ -143,14 +143,15 @@ typedef struct
 
 typedef struct
 {
-	font_t		smallFont,
-				mediumFont,
-				largeFont;
+	font_t			smallFont,
+					mediumFont,
+					largeFont;
 
 	DisconnectionMessageState_t
-				disconnectionMessage;
+					disconnectionMessage;
 
-	Boolean_t	redrawPrimitiveObjectsFlag;			// For menu items redrawing like circles, rectangles etc.
+	sbgcBoolean_t	redrawMenuFlag;
+	sbgcBoolean_t	redrawPrimitiveObjectsFlag;			// For menu items redrawing like circles, rectangles etc.
 
 }	MiniRemoteGUI_t;
 
@@ -174,7 +175,7 @@ typedef struct
 }	MiniRemoteCalibs_t;
 
 
-typedef struct
+typedef struct __attribute__((aligned(4)))
 {
 	ui32			firmwareVersion;
 
@@ -293,6 +294,7 @@ class MiniRemoteGeneral
 		font_t				GetMediumFont (void) { return GUI.mediumFont; }
 		font_t				GetLargeFont (void) { return GUI.largeFont; }
 
+		void				SetTempBrightness (ui16 value) { tempBrightness = value; }
 		ui16				*GetAddressBrightness (void) { return &currentBrightness; }
 		ui16				GetBrightness (void) { return currentBrightness; }
 		void				SetBrightness (ui16 brightness)
@@ -317,8 +319,11 @@ class MiniRemoteGeneral
 		DisconnectionMessageState_t
 							GetDisconnectionMessageState (void) { return GUI.disconnectionMessage; }
 
-		Boolean_t			GetRedrawPrimitiveObjectsFlag (void) { return GUI.redrawPrimitiveObjectsFlag; }
-		void				SetRedrawPrimitiveObjectsFlag (Boolean_t newState) { GUI.redrawPrimitiveObjectsFlag = newState; }
+		sbgcBoolean_t		GetRedrawMenuFlag (void) { return GUI.redrawMenuFlag; }
+		void				SetRedrawMenuFlag (sbgcBoolean_t newState) { GUI.redrawMenuFlag = newState; }
+
+		sbgcBoolean_t		GetRedrawPrimitiveObjectsFlag (void) { return GUI.redrawPrimitiveObjectsFlag; }
+		void				SetRedrawPrimitiveObjectsFlag (sbgcBoolean_t newState) { GUI.redrawPrimitiveObjectsFlag = newState; }
 
 };
 
@@ -355,10 +360,9 @@ static inline void AverageValue (AverageValue_t *averageValue, i32 value)
 static inline void FormatMiniRemoteFirmwareVersion (ui32 firmwareVer, char* pBuff)
 {
 	ui8 majorVer = firmwareVer / 100000;
-	ui8 minorVer = (firmwareVer % 100000) / 1000;
-	ui16 build = firmwareVer % 1000;
+	ui8 minorVer = (firmwareVer % 100000) / 10000;
 
-	sprintf_(pBuff, "v.%u.%u.b%u", majorVer, minorVer, build);
+	sprintf_(pBuff, "v.%u.%u", majorVer, minorVer);
 }
 
 

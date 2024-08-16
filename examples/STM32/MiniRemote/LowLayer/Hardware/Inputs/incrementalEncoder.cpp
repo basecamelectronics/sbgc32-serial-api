@@ -17,16 +17,16 @@ IncrementalEncoder LeftIncrementalEncoder(	INC_ENC2_TIM_INSTANCE,
 											PRPH_LEFT_INCREMENTAL_ENCODER,
 											&GPIO_ReferenceArray[INC_ENC_PRPH_OFFSET + INC_ENC_PRPH_PINS_NUM],
 											INC_ENC_PRPH_PINS_NUM,
-											lambafunc_(INC_ENC2_ACH_TIM_GPIO_CLOCK_ENABLE(); INC_ENC2_BCH_TIM_GPIO_CLOCK_ENABLE()),
-											lambafunc_(INC_ENC2_TIM_CLOCK_ENABLE()),
+											lambdafunc_(INC_ENC2_ACH_TIM_GPIO_CLOCK_ENABLE(); INC_ENC2_BCH_TIM_GPIO_CLOCK_ENABLE()),
+											lambdafunc_(INC_ENC2_TIM_CLOCK_ENABLE()),
 											LeftIncrementalEncoderReadCount);
 
 IncrementalEncoder RightIncrementalEncoder(	INC_ENC1_TIM_INSTANCE,
 											PRPH_RIGHT_INCREMENTAL_ENCODER,
 											&GPIO_ReferenceArray[INC_ENC_PRPH_OFFSET],
 											INC_ENC_PRPH_PINS_NUM,
-											lambafunc_(INC_ENC1_ACH_TIM_GPIO_CLOCK_ENABLE(); INC_ENC1_BCH_TIM_GPIO_CLOCK_ENABLE()),
-											lambafunc_(INC_ENC1_TIM_CLOCK_ENABLE()),
+											lambdafunc_(INC_ENC1_ACH_TIM_GPIO_CLOCK_ENABLE(); INC_ENC1_BCH_TIM_GPIO_CLOCK_ENABLE()),
+											lambdafunc_(INC_ENC1_TIM_CLOCK_ENABLE()),
 											RightIncrementalEncoderReadCount);
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

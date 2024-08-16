@@ -11,6 +11,7 @@
  */
 
 #include "createWidget.h"
+#include "parameters.h"
 
 
 sContainerDraw sPotentiometerCalibContainerDraw = {"Pot. Calib.", "Press \"Enter\" for OK"};
@@ -85,7 +86,9 @@ void CPotentiometerCalibContainerM::Init (void)
 
 void CPotentiometerCalibContainerM::OnHide (void)
 {
-	;
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.potMin);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.potMax);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.potZero);
 }
 
 

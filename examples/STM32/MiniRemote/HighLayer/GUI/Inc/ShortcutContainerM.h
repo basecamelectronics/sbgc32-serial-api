@@ -19,18 +19,17 @@
 
 #define		INITIAL_SHORTCUT_NUM	5				// Number of shortcuts on displayed at the same time
 
-#define		DOWN_ARROW_IMAGE_CLEARANCE		5		// Units: pixels
-
-#define		SIDE_ARROW_IMAGE_CLEARANCE		2		// Units: pixels
-#define		SIDE_ARROW_IMAGE_HEIGHT			6		// Units: pixels
-#define		SIDE_ARROW_IMAGE_WIDTH			3		// Units: pixels
+#define		SIDE_ARROW_IMAGE_CLEARANCE		2		// Units: pixels. Clearance from sides
+#define		SIDE_ARROW_IMAGE_HEIGHT			10		// Units: pixels
+#define		SIDE_ARROW_IMAGE_WIDTH			4		// Units: pixels
 
 #define		SIDE_ARROW_IMAGE_Y_POS			((DISPLAY_HEIGHT - SIDE_ARROW_IMAGE_HEIGHT) / 2)
 
-#define		SHORTCUT_IMAGE_CLEARANCE		2		// Units: pixels
 #define		SHORTCUT_IMAGE_SIZE				28		// Units: pixels (28 x 28)
+#define		SHORTCUT_IMAGE_CLEARANCE		((DISPLAY_WIDTH / 6) - SHORTCUT_IMAGE_SIZE)
 
-#define		SELECT_SC_ARROW_Y_POS			((DISPLAY_HEIGHT / 2) + (SHORTCUT_IMAGE_SIZE / 2) + SELECT_ARROW_CLEARANCE)
+#define		DOWN_ARROW_IMAGE_CLEARANCE		6		// Units: pixels. Clearance from bottom of shortcuts
+#define		DOWN_ARROW_Y_POS				((DISPLAY_HEIGHT / 2) + (SHORTCUT_IMAGE_SIZE / 2) + SELECT_ARROW_CLEARANCE)
 
 /* Units: pixels */
 #define		SHORTCUT_IMAGE_Y_POS			((DISPLAY_HEIGHT - SHORTCUT_IMAGE_SIZE) / 2)
@@ -85,6 +84,9 @@ class CShortcutContainerM : public CXContainer
 		ShortcutParameters_t
 							shortcut [SHORTCUT_TOTAL_NUM];
 
+		ShortcutCurrentStatus_t
+							previousShortcutStatuses [SHORTCUT_TOTAL_NUM];
+
 		GHandle				ghLabelSelect;
 		GHandle				ghProgressbar;
 		GHandle				ghImageReturn;
@@ -98,14 +100,26 @@ class CShortcutContainerM : public CXContainer
 		void				vTask (void *pvParameters);
 		void				OnHide (void);
 
+		void				SaveCurrentStatuses (void)
+							{
+								for (ui8 i = 0; i < SHORTCUT_TOTAL_NUM; i++)
+									previousShortcutStatuses[i] = shortcut[i].status;
+							}
+
+		void				ReturnPreviousStatuses (void)
+							{
+								for (ui8 i = 0; i < SHORTCUT_TOTAL_NUM; i++)
+									SetStatusAndTrigger(&shortcut[i], previousShortcutStatuses[i]);
+							}
+
 		void				PlaceShortcut (ui8 target, ShortcutParameters_t *newShortcut);
 		void				SwapShortcuts (ShortcutParameters_t *pulledShortcut, ShortcutParameters_t *nextShortcut);
 		void				LeftScroll (void);
 		void				RightScroll (void);
 		void				UpdateShortcutsImages (void);
 
-		void				DrawLeftArrow (Boolean_t color);
-		void				DrawRightArrow (Boolean_t color);
+		void				DrawLeftArrow (sbgcBoolean_t color);
+		void				DrawRightArrow (sbgcBoolean_t color);
 		void				SideArrowsHandle (void);
 
 		void				CommunicationInit (void);
@@ -159,6 +173,9 @@ class CShortcutContainerM : public CXContainer
 								SetStatusAndTrigger(FindShortcut(SHORTCUT_MOTOR_SWITCH), SCS_TURNED_ON);
 							}
 
+
+		friend void			SBGC32_CalibrationFinishSC_Callback (void *gSBGC);
+
 };
 
 
@@ -166,16 +183,16 @@ void TaskPID_AutoTuneFinishCheck (void *params);
 void TaskScriptExeFinishWait (void *params);
 
 
-static inline Boolean_t IsScriptShortcut (ShortcutParameters_t *shortcut)
+static inline sbgcBoolean_t IsScriptShortcut (ShortcutParameters_t *shortcut)
 {
 	if ((shortcut->number == SHORTCUT_SCRIPT_1) ||
 		(shortcut->number == SHORTCUT_SCRIPT_2) ||
 		(shortcut->number == SHORTCUT_SCRIPT_3) ||
 		(shortcut->number == SHORTCUT_SCRIPT_4) ||
 		(shortcut->number == SHORTCUT_SCRIPT_5))
-		return TRUE__;
+		return sbgcTRUE;
 
-	return FALSE__;
+	return sbgcFALSE;
 }
 
 

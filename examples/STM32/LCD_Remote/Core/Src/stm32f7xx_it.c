@@ -64,7 +64,7 @@ extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 extern InputsInfo_t InputsInfo;
-extern GeneralSBGC_t SBGC32_Device;
+extern sbgcGeneral_t SBGC32_Device;
 
 /* USER CODE END EV */
 
@@ -237,9 +237,7 @@ void TIM2_IRQHandler(void)
 
 	/* - - - - - TIM2 Interrupt Flags Check - - - - - */
 
-	if (GET_FLAG_TIM_SR_UIF(SBGC_REFERENCE_TIMER) &&
-		GET_FLAG_TIM_DIER_UIE(SBGC_REFERENCE_TIMER))
-		TimerDRV_CallBack(SBGC32_Device.Drv);
+	sbgcTimerIRQ_Handler(&SBGC32_Device)
 
 	/*  - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -259,16 +257,7 @@ void USART1_IRQHandler(void)
 
 	/*  - - - - UART1 Interrupt Flags Check - - - - - */
 
-	if (GET_FLAG_UART_ISR_TC(SBGC_SERIAL_PORT) &&
-		GET_FLAG_UART_CR1_TCIE(SBGC_SERIAL_PORT))
-		UART_DRV_TxCallBack(SBGC32_Device.Drv);
-
-	if (GET_FLAG_UART_ISR_RXNE(SBGC_SERIAL_PORT) &&
-		GET_FLAG_UART_CR1_RXNEIE(SBGC_SERIAL_PORT))
-		UART_DRV_RxCallBack(SBGC32_Device.Drv);
-
-	if (GET_FLAG_UART_ISR_ORE(SBGC_SERIAL_PORT))
-		CLEAR_UART_ORE(SBGC_SERIAL_PORT);
+	sbgcUART_IRQ_Handler(&SBGC32_Device)
 
 	/*  - - - - - - - - - - - - - - - - - - - - - - - */
 

@@ -16,11 +16,8 @@
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
 #include	"hardware.h"
-#include	"initialConfig.h"
 
 #define		NO_PROCESS_FUNC			NULL
-
-#define		lambafunc_(body)		([](void) { body; } )
 
 #define		IN_MIN_VALUE			0
 #define		IN_MIDDLE_VALUE			32768
@@ -37,7 +34,7 @@ typedef enum
 	IN_ON,
 	IN_NEED_INIT,
 	IN_NEED_DEINIT,
-	IN_OFF
+	IN_OFF,
 
 }	InputState_t;
 
@@ -51,9 +48,11 @@ typedef enum
 {
 	PRPH_DIGITAL_JOYSTICK_CHANNEL_X	= 0,
 	PRPH_DIGITAL_JOYSTICK_CHANNEL_Y,
-	PRPH_ABSOLUTE_ENCODER,
+	PRPH_ABSOLUTE_ENCODER_EEPROM,					// They have one I2C line
 	PRPH_LEFT_INCREMENTAL_ENCODER,
 	PRPH_RIGHT_INCREMENTAL_ENCODER,
+	PRPH_ANALOG_JOYSTICK_CHANNEL_X,
+	PRPH_ANALOG_JOYSTICK_CHANNEL_Y,
 	PRPH_POTENTIOMETER,
 	PRPH_ENCODER1_BUTTON,
 	PRPH_ENCODER2_BUTTON,
@@ -132,6 +131,20 @@ static inline ui16 ConvertValue14_BitTo16_Bit (ui16 value)
 static inline ui16 ConvertValue1_BitTo16_Bit (ui16 value)
 {
 	return (value ? IN_MAX_VALUE : IN_MIN_VALUE);
+}
+
+
+static inline ui16 ConvertValueBinary16_FlagToDecade (ui16 flag)
+{
+	for (ui8 i = 0; i < 16; i++)
+	{
+		if (flag == 1)
+			return i;
+
+		flag >>= 1;
+	}
+
+	return 0;
 }
 
 

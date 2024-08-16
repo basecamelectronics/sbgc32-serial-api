@@ -1,21 +1,15 @@
-/*  ____________________________________________________________________
+/** ____________________________________________________________________
  *
- *	Copyright © 2023 BaseCam Electronics™.
- *	All rights reserved.
+ *	@file		app.h
  *
- *	Licensed under the Apache License, Version 2.0 (the "License");
- *	you may not use this file except in compliance with the License.
- *	You may obtain a copy of the License at
+ *				BaseCamElectronics Team
  *
- *	http://www.apache.org/licenses/LICENSE-2.0
+ *				LCD Remote project
  *
- *	Unless required by applicable law or agreed to in writing, software
- *	distributed under the License is distributed on an "AS IS" BASIS,
- *	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- *	implied. See the License for the specific language governing
- *	permissions and limitations under the License.
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *				https://www.basecamelectronics.com
+ *  ____________________________________________________________________
+ */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *	This is an example sketch for Arduino, that shows how to control
  *	SimpleBGC-driven gimbal via Serial API. API specs are available at
@@ -298,19 +292,20 @@ static inline void AverageValue (AverageValue_t *averageValue, i16 value)
 }
 
 
-void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					 RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
+void ProcessHandler (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
+					 sbgcRealTimeData_t *realTimeData, sbgcAdjVarGeneral_t *adjVarGeneral);
 ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDirection_t newState);
 
 ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo);
-void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral);
-void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
+void UpdateDisplay (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
+					sbgcRealTimeData_t *realTimeData, sbgcAdjVarGeneral_t *adjVarGeneral);
+					void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
 void LCD_PrintProgress (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ui8 cursor_pos);
 void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos);
+void LCD_DebugMessage (ui8 raw, char *str, ui8 length);
 
-ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug);
-void BT_MasterConnect (GeneralSBGC_t *generalSBGC);
+ui8 BT_ReadAnswer (sbgcGeneral_t *sbgcGeneral, ui8 *buff, ui16 timeout, sbgcBoolean_t debug);
+void BT_MasterConnect (sbgcGeneral_t *sbgcGeneral);
 
 void ReadADC_Inputs (InputsInfo_t *inputsInfo);
 ui8 ReadButtonState (ui8 pin);

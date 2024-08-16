@@ -15,7 +15,7 @@
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-#include	"gfx.h"
+#include	"gwinMenuPref.h"
 
 #define		PARAM_EDIT_Y_CENTER_OFFSET		(((EDIT_TITLE_TOTAL_HEIGHT - MEDIUM_FONT_HEIGHT) / 2) - 1)
 
@@ -23,6 +23,8 @@
 class CParameterEditContainerM : public CXContainer
 {
 	private :
+
+		ParameterHandle_t	*parameterHandle;
 
 		GHandle				ghImageReturn,
 							ghValueProgressbar,

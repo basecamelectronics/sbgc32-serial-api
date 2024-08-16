@@ -1,14 +1,14 @@
-/** ____________________________________________________________________
+/**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v1.1
+ *	SBGC32 Serial API Library v2.0
  *
- * 	@file		sbgc32.c
+ *	@file		sbgc32.c
  *
- *	@brief 		Assembly source file of the Library
+ *	@brief		Assembly source file of the Library
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2023 BaseCam Electronics™.<br>
+ *				Copyright © 2024 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -35,41 +35,106 @@
 /**	@addtogroup	Common
  *	@{
  */
-/**	@brief	General initialization function.
- * 			Sets library variables from configurations
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *													Executable Functions
+ */
+/**	@brief	Conducts to general initialization
  *
- * 	@param	*generalSBGC - serial connection descriptor
+ *	@note	Quasi-private function. Don't use it
+ *
+ *	@param	*gSBGC - serial connection descriptor
  *
  *	@return	Communication status
  */
-TxRxStatus_t SBGC32_Init (GeneralSBGC_t *generalSBGC)
+sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
 {
-	#if (SBGC_USE_ARDUINO_DRIVER)
+	#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
 
-		return SBGC32_ManualInit(generalSBGC, TxFuncTemp, RxFuncTemp, AvailableBytesFuncTemp,
-								 TxDebugFuncTemp, GetTimeFuncTemp, sprintf, SBGC_PROTOCOL_V2);
+		#if (SBGC_USE_ARDUINO_DRIVER)
 
-	#elif (SBGC_USE_LINUX_DRIVER)
+			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_TxFuncTemp, DriverSBGC32_RxFuncTemp, DriverSBGC32_AvailableBytesFuncTemp,
+								 DriverSBGC32_TxDebugFuncTemp, DriverSBGC32_GetTimeFuncTemp);
 
-		DriverInit(&generalSBGC->Drv, SBGC_SERIAL_PORT);
+			DriverSBGC32_InitFuncTemp();
 
-		return SBGC32_ManualInit(generalSBGC, PortTransmitData, PortReceiveByte, GetAvailableBytes,
-								 PrintDebugData, GetTimeMs, sprintf, SBGC_PROTOCOL_V2);
+		#elif (SBGC_USE_LINUX_DRIVER)
 
-	#elif (SBGC_USE_STM32_DRIVER)
+			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_PortTransmitData, DriverSBGC32_PortReceiveByte, DriverSBGC32_GetAvailableBytes,
+								 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
 
-		DriverInit(&generalSBGC->Drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
+			DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_SERIAL_SPEED);
 
-		return SBGC32_ManualInit(generalSBGC, UartTransmitData, UartReceiveByte, GetAvailableBytes,
-								 UartTransmitDebugData, GetTimeMs, sprintf, SBGC_PROTOCOL_V2);
+		#elif (SBGC_USE_STM32_DRIVER)
 
-	#else
-		#error "When using a custom driver, use the SBGC32_ManualInit() function!"
+			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_UartTransmitData, DriverSBGC32_UartReceiveByte, DriverSBGC32_GetAvailableBytes,
+								 DriverSBGC32_UartTransmitDebugData, DriverSBGC32_GetTimeMs);
+
+			DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
+
+		#endif
 	#endif
+
+	return SBGC32_SetupLibrary(gSBGC);
+}
+
+
+/**	@brief	General initialization function.
+ *			Launches SBGC32 thread if OS support is on.
+ *			Links embedded driver functions to the low-layer,
+ *			sets library variables from configurations, gets
+ *			firmware and hardware versions of the board
+ *
+ *	@pre	Connected SBGC32 device
+ *
+ *	@code
+
+			// Link the library files
+			#include "sbgc32.h"
+
+			// Declare a general SBGC32 object
+			sbgcGeneral_t SBGC32_Device;
+
+			// Initialize the library
+			SBGC32_Init(&SBGC32_Device);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *
+ *	@return	Communication status
+ */
+sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
+{
+	#if (!(SBGC_USE_ARDUINO_DRIVER || SBGC_USE_LINUX_DRIVER || SBGC_USE_STM32_DRIVER))
+
+		/* Attention! When using a custom driver, use the SerialAPI_LinkDriver() and SBGC32_SetupLibrary function! */
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+
+	#endif
+
+	#if (SBGC_USES_OS_SUPPORT)
+		SystemSBGC32_Init(gSBGC);
+	#else
+		return PrivateSBGC32_EnterInit(gSBGC);
+	#endif
+
+	return sbgcCOMMAND_OK;
+}
+
+
+/**	@brief	Will be executed upon any error occurrence
+ *
+ *	@note	Weak function
+ */
+WEAK__ void SerialAPI_FatalErrorHandler (void)
+{
+	/* User common error handler */
+
+	while (1);
 }
 /**	@}
  */
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-/*					https://www.basecamelectronics.com  			  */
+/*                 https://www.basecamelectronics.com                 */
 /* __________________________________________________________________ */

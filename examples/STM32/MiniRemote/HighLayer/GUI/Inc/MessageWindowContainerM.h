@@ -81,10 +81,15 @@ class CMessageWindowContainerM : public CXContainer
 		MessageWindowState_t
 							GetCurrentState (void) { return currentState; }
 
+
+		friend void			SBGC32_CalibrationFinishMW_Callback (void *gSBGC);
+
 };
 
-
 extern MessageWindowDialogAnswer_t dialogAnswer;
+
+
+//void SBGC32_CalibrationFinishCallback (void *gSBGC);
 
 
 #endif		/* _MESSAGE_WINDOW_CONTAINER_M_H_ */

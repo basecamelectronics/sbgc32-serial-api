@@ -25,7 +25,7 @@ MiniRemoteGeneral MiniRemote(	gdispOpenFont("DejaVuSans12_aa"),
 void MiniRemoteGeneral::Init (void)
 {
 	/* Mixes init */
-	/* - - - - - Place for manual mixer remapping - - - - */
+	/* - - - - A space for manual mixer remapping - - - - */
 
 	/* It must be referenceInputID or referenceOutputID */
 
@@ -40,12 +40,11 @@ void MiniRemoteGeneral::Init (void)
 
 	gwinSetDefaultFont(MiniRemote.GetMediumFont());
 
-	GUI.redrawPrimitiveObjectsFlag = TRUE__;
+	GUI.redrawPrimitiveObjectsFlag = sbgcTRUE;
 
 	/* State machine init */
 	osSemaphoreCreate(xSemaphoreCurrentState);
 	osSemaphoreGive(xSemaphoreCurrentState);
-
 
 	/* OS tasks init */
 	osTaskCreate(	TaskStartPeripheral,
@@ -65,6 +64,7 @@ void MiniRemoteGeneral::Init (void)
 					OS_HIGH_PRIORITY,
 					NULL);
 
+	SetTempBrightness(MiniRemote.Presets.activeBrightness);
 	UpdateLastResponseTime();
 }
 
@@ -217,8 +217,6 @@ void MiniRemoteGeneral::ProcessFunction (SystemFunctionID_t ID, void *res)
 		case CSF_NAVIGATION_EXIT :
 		case VSF_NAVIGATION_CONTROL_TOGGLE :
 		case VSF_SC_MENU_ADJ_VARS :
-		case VSF_SC_RESET_ADJ_VARS :
-		case VSF_SC_SAVE_ADJ_VARS :
 			ProcessButton(valueTemp, (ButtonState_t*)res);
 			break;
 

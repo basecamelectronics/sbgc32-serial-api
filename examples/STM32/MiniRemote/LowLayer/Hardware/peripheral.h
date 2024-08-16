@@ -24,6 +24,7 @@
 
 /* Miscellaneous */
 #include	"CRC32.h"
+#include	"EEPROM.h"
 #include	"internalFlash.h"
 #include	"watchDog.h"
 

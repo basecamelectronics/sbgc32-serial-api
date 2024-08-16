@@ -31,9 +31,11 @@ sMenuItem exsMixInputsItems [] =
 {
 	{ ITEM_TYPE_CHECKBOX, "Digital Joy. X", PRPH_DIGITAL_JOYSTICK_CHANNEL_X, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Digital Joy. Y", PRPH_DIGITAL_JOYSTICK_CHANNEL_Y, 0, NULL, NULL, NULL },
-	{ ITEM_TYPE_CHECKBOX, "Abs. Encoder", PRPH_ABSOLUTE_ENCODER, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Abs. Encoder", PRPH_ABSOLUTE_ENCODER_EEPROM, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Left Inc. Encoder", PRPH_LEFT_INCREMENTAL_ENCODER, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Right Inc. Encoder", PRPH_RIGHT_INCREMENTAL_ENCODER, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Analog Joy. X", PRPH_ANALOG_JOYSTICK_CHANNEL_X, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Analog Joy. Y", PRPH_ANALOG_JOYSTICK_CHANNEL_Y, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Potentiometer", PRPH_POTENTIOMETER, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Left Encoder But.", PRPH_ENCODER1_BUTTON, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Right Encoder But.", PRPH_ENCODER2_BUTTON, 0, NULL, NULL, NULL },
@@ -75,10 +77,11 @@ sMenuItem exsMixOutputsItems [] =
 	{ ITEM_TYPE_CHECKBOX, "Navigation X", CSF_NAVIGATION_X, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Navigation Y", CSF_NAVIGATION_Y, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "Parameter Edit", CSF_PARAMETER_CHANGE, 0, NULL, NULL, NULL },
-	{ ITEM_TYPE_CHECKBOX, "SC Save Adjvars", VSF_SC_SAVE_ADJ_VARS, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "SC Menu Adjvars", VSF_SC_MENU_ADJ_VARS, 0, NULL, NULL, NULL },
-	{ ITEM_TYPE_CHECKBOX, "SC Reset Adjvars", VSF_SC_RESET_ADJ_VARS, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_CHECKBOX, "SC Control Toggle", VSF_NAVIGATION_CONTROL_TOGGLE, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Control Profile Toggle", VSF_CONTROL_PROFILE_TOGGLE, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Control Sens. Adjust", VSF_AXIS_CONTROL_SENS, 0, NULL, NULL, NULL },
+	{ ITEM_TYPE_CHECKBOX, "Control Axis Trimming", VSF_AXIS_TRIMMING, 0, NULL, NULL, NULL },
 
 	{ ITEM_TYPE_CHECKBOX, "No Output", SF_NO, 0, 0, 0 }
 
@@ -216,13 +219,14 @@ sPrefMenu exsPrefAdjVarsSync =
 sMenuItem exsRemoteMenuItems [] =
 {
 	{ ITEM_TYPE_MENU, "Communic. Way", 0, 0, &exsPrefCommunicationWay, NULL, NULL },
-	{ ITEM_TYPE_MENU, "Mixer Settings", 0, 0, &exsPrefMixChannels, NULL, NULL },
+	{ ITEM_TYPE_MENU, "Mixer Settings (beta)", 0, 0, &exsPrefMixChannels, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Joystick Calib.", FUNC_SET_STATE, STICK_CALIB_STATE, NULL, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Potentiometer Calib.", FUNC_SET_STATE, POTENTIOMETER_CALIB_STATE, NULL, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Backlight", FUNC_EDIT_SYSTEM_BRIGHTNESS, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Backlight Dimming", FUNC_EDIT_SYSTEM_EE_RATIO, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Backlight Dim. Time", FUNC_EDIT_SYSTEM_EE_TIMER, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_MENU, "Adj. Vars. Sync.", 0, 0, &exsPrefAdjVarsSync, NULL, NULL },
+	{ ITEM_TYPE_FUNCTION, "Clear EEPROM", FUNC_CLEAR_EEPROM, 0, NULL, NULL, NULL },
 	{ ITEM_TYPE_FUNCTION, "Restart", FUNC_RESTART, 0, NULL, NULL, NULL }
 
 };
@@ -303,11 +307,11 @@ static void MixChannelSettingsMenuInit (void)
 	mixMultiplierHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 	mixAverageHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 
-	*mixMinHandle = { FUNC_EDIT_PARAMETER, NULL, 1.0F, 0, 0, IN_MIN_VALUE, IN_MAX_VALUE, _SIGNED_INT_, "Min", 0, 0, 0, 0, 0, 0};
-	*mixMaxHandle = { FUNC_EDIT_PARAMETER, NULL, 1.0F, 0, 0, IN_MIN_VALUE, IN_MAX_VALUE, _SIGNED_INT_, "Max", 0, 0, 0, 0, 0, 0};
-	*mixOffsetHandle = { FUNC_EDIT_PARAMETER, NULL, 1.0F, 0, 0, MIN_MIX_OFFSET, MAX_MIX_OFFSET, _SIGNED_INT_, "Offset", 0, 0, 0, 0, 0, 0};
-	*mixMultiplierHandle = { FUNC_EDIT_PARAMETER, NULL, 1.0F, 0, 0, MIN_MIX_MPL, MAX_MIX_MPL, _SIGNED_INT_, "Multiplier", 0, 0, 0, 0, 0, 0};
-	*mixAverageHandle = { FUNC_EDIT_PARAMETER, NULL, 1.0F, 0, 0, MIN_MIX_AVERAGE, MAX_MIX_AVERAGE, _SIGNED_INT_, "Average", 0, 0, 0, 0, 0, 0};
+	*mixMinHandle = { FUNC_EDIT_PARAMETER, PMS_REMOTE, NULL, 1.0F, 0, 0, IN_MIN_VALUE, IN_MAX_VALUE, sbgcINT, "Min", 0, 0, 0, 0, 0};
+	*mixMaxHandle = { FUNC_EDIT_PARAMETER, PMS_REMOTE, NULL, 1.0F, 0, 0, IN_MIN_VALUE, IN_MAX_VALUE, sbgcINT, "Max", 0, 0, 0, 0, 0};
+	*mixOffsetHandle = { FUNC_EDIT_PARAMETER, PMS_REMOTE, NULL, 1.0F, 0, 0, MIN_MIX_OFFSET, MAX_MIX_OFFSET, sbgcINT, "Offset", 0, 0, 0, 0, 0};
+	*mixMultiplierHandle = { FUNC_EDIT_PARAMETER, PMS_REMOTE, NULL, 1.0F, 0, 0, MIN_MIX_MPL, MAX_MIX_MPL, sbgcINT, "Multiplier", 0, 0, 0, 0, 0};
+	*mixAverageHandle = { FUNC_EDIT_PARAMETER, PMS_REMOTE, NULL, 1.0F, 0, 0, MIN_MIX_AVERAGE, MAX_MIX_AVERAGE, sbgcINT, "Average", 0, 0, 0, 0, 0};
 
 	mixMinHandle->initValue = MiniRemote.Presets.mixChannel[chosenMixChannel].min;
 	mixMaxHandle->initValue = MiniRemote.Presets.mixChannel[chosenMixChannel].max;
@@ -321,11 +325,11 @@ static void MixChannelSettingsMenuInit (void)
 	mixMultiplierHandle->operatingValue = &MiniRemote.Presets.mixChannel[chosenMixChannel].multiplier;
 	mixAverageHandle->operatingValue = &MiniRemote.Presets.mixChannel[chosenMixChannel].average;
 
-	mixAverageHandle->typeValue = _UNSIGNED_SHORT_;
-	mixMaxHandle->typeValue = _UNSIGNED_SHORT_;
-	mixOffsetHandle->typeValue = _SIGNED_INT_;
-	mixMultiplierHandle->typeValue = _FLOAT_;
-	mixAverageHandle->typeValue = _UNSIGNED_CHAR_;
+	mixAverageHandle->typeValue = sbgcUSHORT;
+	mixMaxHandle->typeValue = sbgcUSHORT;
+	mixOffsetHandle->typeValue = sbgcINT;
+	mixMultiplierHandle->typeValue = sbgcFLOAT;
+	mixAverageHandle->typeValue = sbgcUCHAR;
 
 	/* Title */
 	char mixChannelTitle [15] = {0};
@@ -423,7 +427,10 @@ void CMenuContainerM::Init (void)
 void CMenuContainerM::vTask (void *pvParameters)
 {
 	if (!EnterPrefMenu((sPrefMenu*)pvParameters))
+	{
 		CStateManager::SetState({ PREVIOUS_STATE, 0 });
+		while (1);
+	}
 
 	gwinShow(ghContainer);
 	gwinSetText(ghLabelTitle, (const char*)PrefMenu->Menu->pszTitle, FALSE);
@@ -496,7 +503,10 @@ void CMenuContainerM::vTask (void *pvParameters)
 		}
 
 		if ((nav == ND_LEFT) || (exitButton == BS_PRESSED))
+		{
 			CStateManager::SetState({ PREVIOUS_STATE, 0 });
+			while (1);
+		}
 
 		/* One-time drawing objects handle */
 		if (oneTimeDrawObjectsFlag)
@@ -506,9 +516,8 @@ void CMenuContainerM::vTask (void *pvParameters)
 									 (char*)"Where to save values between sessions ", MiniRemote.GetSmallFont(),
 									 GFX_DARK_GRAY, GFX_BLACK, (gJustify)(gJustifyCenter | gJustifyMiddle));
 
-			oneTimeDrawObjectsFlag = FALSE__;
+			oneTimeDrawObjectsFlag = sbgcFALSE;
 		}
-
 
 		osDelay(CONTAINER_PROCESS_DELAY);
 	}
@@ -567,7 +576,7 @@ bool CMenuContainerM::EnterPrefMenu (sPrefMenu *menuPath)
 	CMenuContainerM::SwitchState((RemoteMenuState_t)PrefMenu->menuType);
 
 	if (PrefMenu->menuType == REMOTE_MENU_ADJ_VARS_SYNC_PRIORITY)
-		oneTimeDrawObjectsFlag = TRUE__;
+		oneTimeDrawObjectsFlag = sbgcTRUE;
 
 	Process(menuCurrentState);
 
@@ -581,6 +590,22 @@ void CMenuContainerM::Process (RemoteMenuState_t currentState)
 {
 	switch (currentState)
 	{
+		case REMOTE_MENU_COMMUNICATION_WAY :
+			for (ui8 i = 0; i < countof_(exsCommunicationWayItems); i++)
+				exsPrefCommunicationWay.Menu->psItems[i].param = 0;
+
+			exsPrefCommunicationWay.Menu->psItems[(ui8)MiniRemote.Presets.communicationWay].param = 1;
+
+			break;
+
+		case REMOTE_MENU_ADJ_VARS_SYNC_PRIORITY :
+			for (ui8 i = 0; i < countof_(exsAdjVarsSyncItems); i++)
+				exsPrefAdjVarsSync.Menu->psItems[i].param = 0;
+
+			exsPrefAdjVarsSync.Menu->psItems[(ui8)MiniRemote.Presets.adjVarsSync].param = 1;
+
+			break;
+
 		case REMOTE_MENU_MIX_CHANNELS :
 			MixChannelsMenuInit();
 			break;

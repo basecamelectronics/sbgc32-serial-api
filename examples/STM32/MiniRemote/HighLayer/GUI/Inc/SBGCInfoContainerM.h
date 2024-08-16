@@ -18,7 +18,7 @@
 #include	"gfx.h"
 #include	"gimbal.h"
 
-#define		SBGC_MENU_ADJVARS_ADD_FUNC_NUM	3		// Quantity of service function in an Adjvars Data menu
+#define		SBGC_MENU_ADJVARS_ADD_FUNC_NUM	4		// Quantity of service function in an Adjvars Data menu
 
 
 typedef enum
@@ -44,12 +44,13 @@ typedef enum
 
 typedef struct
 {
-	AdjVarGeneral_t	buffEditedAdjVar;
+	sbgcAdjVarGeneral_t
+					buffEditedAdjVar;
 
-	ui8		activeAdjVarsCount;
-	bool	activeAdjVarFlag [ADJ_VARS_QUANTITY];
+	ui8				activeAdjVarsCount;
+	bool			activeAdjVarFlag [SBGC_ADJ_VARS_MAX_QUANTITY];
 
-	bool	needUpdateActiveAdjVarsN_Select;
+	bool			needUpdateActiveAdjVarsN_Select;
 
 }	AdjVarsMenu_t;
 

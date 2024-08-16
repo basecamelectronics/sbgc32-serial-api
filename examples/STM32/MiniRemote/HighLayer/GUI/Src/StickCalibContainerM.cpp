@@ -11,6 +11,7 @@
  */
 
 #include "createWidget.h"
+#include "parameters.h"
 
 
 sContainerDraw sStickCalibContainerDraw = {"Joystick Calib.", "Press \"Enter\" for OK"};
@@ -70,7 +71,13 @@ void CStickCalibContainerM::Init (void)
 
 void CStickCalibContainerM::OnHide (void)
 {
-	;
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyX_Min);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyX_Max);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyX_Zero);
+
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyY_Min);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyY_Max);
+	SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.handlersCalibs.joyY_Zero);
 }
 
 

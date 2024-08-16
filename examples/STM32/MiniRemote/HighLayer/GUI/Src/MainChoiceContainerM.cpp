@@ -49,15 +49,15 @@ void CMainChoiceContainerM::Init (void)
    |____________________|
 */
 
-	gCoord Aw = ghContainer->width / 5;
-	gCoord Ah = ghContainer->height / 8;
-	gCoord Rx = ghContainer->width / 2 - Ah;
-	gCoord Ry = ghContainer->height / 2 - Ah;
-	gCoord W = ghContainer->width;
-	gCoord H = ghContainer->height;
+	gCoord Aw = DISPLAY_WIDTH / 5;
+	gCoord Ah = DISPLAY_HEIGHT / 8;
+	gCoord Rx = DISPLAY_WIDTH / 2 - Ah;
+	gCoord Ry = DISPLAY_HEIGHT / 2 - Ah;
+	gCoord W = DISPLAY_WIDTH;
+	gCoord H = DISPLAY_HEIGHT;
 
 	gCoord textH = 16; // textH > Aw
-	gCoord textW = ghContainer->width / 2 - Ah;
+	gCoord textW = DISPLAY_WIDTH / 2 - Ah;
 
 	gCoord A1x = W / 2 - Rx - Ah;
 	gCoord A2x = W / 2 + Rx;
@@ -71,15 +71,15 @@ void CMainChoiceContainerM::Init (void)
 	gPoint textPos [] =
 	{
 		{ (gCoord)(A1x + Ah), (gCoord)(A12y + ((Aw - textH) / 2)) },
-		{ (gCoord)(ghContainer->width / 2), (gCoord)(A12y + ((Aw - textH) / 2)) },
-		{ (gCoord)((ghContainer->width - textW) / 2), (gCoord)(A3y + Ah + 1)},
-		{ (gCoord)((ghContainer->width - textW) / 2), (gCoord)(A4y - textH - 2) }
+		{ (gCoord)(DISPLAY_WIDTH / 2), (gCoord)(A12y + ((Aw - textH) / 2)) },
+		{ (gCoord)((DISPLAY_WIDTH - textW) / 2), (gCoord)(A3y + Ah + 1)},
+		{ (gCoord)((DISPLAY_WIDTH - textW) / 2), (gCoord)(A4y - textH - 2) }
 	};
 
 	const gJustify justify [] = { gJustifyLeft, gJustifyRight, gJustifyTop, gJustifyBottom, };
 	const char* names [] = { "Gimbal", "Remote", "Profiles", "Shortcuts" };
 
-	for (uint8_t i = 0; i < 4; ++i)
+	for (ui8 i = 0; i < 4; ++i)
 	{
 		/* Text */
 		wi.g.height = textH;
@@ -115,7 +115,7 @@ void CMainChoiceContainerM::OnHide (void)
 
 void CMainChoiceContainerM::vTask (void *pvParameters)
 {
-	UNUSED(pvParameters);
+	unused_(pvParameters);
 
 	gwinShow(ghContainer);
 
@@ -130,23 +130,31 @@ void CMainChoiceContainerM::vTask (void *pvParameters)
 		nav =  MiniRemote.GetNavigationDirection();
 
     	if (nav == ND_UP)
+    	{
     		CStateManager::SetState({ PROFILE_STATE, 0 });
+    		while (1);
+    	}
 
     	if (nav == ND_DOWN)
+    	{
 			CStateManager::SetState({ SHORTCUT_STATE, 0 });
+			while (1);
+    	}
 
 		if (nav == ND_RIGHT)
 		{
 			extern sPrefMenu exsPrefRemoteMenu;
 			CStateManager::SetState({ REMOTE_MENU_STATE, ((uint32_t)&exsPrefRemoteMenu) });
+			while (1);
 		}
 
 		if (nav == ND_LEFT)
 		{
 			extern sPrefMenu exsPrefSBGCInfo;
 			CStateManager::SetState({ GIMBAL_MENU_STATE, ((uint32_t)&exsPrefSBGCInfo) });
+			while (1);
 		}
 
-		vTaskDelay(CONTAINER_PROCESS_DELAY);
+		osDelay(CONTAINER_PROCESS_DELAY);
 	}
 }

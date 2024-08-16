@@ -62,12 +62,12 @@ class CMenuContainerM : public CXContainer
 		GHandle				ghLabelTitle;
 		GHandle				ghImageReturn;
 
-		Boolean_t			oneTimeDrawObjectsFlag;
+		sbgcBoolean_t		oneTimeDrawObjectsFlag;
 
 
 		CMenuContainerM (void) : PrefMenu(0)
 							{
-								oneTimeDrawObjectsFlag = FALSE__;
+								oneTimeDrawObjectsFlag = sbgcFALSE;
 							}
 
 		static RemoteMenuState_t

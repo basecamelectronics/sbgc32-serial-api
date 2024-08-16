@@ -9,18 +9,24 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include serialAPI/sources/service/subdir.mk
--include serialAPI/sources/realtime/subdir.mk
--include serialAPI/sources/profiles/subdir.mk
--include serialAPI/sources/imu/subdir.mk
--include serialAPI/sources/gimbalControl/subdir.mk
--include serialAPI/sources/eeprom/subdir.mk
--include serialAPI/sources/core/subdir.mk
--include serialAPI/sources/calib/subdir.mk
--include serialAPI/sources/adjvar/subdir.mk
--include serialAPI/drivers/STM32_Driver/subdir.mk
--include serialAPI/drivers/LinuxDriver/subdir.mk
--include serialAPI/drivers/ArduinoDriver/subdir.mk
+-include serialAPI/os/glueLinuxOS/subdir.mk
+-include serialAPI/os/glueFreeRTOS/subdir.mk
+-include serialAPI/os/glueAzureRTOS/subdir.mk
+-include serialAPI/modules/service/subdir.mk
+-include serialAPI/modules/realtime/subdir.mk
+-include serialAPI/modules/profiles/subdir.mk
+-include serialAPI/modules/imu/subdir.mk
+-include serialAPI/modules/gimbalControl/subdir.mk
+-include serialAPI/modules/eeprom/subdir.mk
+-include serialAPI/modules/calib/subdir.mk
+-include serialAPI/modules/adjvar/subdir.mk
+-include serialAPI/drivers/driverSTM32/subdir.mk
+-include serialAPI/drivers/driverLinux/subdir.mk
+-include serialAPI/drivers/driverArduino/subdir.mk
+-include serialAPI/core/parser/subdir.mk
+-include serialAPI/core/highLayer/subdir.mk
+-include serialAPI/core/debug/subdir.mk
+-include serialAPI/core/subdir.mk
 -include serialAPI/subdir.mk
 -include Middleware/uGFX/src/gdisp/subdir.mk
 -include Middleware/uGFX/src/subdir.mk
@@ -95,6 +101,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 MiniRemote.list \
 
+OBJCOPY_HEX += \
+MiniRemote.hex \
+
 OBJCOPY_BIN += \
 MiniRemote.bin \
 
@@ -121,6 +130,11 @@ MiniRemote.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+MiniRemote.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "MiniRemote.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 MiniRemote.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "MiniRemote.bin"
 	@echo 'Finished building: $@'
@@ -128,10 +142,10 @@ MiniRemote.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 
 # Other Targets
 clean:
-	-$(RM) MiniRemote.bin MiniRemote.elf MiniRemote.list MiniRemote.map default.size.stdout
+	-$(RM) MiniRemote.bin MiniRemote.elf MiniRemote.hex MiniRemote.list MiniRemote.map default.size.stdout
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX) $(OBJCOPY_BIN)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

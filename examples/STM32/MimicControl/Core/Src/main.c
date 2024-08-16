@@ -60,28 +60,26 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-/*   					Global Software Objects  					  */
+/*                       Global Software Objects                      */
 /* __________________________________________________________________ */
 
-			GeneralSBGC_t			SBGC32_Device;
+			sbgcGeneral_t			SBGC32_Device;
 
-static 		Control_t    			Control;
-static		ControlConfig_t			ControlConfig;
+static		sbgcControl_t			Control;
+static		sbgcControlConfig_t		ControlConfig;
+
+static		sbgcConfirm_t			Confirm;
 
 			InputsInfo_t			InputsInfo;
 
-static		i16 servoOut [8] = {	SERVO_OUT_DISABLED, SERVO_OUT_DISABLED,
-									SERVO_OUT_DISABLED, SERVO_OUT_DISABLED,
-									SERVO_OUT_DISABLED, SERVO_OUT_DISABLED,
-									SERVO_OUT_DISABLED, SERVO_OUT_DISABLED};
+static		i16 servoOut [SBGC_SERVO_OUTS_NUM] = {	SBGC_SERVO_OUT_DISABLED, SBGC_SERVO_OUT_DISABLED,
+													SBGC_SERVO_OUT_DISABLED, SBGC_SERVO_OUT_DISABLED};
 
 static		AverageValue_t JoystickAverage [2];
 
 static		ui32 currentTime;
-static 		ui32 lastControlTime = 0;
-static 		ui32 lastButtonTime;
-
-/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+static		ui32 lastControlTime = 0;
+static		ui32 lastButtonTime;
 
 /* USER CODE END 0 */
 
@@ -92,12 +90,6 @@ static 		ui32 lastButtonTime;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
-	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-	/*                         Initialization                         */
-	/* ______________________________________________________________ */
-
-	/*  - - - - - - - - - - - - Hardware Init - - - - - - - - - - - - */
 
   /* USER CODE END 1 */
 
@@ -127,15 +119,12 @@ int main(void)
 
   	InitADC(&InputsInfo, JOYSTICK_ADC);
 
-
-	/*  - - - - - - - - - - Software Initialization - - - - - - - - - */
-
 	/* SimpleBGC32 Init */
 	SBGC32_Init(&SBGC32_Device);
 
 	/* Control Configurations */
-	Control.controlMode[PITCH] = CtrlM_MODE_ANGLE;
-	Control.controlMode[YAW] = CtrlM_MODE_ANGLE;
+	Control.mode[PITCH] = CtrlMODE_ANGLE;
+	Control.mode[YAW] = CtrlMODE_ANGLE;
 
 	Control.AxisC[PITCH].angle = 0;
 	Control.AxisC[YAW].angle = 0;
@@ -147,7 +136,7 @@ int main(void)
 
 	#endif
 
-	ControlConfig.flags = RTCCF_CONTROL_CONFIG_FLAG_NO_CONFIRM;
+	ControlConfig.flags = CtrlCONFIG_FLAG_NO_CONFIRM;
 
 	InputsInfo.recBtn = BTN_RELEASED;
 	InputsInfo.menuBtn = BTN_RELEASED;
@@ -158,14 +147,9 @@ int main(void)
 	servoOut[PWM_SERVO_OUT_IDX] = PWM_CAM_REC_OFF;
 
 
-	/*  - - - - - - - - - Initializing commands - - - - - - - - - - - */
-
-	SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig);
+	SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
 
 	SBGC32_SetServoOut(&SBGC32_Device, servoOut);
-
-
-	/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 
   /* USER CODE END 2 */
 
@@ -173,24 +157,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-		/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
-		/*                     Start Worker Cycle                     */
-		/* __________________________________________________________ */
-
-	  	/* Getting current time */
-		currentTime = SBGC32_Device.GetTimeFunc(SBGC32_Device.Drv);
+		/* Getting current time */
+		currentTime = sbgcGetTick();
 
 
 		/* - - - - - - - - - - Joystick Handling - - - - - - - - - - */
 
 		ReadADC_Inputs(&InputsInfo);
 
-		AverageValue(&JoystickAverage[0], (i16)DEGREE_TO_ANGLE_INT(YAW_ANGLE_MIN) +
-			(i16)((i32)InputsInfo.ADC_INx[ADC_JOY_Y] * DEGREE_TO_ANGLE_INT(YAW_ANGLE_MAX - YAW_ANGLE_MIN) / (1 << ADC_RESOLUTION)));
+		AverageValue(&JoystickAverage[0], (i16)sbgcDegreeToAngle(YAW_ANGLE_MIN) +
+			(i16)((i32)InputsInfo.ADC_INx[ADC_JOY_Y] * sbgcDegreeToAngle(YAW_ANGLE_MAX - YAW_ANGLE_MIN) / (1 << ADC_RESOLUTION)));
 
-		AverageValue(&JoystickAverage[1], (i16)DEGREE_TO_ANGLE_INT(PITCH_ANGLE_MIN) +
-			(i16)((i32)InputsInfo.ADC_INx[ADC_JOY_X] * DEGREE_TO_ANGLE_INT(PITCH_ANGLE_MAX - PITCH_ANGLE_MIN) / (1 << ADC_RESOLUTION)));
+		AverageValue(&JoystickAverage[1], (i16)sbgcDegreeToAngle(PITCH_ANGLE_MIN) +
+			(i16)((i32)InputsInfo.ADC_INx[ADC_JOY_X] * sbgcDegreeToAngle(PITCH_ANGLE_MAX - PITCH_ANGLE_MIN) / (1 << ADC_RESOLUTION)));
 
 
 		if ((currentTime - lastControlTime ) > CMD_CONTROL_DELAY)
@@ -201,7 +180,7 @@ int main(void)
 			Control.AxisC[YAW].angle = JoystickAverage[0].avgRes;
 
 			SBGC32_Control(&SBGC32_Device, &Control);
-			/* SBGC32_CheckConfirmation(&SBGC32_Device, CMD_CONTROL); */
+			/* SBGC32_CheckConfirmation(&SBGC32_Device, CMD_CONTROL, &Confirm); */
 		}
 
 
@@ -244,8 +223,10 @@ int main(void)
 			if ((currentTime - lastButtonTime > SOFTWARE_ANTI_BOUNCE) &&
 				(InputsInfo.menuBtn != BTN_POST_PRESSED))
 			{
-				SBGC32_ExecuteMenu(&SBGC32_Device, MENU_BUTTON_IS_PRESSED);
-				InputsInfo.menuBtn = BTN_POST_PRESSED;
+				SBGC32_ExecuteMenu(&SBGC32_Device, MENU_CMD_BUTTON_PRESS, &Confirm);
+
+				if (SerialAPI_GetConfirmStatus(&Confirm) == sbgcCONFIRM_RECEIVED)
+					InputsInfo.menuBtn = BTN_POST_PRESSED;
 			}
 		}
 
@@ -255,9 +236,7 @@ int main(void)
 
 
 		/* Make a constant sampling time by inserting a delay of 1 ms */
-		while ((SBGC32_Device.GetTimeFunc(SBGC32_Device.Drv) - currentTime) < 1);
-
-		/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+		while ((sbgcGetTick() - currentTime) < 1);
 
     /* USER CODE END WHILE */
 
@@ -321,6 +300,14 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void SerialAPI_FatalErrorHandler (void)
+{
+	/* User common error handler */
+	__disable_irq();
+
+	while (1);
+}
 
 /* USER CODE END 4 */
 

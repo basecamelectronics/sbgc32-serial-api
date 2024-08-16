@@ -10,14 +10,26 @@
  *  ____________________________________________________________________
  */
 
-/* System HL */
+/* System HL includes */
 #include "parameters.h"
 #include "system.h"
 #include "gimbal.h"
 
 
 extern sPrefMenu exsPrefSBGC32_AdjvarsData;
-static ui8 communicationOneTimeFlag = 0;  // needed if gimbal wasn't found at startup
+static ui8 communicationOneTimeFlag = 0;  // needed if gimbal haven't found at startup
+
+
+void SerialAPI_LinkSprintf (sbgcGeneral_t *gSBGC)
+{
+	gSBGC->_ll->debugSprintf = sprintf_;
+}
+
+
+static void SBGC32_PingCallback (void *tick)
+{
+	*(TickType_t*)tick = osGetTickCount();
+}
 
 
 void SystemClock_Config (void);
@@ -34,7 +46,7 @@ int main (void)
 	/* PendSV_IRQn interrupt configuration */
 	HAL_NVIC_SetPriority(PendSV_IRQn, 3, 0);
 
-	osTaskCreate(TaskStartup, "Initialization", configMINIMAL_STACK_SIZE * 5, NULL, OS_NORMAL_PRIORITY, NULL);
+	osTaskCreate(TaskStartup, "Initialization", configMINIMAL_STACK_SIZE * 5, NULL, OS_MEDIUM_PRIORITY, NULL);
 
 	/* Start the scheduler */
 	osTaskStartSheduler();
@@ -49,31 +61,27 @@ void TaskStartup (void *pvParameters)
 
 	char miniRemoteVersionBuff [30] = { 0 };
 
-	Boolean_t needRefreshGUI_Flag = FALSE__;
+	sbgcBoolean_t needRefreshGUI_Flag = sbgcFALSE;
+
+	/* System startup delay */
+	osDelay(10);
 
 	/* Graphics init */
 	gfxInit();
 
 	Utils::showLogo();
-	gdispSetPowerMode(gPowerOn);
 	gdispSetBacklight(DEFAULT_INITIAL_BRIGHTNESS);
 
 	/* Presets restore */
 	CRC32_Module.Init();
+	EEPROM.Init();
+
+	osDelay(10);
 
 	#if (LOADER_NEED_CHANGE_SETTINGS == SET_OFF)
 
-		if (SettingsLoader.Boot() == TRUE__)
-		{
-			#if (MINI_REMOTE_DEVELOPER_RIGHT)
-
-				/* Increment build number */
-				MiniRemote.SetFirmwareVersion(MiniRemote.GetFirmwareVersion() + 1);
-
-			#endif
-
-			needRefreshGUI_Flag = TRUE__;
-		}
+		if (SettingsLoader.Boot() == sbgcTRUE)
+			needRefreshGUI_Flag = sbgcTRUE;
 
 		if (SettingsLoader.GetCurrentState() == LS_READ_ERROR)
 
@@ -82,6 +90,9 @@ void TaskStartup (void *pvParameters)
 		{
 			MiniRemote.SetDefaultSettings();
 			Gimbal.SetDefaultSettings();
+
+			/* Create new settings file */
+			SettingsLoader.Save();
 		}
 
 	/* Current version */
@@ -93,14 +104,14 @@ void TaskStartup (void *pvParameters)
 	/* System init */
 	MiniRemote.Init();
 
-	if (needRefreshGUI_Flag == TRUE__)
+	if (needRefreshGUI_Flag == sbgcTRUE)
 		CCreateWidget::PreInit();
 
 	CStateManager::Init();
 	CCreateWidget::Init();
 
 	/* SimpleBGC32 Init */
-	Gimbal.Init(SBGC_SERIAL_PORT, NULL);
+	Gimbal.Init(SCParam_FREEZE, SCPrior_HIGH, 200, SBGC_NO_CALLBACK_);
 
 	/* Pre-launch */
 	CStateManager::SetState({ MAIN_CHOICE_STATE, 0 });
@@ -108,16 +119,14 @@ void TaskStartup (void *pvParameters)
 	if (Gimbal.GetCommunicationState())
 	{
 		communicationOneTimeFlag = 1;
-		exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Dummy"), MW_GIMBAL_INIT_OK_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
+		exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Dummy"), MW_GIMBAL_INIT_OK_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
 	}
 
 	else  // No-communication handle
 	{
-		exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Connection is lost"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
+		exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Connection is lost"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
 		MiniRemote.SetDisconnectionMessageState(DM_SHOWED);
 	}
-
-
 
 	CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 
@@ -142,12 +151,7 @@ void TaskBackground (void *pvParameters)
 	unused_(pvParameters);
 
 	#if (SBGC_NEED_PING)
-
 		TickType_t	xLastPingTime = osGetTickCount();
-
-		TickType_t	xLostConnectionTime = 0;
-		Boolean_t	driverResetApplyFlag = TRUE__;
-
 	#endif
 
 
@@ -169,12 +173,7 @@ void TaskBackground (void *pvParameters)
 			/* Ping */
 			if (((osGetTickCount() - xLastPingTime) > SBGC_PING_UPDATE_TIME) &&
 				!SBGC_RebootStateMask(Gimbal.GetCurrentState()))
-			{
-				Gimbal.ReadAngles();
-
-				if (Gimbal.GetCommunicationState())
-					xLastPingTime = osGetTickCount();
-			}
+				Gimbal.ReadAngles(SCParam_NO, SCPrior_LOW, 50, SBGC32_PingCallback, &xLastPingTime);
 
 			/* Disconnection handler */
 			if (((osGetTickCount() - xLastPingTime) > DISCONNECTION_UPDATE_TIME) &&
@@ -183,37 +182,26 @@ void TaskBackground (void *pvParameters)
 			{
 				Gimbal.SetCurrentState(SBGC_LOST_CONNECTION);
 
-				#if (SBGC_NEED_CLEAN_UNEXP_CMD_BUFF)
-					Gimbal.ResetUnexpCommandBuff();
-				#endif
-
-				xLostConnectionTime = osGetTickCount();
-				driverResetApplyFlag = TRUE__;
-
-				Gimbal.GetAddressGeneralSBGC()->rxTimeout = SBGC_REDUCED_COMMUNICATION_TIME;
-				Gimbal.GetAddressGeneralSBGC()->txrxTimeout = SBGC_REDUCED_COMMUNICATION_TIME;
-
 				/* Waiting until other window will be hidden */
 				while (CStateManager::GetCurrentState() == MESSAGE_WINDOW_STATE);
 
 				if (MiniRemote.GetDisconnectionMessageState() == DM_NEED_TO_SHOW)
 				{
-					exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Connection is lost"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
+					exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Connection is lost"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
 					CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 					MiniRemote.SetDisconnectionMessageState(DM_SHOWED);
-					__DelayMs(10);
+					osDelay(10);
 				}
 			}
 
 			if (SBGC_NoConnectionStateMask(Gimbal.GetCurrentState()) &&
 			    Gimbal.GetCommunicationState())
 			{
-				Gimbal.SetCurrentState(Gimbal.GetPreviousState());  // Return old state
+				if (Gimbal.GetPreviousState() != SBGC_LOST_CONNECTION)
+					Gimbal.SetCurrentState(Gimbal.GetPreviousState());  // Return old state
 
-				driverResetApplyFlag = FALSE__;
-
-				Gimbal.GetAddressGeneralSBGC()->rxTimeout = SBGC_RX_WAITING;
-				Gimbal.GetAddressGeneralSBGC()->txrxTimeout = SBGC_REQ_WAITING;
+				else
+					Gimbal.SetCurrentState(SBGC_NORMAL);
 
 				/* Waiting until other window will be hidden */
 				while (CStateManager::GetCurrentState() == MESSAGE_WINDOW_STATE);
@@ -222,39 +210,19 @@ void TaskBackground (void *pvParameters)
 
 				if (communicationOneTimeFlag == 0)
 				{
-					Gimbal.RecoverParameters();
-					exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Dummy"), MW_GIMBAL_INIT_OK_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
+					Gimbal.RecoverParameters(SCParam_FREEZE, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+					exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Dummy"), MW_GIMBAL_INIT_OK_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
 					communicationOneTimeFlag = 1;
 				}
 
 				else
-					exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Connection restored"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
+					exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Connection restored"), MW_NOTE_STATE, MW_MEDIUM_FONT, SHOW_MESSAGE_TIME);
 
 				CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 
-				Gimbal.ReadRealTimeData();
+				Gimbal.ReadRealTimeData(SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+				Gimbal.ReadBoardInfo(0, SCParam_NO, SCPrior_LOW, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 			}
-
-			#if (SBGC_NEED_RESET_DRIVER)
-
-				/* Reset driver to recover connection */
-				if ((((osGetTickCount() - xLostConnectionTime) > SBGC_DRIVER_RESET_TIMEOUT) && driverResetApplyFlag) &&
-					(SBGC_NoConnectionStateMask(Gimbal.GetCurrentState())))
-				{
-					Gimbal.ResetDriver(SBGC_SERIAL_PORT, NULL);
-
-					#if (SBGC_NEED_CLEAN_UNEXP_CMD_BUFF)
-						Gimbal.ResetUnexpCommandBuff();
-					#endif
-
-					#if (SBGC_DRIVER_RESET_CYCLIC == SET_OFF)
-						driverResetApplyFlag = FALSE__;
-					#endif
-
-					xLostConnectionTime = osGetTickCount();
-				}
-
-			#endif
 
 		#endif
 
@@ -271,9 +239,27 @@ void TaskBackground (void *pvParameters)
 	    		{
 	    			MiniRemote.SetCurrentState(MR_MENU_CONTROL);
 	    			Gimbal.ClearCurrentState(SBGC_CONTROL);
-	    			Gimbal.StopDataStream();
+
+	    			/* Stop data streaming */
+	    			Gimbal.StopRealTimeDataCustomStream(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+	    			/* Save control modes */
+	    			ui8 modesTemp [3];
+
+	    			for (ui8 i = 0; i < 3; i++)
+	    			{
+	    				modesTemp[i] = Gimbal.Control.mode[i];
+	    				Gimbal.Control.mode[i] = CtrlMODE_NO_CONTROL;
+	    			}
+
+	    			/* Free control */
+	    			Gimbal.ControlGimbal(SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+
+	    			for (ui8 i = 0; i < 3; i++)
+	    				Gimbal.Control.mode[i] = modesTemp[i];
+
 	    			CStateManager::SetState({ PREVIOUS_STATE, 0 });
-	    			__DelayMs(10);
+	    			osDelay(10);
 	    		}
 
 	    		else
@@ -281,7 +267,7 @@ void TaskBackground (void *pvParameters)
 	    			MiniRemote.SetCurrentState(MR_GIMBAL_CONROL);
 	    			Gimbal.AddCurrentState(SBGC_CONTROL);
 	    			CStateManager::SetState({ CONTROL_STATE, 0 });
-	    			__DelayMs(10);
+	    			osDelay(10);
 	    		}
 			}
 		}
@@ -311,7 +297,7 @@ void TaskBackground (void *pvParameters)
 					break;
 			}
 
-			Gimbal.ConfigGimbalControl();
+			Gimbal.ConfigGimbalControl(SCParam_FREEZE, SCPrior_HIGH, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 			if (MiniRemote.GetCurrentState() == MR_GIMBAL_CONROL)
 				CStateManager::SetState({ REFRESH_THE_STATE, 0 });
@@ -320,12 +306,11 @@ void TaskBackground (void *pvParameters)
 		/* Shortcuts handler */
 		MiniRemote.ProcessFunction(VSF_SC_MENU_ADJ_VARS, &adjVarsMenuSC_Button);
 
-		if (adjVarsMenuSC_Button == BS_PRESSED)
+		if ((MiniRemote.GetCurrentState() != MR_GIMBAL_CONROL) &&
+			(adjVarsMenuSC_Button == BS_PRESSED))
 		{
-//			CStateManager::SetState((sDevState){ SBGC_INFO_STATE, ((uint32_t)&exsPrefSBGC32_AdjvarsData) });
-//			__DelayMs(10);
-
-			SettingsLoader.Save();
+			CStateManager::SetState((sDevState){ GIMBAL_MENU_STATE, ((uint32_t)&exsPrefSBGC32_AdjvarsData) });
+			osDelay(10);
 		}
 
 		/* Energy mode handler */
@@ -346,60 +331,57 @@ void TaskBackground (void *pvParameters)
 		#endif
 
 		/* Background task rate */
-		__DelayMs(BACKGROUND_TASK_DELAY);
+		osDelay(BACKGROUND_TASK_DELAY);
 	}
 }
-
 
 /**
   * @brief System Clock Configuration
   * @retval None
   *
   */
-void SystemClock_Config(void)
+void SystemClock_Config (void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Configure the main internal regulator output voltage
+	*/
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 12;
-  RCC_OscInitStruct.PLL.PLLN = 96;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    HardwareErrorHandler();
-  }
+	/** Initializes the RCC Oscillators according to the specified parameters
+	* in the RCC_OscInitTypeDef structure.
+	*/
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = 4;
+	RCC_OscInitStruct.PLL.PLLN = 100;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 4;
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+		HardwareErrorHandler();
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
-  {
-	  HardwareErrorHandler();
-  }
+	/** Initializes the CPU, AHB and APB buses clocks
+	*/
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+							  |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+		HardwareErrorHandler();
 }
+
 
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 {
-	UNUSED(TickPriority);
+	unused_(TickPriority);
 
 	/* Return function status */
 	return HAL_OK;
@@ -414,5 +396,14 @@ uint32_t HAL_GetTick (void)
 
 void HAL_Delay (__IO uint32_t Delay)
 {
-	vTaskDelay(Delay);
+	osDelay(Delay);
+}
+
+
+void SerialAPI_FatalErrorHandler (void)
+{
+	/* User common error handler */
+	__disable_irq();
+
+	while (1);
 }

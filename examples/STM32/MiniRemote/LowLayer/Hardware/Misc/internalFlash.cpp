@@ -57,5 +57,5 @@ void InternalFlashHandle::EraseSector (ui32 sector, ui8 sectorsNumber)
 		HardwareErrorHandler();
 
 	/* FLASH_Erase_Sector(sector, voltageRange); */
-	__DelayMs(1);
+	osDelay(1);
 }

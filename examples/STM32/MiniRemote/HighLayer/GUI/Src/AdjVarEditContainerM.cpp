@@ -12,6 +12,7 @@
 
 #include "createWidget.h"
 #include "gwinMenuPref.h"
+#include "parameters.h"
 
 
 sContainerDraw sAdjVarEditContainerDraw = { "", "" };
@@ -21,9 +22,9 @@ static i32 minInitValue, minTempValue, maxInitValue, maxTempValue;
 static AdjVarActiveClass_t containerPhase;
 static ParameterHandle_t ParameterHandle;
 
-static Boolean_t editLock = FALSE__;
+static sbgcBoolean_t editLock = sbgcFALSE;
 
-static Boolean_t needDisplayUpdate = TRUE__;
+static sbgcBoolean_t needDisplayUpdate = sbgcTRUE;
 
 extern MessageWindowDialogAnswer_t dialogAnswer;
 
@@ -38,24 +39,21 @@ static void InitAdjVarEditContainerHandler (ui8 adjVarID)
 	ParameterHandle.initValue = Gimbal.Presets.AdjVarGeneral[adjVarID].value;
 	ParameterHandle.minValue = Gimbal.Presets.AdjVarGeneral[adjVarID].minValue;
 	ParameterHandle.maxValue = Gimbal.Presets.AdjVarGeneral[adjVarID].maxValue;
-	ParameterHandle.typeValue = Gimbal.Presets.AdjVarGeneral[adjVarID].varType;
-	ParameterHandle.name = &adjVarsReferenceInfoArray[adjVarID].name[ADJ_VAR_NAME_CUT];
+	ParameterHandle.name = &adjVarsReferenceInfoArray[adjVarID].name[SBGC_ADJ_VAR_NAME_CUT];
 	ParameterHandle.sensitivity = EDIT_SENS_PARAMETER_ADJUST;
 
 	ParameterHandle.tempValue = ParameterHandle.initValue;
 	ParameterHandle.divider = (adjVarsReferenceInfoArray[selectedAdjVarID].maxValue - adjVarsReferenceInfoArray[selectedAdjVarID].minValue) *
 							   ParameterHandle.sensitivity;
 
-	ParameterHandle.location = &ParameterHandle;
-
 	/* Locking check */
 	if (ParameterHandle.initValue == ADJVAR_LOCK_VALUE)
-		editLock = TRUE__;
+		editLock = sbgcTRUE;
 
 	else
-		editLock = FALSE__;
+		editLock = sbgcFALSE;
 
-	needDisplayUpdate = TRUE__;
+	needDisplayUpdate = sbgcTRUE;
 
 	MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
 }
@@ -83,7 +81,7 @@ static void ParameterProcessOperating (ButtonState_t enterButton)
 		{
 			/* Delete from active */
 			dialogAnswer = MWDA_NO;
-			exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Delete variable?"), MW_DIALOG_STATE, MW_MEDIUM_FONT, 0);
+			exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Delete variable?"), MW_DIALOG_STATE, MW_MEDIUM_FONT, 0);
 			CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 			while (1);
 		}
@@ -92,7 +90,7 @@ static void ParameterProcessOperating (ButtonState_t enterButton)
 		{
 			/* Add to active */
 			dialogAnswer = MWDA_YES;
-			exCMessageWindowContainerM.SetMessage(TEXT_SIZE_("Add variable?"), MW_DIALOG_STATE, MW_MEDIUM_FONT, 0);
+			exCMessageWindowContainerM.SetMessage(TEXT_LENGTH_("Add variable?"), MW_DIALOG_STATE, MW_MEDIUM_FONT, 0);
 			CStateManager::SetState({ MESSAGE_WINDOW_STATE, 0 });
 			while (1);
 		}
@@ -105,14 +103,20 @@ static void ParameterProcessOperating (ButtonState_t enterButton)
 	if ((ParameterHandle.tempValue != *(i32*)ParameterHandle.operatingValue) ||
 		(minTempValue != ParameterHandle.minValue) ||
 		(maxTempValue != ParameterHandle.maxValue))
-		needDisplayUpdate = TRUE__;
+		needDisplayUpdate = sbgcTRUE;
 
 	if (needDisplayUpdate)
 	{
 		MiniRemote.UpdateLastResponseTime();
 
-		EditAdjVarValue(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID], ParameterHandle.tempValue);
-		Gimbal.SetAdjVarValue(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID]);
+		if (gimbalConnected_ || MiniRemote.Presets.adjVarsSync == AVS_REMOTE_PRIORITY)
+			SerialAPI_EditAdjVarValue(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID], ParameterHandle.tempValue);
+
+		if (gimbalConnected_)
+		{
+			Gimbal.SetAdjVarValue(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID],
+								  SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+		}
 	}
 }
 
@@ -263,6 +267,9 @@ void CAdjVarEditContainerM::OnHide (void)
 	{
 		Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].minValue = (i16)ParameterHandle.minValue;
 		Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].maxValue = (i16)ParameterHandle.maxValue;
+
+		SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].minValue);
+		SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].maxValue);
 	}
 }
 
@@ -295,6 +302,9 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 			while (1);
 		}
 	}
+
+	MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
+	ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
 
 	selectedAdjVarID = *(ui32*)pvParameters;
 	InitAdjVarEditContainerHandler(selectedAdjVarID);
@@ -345,7 +355,7 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 		if ((nav == ND_LEFT) || (exitButton == BS_PRESSED))
 		{
 			gwinSetText(ghLabelTitle, "Adjvar. Edit", FALSE);
-			__DelayMs(10);
+			osDelay(50);  // Necessary delay
 			CStateManager::SetState({ PREVIOUS_STATE, 0 });
 			while (1);
 		}
@@ -365,7 +375,7 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 			Redraw();
 		}
 
-		if (editLock == FALSE__)
+		if (editLock == sbgcFALSE)
 		{
 			/* Target value toggle */
 			if (nav == ND_RIGHT)
@@ -415,7 +425,7 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 
 				gwinProgressbarSetPosition(ghValueProgressbar, ParameterHandle.tempValue);
 
-				needDisplayUpdate = FALSE__;
+				needDisplayUpdate = sbgcFALSE;
 			}
 
 			if (editState != AVES_EDIT_VALUE)
@@ -442,47 +452,46 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 			}
 
 			/* Control handle */
-			switch (editState)
+			MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
+
+			if ((abs(ParameterHandle.newControlValue - ParameterHandle.oldControlValue)) > AS5048_MAX_DISPERSION)
 			{
-				case AVES_EDIT_VALUE :
-					ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
-					MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
 
-					ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
-															  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
-					ParameterHandle.tempValue = constrain_((ParameterHandle.tempValue + SignedCeil(ParameterHandle.filter)),
-															ParameterHandle.minValue, ParameterHandle.maxValue);
-					break;
+				switch (editState)
+				{
+					case AVES_EDIT_VALUE :
+						ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
+																  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
+						ParameterHandle.tempValue = constrain_((ParameterHandle.tempValue + CalculateSignedCeil(ParameterHandle.filter)),
+																ParameterHandle.minValue, ParameterHandle.maxValue);
+						break;
 
-				case AVES_EDIT_MIN :
-					ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
-					MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
+					case AVES_EDIT_MIN :
+						ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
+																  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
+						minTempValue = constrain_((minTempValue + CalculateSignedCeil(ParameterHandle.filter)),
+												   adjVarsReferenceInfoArray[selectedAdjVarID].minValue,
+												   adjVarsReferenceInfoArray[selectedAdjVarID].maxValue);
+						break;
 
-					ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
-															  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
-					minTempValue = constrain_((minTempValue + SignedCeil(ParameterHandle.filter)),
-											   adjVarsReferenceInfoArray[selectedAdjVarID].minValue,
-											   adjVarsReferenceInfoArray[selectedAdjVarID].maxValue);
-					break;
+					case AVES_EDIT_MAX :
+						ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
+																  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
+						maxTempValue = constrain_((maxTempValue + CalculateSignedCeil(ParameterHandle.filter)),
+												   adjVarsReferenceInfoArray[selectedAdjVarID].minValue,
+												   adjVarsReferenceInfoArray[selectedAdjVarID].maxValue);
+						break;
+				}
 
-				case AVES_EDIT_MAX :
-					ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
-					MiniRemote.ProcessFunction(CSF_PARAMETER_CHANGE, &ParameterHandle.newControlValue);
-
-					ParameterHandle.filter = FilterEncoderValue(ParameterHandle.oldControlValue, ParameterHandle.newControlValue,
-															  EDIT_FILTER_DIVIDER_CONSTANT) * ParameterHandle.divider;
-					maxTempValue = constrain_((maxTempValue + SignedCeil(ParameterHandle.filter)),
-											   adjVarsReferenceInfoArray[selectedAdjVarID].minValue,
-											   adjVarsReferenceInfoArray[selectedAdjVarID].maxValue);
-					break;
+				ParameterHandle.oldControlValue = ParameterHandle.newControlValue;
 			}
 		}
 
 		/* If variable is locked, but it's need to fill progressbar */
-		else if (needDisplayUpdate == TRUE__)
+		else if (needDisplayUpdate == sbgcTRUE)
 		{
 			gwinProgressbarSetPosition(ghValueProgressbar, ADJVAR_LOCK_VALUE);
-			needDisplayUpdate = FALSE__;
+			needDisplayUpdate = sbgcFALSE;
 		}
 
 
@@ -514,7 +523,7 @@ void CAdjVarEditContainerM::Redraw (void)
 	gwinProgressbarSetPosition(ghValueProgressbar, ParameterHandle.tempValue);
 	gwinProgressbarSetRange(ghValueProgressbar, ParameterHandle.minValue, ParameterHandle.maxValue);
 
-	needDisplayUpdate = TRUE__;
+	needDisplayUpdate = sbgcTRUE;
 }
 
 

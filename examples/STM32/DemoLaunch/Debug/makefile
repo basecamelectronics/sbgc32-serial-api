@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (10.3-2021.10)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -9,17 +9,23 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include serialAPI/sources/service/subdir.mk
--include serialAPI/sources/realtime/subdir.mk
--include serialAPI/sources/profiles/subdir.mk
--include serialAPI/sources/imu/subdir.mk
--include serialAPI/sources/gimbalControl/subdir.mk
--include serialAPI/sources/eeprom/subdir.mk
--include serialAPI/sources/core/subdir.mk
--include serialAPI/sources/calib/subdir.mk
--include serialAPI/sources/adjvar/subdir.mk
--include serialAPI/drivers/STM32_Driver/subdir.mk
--include serialAPI/drivers/LinuxDriver/subdir.mk
+-include serialAPI/os/glueLinuxOS/subdir.mk
+-include serialAPI/os/glueFreeRTOS/subdir.mk
+-include serialAPI/os/glueAzureRTOS/subdir.mk
+-include serialAPI/modules/service/subdir.mk
+-include serialAPI/modules/realtime/subdir.mk
+-include serialAPI/modules/profiles/subdir.mk
+-include serialAPI/modules/imu/subdir.mk
+-include serialAPI/modules/gimbalControl/subdir.mk
+-include serialAPI/modules/eeprom/subdir.mk
+-include serialAPI/modules/calib/subdir.mk
+-include serialAPI/modules/adjvar/subdir.mk
+-include serialAPI/drivers/driverSTM32/subdir.mk
+-include serialAPI/drivers/driverLinux/subdir.mk
+-include serialAPI/core/parser/subdir.mk
+-include serialAPI/core/highLayer/subdir.mk
+-include serialAPI/core/debug/subdir.mk
+-include serialAPI/core/subdir.mk
 -include serialAPI/subdir.mk
 -include Drivers/STM32F7xx_HAL_Driver/Src/subdir.mk
 -include Core/ThreadSafe/subdir.mk

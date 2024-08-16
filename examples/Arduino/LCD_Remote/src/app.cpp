@@ -1,19 +1,12 @@
-/*  ____________________________________________________________________
+/** ____________________________________________________________________
  *
- *	Copyright © 2023 BaseCam Electronics™.
- *	All rights reserved.
+ *	@file		app.cpp
  *
- *	Licensed under the Apache License, Version 2.0 (the "License");
- *	you may not use this file except in compliance with the License.
- *	You may obtain a copy of the License at
+ *				BaseCamElectronics Team
  *
- *	http://www.apache.org/licenses/LICENSE-2.0
+ *				LCD Remote project
  *
- *	Unless required by applicable law or agreed to in writing, software
- *	distributed under the License is distributed on an "AS IS" BASIS,
- *	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- *	implied. See the License for the specific language governing
- *	permissions and limitations under the License.
+ *				https://www.basecamelectronics.com
  *  ____________________________________________________________________
  */
 
@@ -29,27 +22,27 @@ LiquidCrystal lcd (LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN,
  */
 /* Process incoming commands. Call it as frequently as possible,
    to prevent overrun of serial input buffer */
-void ProcessHandler (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					 RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral)
+void ProcessHandler (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
+					 sbgcRealTimeData_t *realTimeData, sbgcAdjVarGeneral_t *adjVarGeneral)
 {
-	if (generalSBGC->_parserCurrentStatus == TX_RX_OK)
+	if (SerialAPI_GetStatus(sbgcGeneral) == sbgcCOMMAND_OK)
 	{
 		if (LCD_RemoteGeneral->connectFlag == 0)
 		{
 			LCD_RemoteGeneral->connectFlag = 1;
-			SBGC32_GetAdjVarValues(generalSBGC, adjVarGeneral, LCD_RemoteGeneral->adjVarQuan);
+			SBGC32_GetAdjVarValues(sbgcGeneral, adjVarGeneral, LCD_RemoteGeneral->adjVarQuan);
 		}
 
 		ui32 err = (ui32)(abs(realTimeData->IMU_Angle[ROLL] - realTimeData->targetAngle[ROLL])
 				 + abs(realTimeData->IMU_Angle[PITCH] - realTimeData->targetAngle[PITCH])
-				 + abs(realTimeData->IMU_Angle[YAW] - realTimeData->targetAngle[YAW])) * (ui32)(ANGLE_DEGREE_SCALE * 1000);
+				 + abs(realTimeData->IMU_Angle[YAW] - realTimeData->targetAngle[YAW])) * (ui32)((1 / SBGC_ANGLE_SCALE) * 1000);
 
 		 AverageValue(&LCD_RemoteGeneral->TargetErrorAverage, constrain_(err, 0, 999));
 	}
 
 	/* If no commands for a long time, set connected state to false */
 	if (LCD_RemoteGeneral->connectFlag && (LCD_RemoteGeneral->currentTimeMs - LCD_RemoteGeneral->rtReqCmdTimeMs) > MAX_WAIT_TIME_MS)
-		LCD_RemoteGeneral->connectFlag = 0;
+		LCD_RemoteGeneral->connectFlag = 0;  // last_bt_connect_ms = currentTimeMs;
 }
 
 
@@ -65,7 +58,7 @@ ui8 DebounceNavigationButton (LCD_RemoteGeneral_t *LCD_RemoteGeneral, ButtonDire
 	}
 
 	else if (LCD_RemoteGeneral->NavButton.triggerState != LCD_RemoteGeneral->NavButton.state &&
-	  		(ui16)(LCD_RemoteGeneral->currentTimeMs - LCD_RemoteGeneral->NavButton.lastTimeMs) > SOFTWARE_ANTI_BOUNCE)
+			 (ui16)(LCD_RemoteGeneral->currentTimeMs - LCD_RemoteGeneral->NavButton.lastTimeMs) > SOFTWARE_ANTI_BOUNCE)
 	{
 		LCD_RemoteGeneral->NavButton.triggerState = LCD_RemoteGeneral->NavButton.state;
 		return 1;
@@ -82,23 +75,29 @@ ButtonDirection_t ReadNavigationButtonState (InputsInfo_t *inputsInfo)
 
 	ui16 navBtnLevel = inputsInfo->ADC_INx[ADC_NAV];
 
-	if (navBtnLevel >= 900)
+	if (navBtnLevel >= 3600)
 		return NAV_BTN_RELEASED;
 
-	if (navBtnLevel < 50)   return NAV_BTN_LEFT;
-	if (navBtnLevel < 150)  return NAV_BTN_UP;
-	if (navBtnLevel < 250)  return NAV_BTN_RIGHT;
-	if (navBtnLevel < 450)  return NAV_BTN_SELECT;
-	if (navBtnLevel < 700)  return NAV_BTN_DOWN;
-	if (navBtnLevel < 900)  return NAV_BTN_ENCODER_SELECT;
+	if (navBtnLevel < 150)
+		return NAV_BTN_LEFT;
+	if (navBtnLevel < 600)
+		return NAV_BTN_UP;
+	if (navBtnLevel < 1300)
+		return NAV_BTN_RIGHT;
+	if (navBtnLevel < 2000)
+		return NAV_BTN_SELECT;
+	if (navBtnLevel < 2900)
+		return NAV_BTN_DOWN;
+	if (navBtnLevel < 3600)
+		return NAV_BTN_ENCODER_SELECT;
 
 	return NAV_BTN_RELEASED;
 }
 
 
 /* Re-paint display */
-void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
-					RealTimeData_t *realTimeData, AdjVarGeneral_t *adjVarGeneral)
+void UpdateDisplay (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteGeneral,
+					sbgcRealTimeData_t *realTimeData, sbgcAdjVarGeneral_t *adjVarGeneral)
 {
 	/* First raw */
 	lcd.setCursor(0, 0);
@@ -122,7 +121,7 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 			break;
 
 		case 1 :  /* PAGE 1 */
-			sprintf(buf, "SE:%04d  FM:%04dB", generalSBGC->_rxErrorsCount, freeMemory());
+			sprintf(buf, "SE:%04d  FM:%04dB", SerialAPI_GetRxErrorsNumber(sbgcGeneral), freeMemory());
 			break;
 
 		case 2 :  /* PAGE 2 */
@@ -145,20 +144,16 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 	/* Second raw */
 	lcd.setCursor(0, 1);
 
-	#ifdef SBGC_DEBUG_MODE
+	#if (SBGC_NEED_DEBUG)
 
-		#if (SBGC_DEBUG_MODE)
+		/* Currently selected adj. variable name and value */
+		for (pos = 0; pos < ADJ_VAR_NAME_MAX_LENGTH; pos++)
+		{
+			if (!(adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]))
+				break;
 
-			/* Currently selected adj. variable name and value */
-			for (pos = 0; pos < ADJ_VAR_NAME_MAX_LENGTH; pos++)
-			{
-				if (!(adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]))
-					break;
-
-				sprintf(&buf[pos], "%c", adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]);  // offset due to ADJ_VAR_ (+ 8)
-			}
-
-		#endif
+			sprintf(&buf[pos], "%c", adjVarGeneral[LCD_RemoteGeneral->currentAdjVarIndex].name[pos + 8]);  // offset due to ADJ_VAR_ (+ 8)
+		}
 
 	#endif
 
@@ -175,8 +170,10 @@ void UpdateDisplay (GeneralSBGC_t *generalSBGC, LCD_RemoteGeneral_t *LCD_RemoteG
 /* Displays a NULL-terminated string */
 void LCD_DebugMessage (ui8 raw, char *str, ui8 length)
 {
-	lcd.setCursor(0, raw);
 	ui8 pos = 0;
+
+	lcd.setCursor(0, raw);
+
 	while (pos != length)
 		lcd.print(str[pos++]);
 
@@ -201,30 +198,28 @@ void LCD_FillSpace (ui8 *cursor_pos, ui8 to_pos)
 }
 
 
-ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_t debug)
+ui8 BT_ReadAnswer (sbgcGeneral_t *sbgcGeneral, ui8 *buff, ui16 timeout, sbgcBoolean_t debug)
 {
-	DELAY_MS_(timeout);
+	sbgcDelay(timeout);
 
 	ui8 size = 0;
 
-	while (!generalSBGC->RxFunc(generalSBGC->Drv, &buff[size]))
-	{
+	while (!sbgcGeneral->_ll->drvRx(sbgcGeneral->_ll->drv, (ui8*)&buff[size]))
 		size++;
-	}
 
-	if (debug == TRUE__)
+	if (debug)
 	{
 		if (size != 0)
 		{
 			buff[size - 2] = '\0';
-			LCD_DebugMessage(1, TEXT_SIZE_((char*)buff));
-			DELAY_MS_(500);
+			LCD_DebugMessage(1, TEXT_LENGTH_((char*)buff));
+			sbgcDelay(500);
 		}
 
 		else
 		{
-			LCD_DebugMessage(1, TEXT_SIZE_((char*)"NO ANSWER"));
-			DELAY_MS_(1000);
+			LCD_DebugMessage(1, TEXT_LENGTH_((char*)"NO ANSWER"));
+			sbgcDelay(1000);
 		}
 	}
 
@@ -232,47 +227,47 @@ ui8 BT_ReadAnswer (GeneralSBGC_t *generalSBGC, ui8 *buff, ui16 timeout, Boolean_
 }
 
 
-void BT_MasterConnect (GeneralSBGC_t *generalSBGC)
+void BT_MasterConnect (sbgcGeneral_t *sbgcGeneral)
 {
 	ui8 buff [BLUETOOTH_BUF_SIZE];
 
-	LCD_DebugMessage(0, TEXT_SIZE_((char*)"BLUETOOTH INIT.."));
+	LCD_DebugMessage(0, TEXT_LENGTH_((char*)"BLUETOOTH INIT.."));
 
 	if (SBGC_SERIAL_SPEED != BLUETOOTH_BAUD)  // for SBGC_SERIAL_PORT.begin(SBGC_SERIAL_SPEED) initialization
 		SBGC_SERIAL_PORT.begin(BLUETOOTH_BAUD);
 
 	/* UART speed re-setting (optional) */
-	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"));
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"115200 SPEED..."));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
+	/* sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"));
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"115200 SPEED..."));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE); */
 
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"));  // Clear paired devices
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"RMAAD..."));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"));  // Clear paired devices
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"RMAAD..."));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE);
 
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+PSWD=", strlen("AT+PSWD="));
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_PIN, strlen(BLUETOOTH_CLIENT_PIN));
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"PIN..."));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+PSWD=", strlen("AT+PSWD="));
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)BLUETOOTH_CLIENT_PIN, strlen(BLUETOOTH_CLIENT_PIN));
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"\r\n", 2);
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"PIN..."));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE);
 
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+ROLE=1\r\n", strlen("AT+ROLE=1\r\n"));  // Set 'master' mode
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"ROLE = MASTER..."));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+ROLE=1\r\n", strlen("AT+ROLE=1\r\n"));  // Set 'master' mode
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"ROLE = MASTER..."));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE);
 
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+CMODE=0\r\n", strlen("AT+CMODE=0\r\n"));  // Connect only to fixed MAC address
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CMODE = 0..."));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+CMODE=0\r\n", strlen("AT+CMODE=0\r\n"));  // Connect only to fixed MAC address
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"CMODE = 0..."));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE);
 
-	/* generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+INIT\r\n", strlen("AT+INIT\r\n"));  // Initialize 'SPP'
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"INIT SPP"));
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__); */
+	/* sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+INIT\r\n", strlen("AT+INIT\r\n"));  // Initialize 'SPP'
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"INIT SPP"));
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE); */
 
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"AT+LINK=", strlen("AT+LINK="));
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)BLUETOOTH_CLIENT_MAC_ADDR, strlen(BLUETOOTH_CLIENT_MAC_ADDR));
-	generalSBGC->TxFunc(generalSBGC->Drv, (ui8*)"\r\n", 2);  // Connect to slave HC-05
-	BT_ReadAnswer(generalSBGC, buff, 500, TRUE__);
-	LCD_DebugMessage(1, TEXT_SIZE_((char*)"CONNECTION..."));
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"AT+LINK=", strlen("AT+LINK="));
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)BLUETOOTH_CLIENT_MAC_ADDR, strlen(BLUETOOTH_CLIENT_MAC_ADDR));
+	sbgcGeneral->_ll->drvTx(sbgcGeneral->_ll->drv, (ui8*)"\r\n", 2);  // Connect to slave HC-05
+	BT_ReadAnswer(sbgcGeneral, buff, 500, sbgcTRUE);
+	LCD_DebugMessage(1, TEXT_LENGTH_((char*)"CONNECTION..."));
 }
 
 

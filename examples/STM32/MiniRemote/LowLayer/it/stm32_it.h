@@ -50,25 +50,18 @@ void MemManage_Handler (void);
 void BusFault_Handler (void);
 void UsageFault_Handler (void);
 void DebugMon_Handler (void);
-#if (DRV_USE_FREERTOS == 0)
-	void SVC_Handler (void);
-	void PendSV_Handler (void);
-	void SysTick_Handler (void);
-#endif
-
-#if (DRV_USE_CUBEMX == SET_OFF)
-	#if defined (DRV_HAL_TIMER) || defined (DRV_LL_TIMER)
-		void SBGC_TIMER_IRQ_HANDLER (void);
-	#endif
-
+#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
 	void SBGC_UART_IRQ_HANDLER (void);
-
-	#if (DRV_HAL_DMA_UART) || (DRV_LL_DMA_UART)
-		void SBGC_UART_DMA_TX_CH_IRQ_HANDLER (void);
-		void SBGC_UART_DMA_RX_CH_IRQ_HANDLER (void);
-	#endif
+	void SBGC_UART_DMA_TX_CH_IRQ_HANDLER (void);
+	void SBGC_UART_DMA_RX_CH_IRQ_HANDLER (void);
+#else
+	void SBGC_UART1_IRQ_HANDLER (void);
+	void SBGC_UART2_IRQ_HANDLER (void);
+	void SBGC_UART1_DMA_TX_CH_IRQ_HANDLER (void);
+	void SBGC_UART1_DMA_RX_CH_IRQ_HANDLER (void);
+	void SBGC_UART2_DMA_TX_CH_IRQ_HANDLER (void);
+	void SBGC_UART2_DMA_RX_CH_IRQ_HANDLER (void);
 #endif
-
 void DJOY_XCH_TIM_IRQ_HANDLER (void);
 void DJOY_YCH_TIM_IRQ_HANDLER (void);
 void GENERAL_ADC_DMA_IRQ_HANDLER (void);

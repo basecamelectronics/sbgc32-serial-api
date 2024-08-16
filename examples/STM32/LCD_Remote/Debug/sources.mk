@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (10.3-2021.10)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 ELF_SRCS := 
@@ -9,6 +9,7 @@ S_SRCS :=
 C_SRCS := 
 S_UPPER_SRCS := 
 O_SRCS := 
+CYCLO_FILES := 
 SIZE_OUTPUT := 
 OBJDUMP_LIST := 
 SU_FILES := 
@@ -24,16 +25,22 @@ SUBDIRS := \
 Core/Src \
 Core/Startup \
 Drivers/STM32F7xx_HAL_Driver/Src \
-serialAPI/drivers/LinuxDriver \
-serialAPI/drivers/STM32_Driver \
+serialAPI/core \
+serialAPI/core/debug \
+serialAPI/core/highLayer \
+serialAPI/core/parser \
+serialAPI/drivers/driverLinux \
+serialAPI/drivers/driverSTM32 \
+serialAPI/modules/adjvar \
+serialAPI/modules/calib \
+serialAPI/modules/eeprom \
+serialAPI/modules/gimbalControl \
+serialAPI/modules/imu \
+serialAPI/modules/profiles \
+serialAPI/modules/realtime \
+serialAPI/modules/service \
+serialAPI/os/glueAzureRTOS \
+serialAPI/os/glueFreeRTOS \
+serialAPI/os/glueLinuxOS \
 serialAPI \
-serialAPI/sources/adjvar \
-serialAPI/sources/calib \
-serialAPI/sources/core \
-serialAPI/sources/eeprom \
-serialAPI/sources/gimbalControl \
-serialAPI/sources/imu \
-serialAPI/sources/profiles \
-serialAPI/sources/realtime \
-serialAPI/sources/service \
 
