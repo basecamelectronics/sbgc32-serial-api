@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		imu.c
  *
@@ -176,12 +176,13 @@
  *	@param	*extIMU_DebugInfo - structure to storing
  *			information about external IMU sensor
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestExtIMU_DebugInfo (sbgcGeneral_t *gSBGC, sbgcExtIMU_DebugInfo_t *extIMU_DebugInfo
 													/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2660)
+	sbgcAssertFeature(BF_EXT_IMU)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_EXT_IMU_DEBUG_INFO SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->finishWrite(gSBGC);
@@ -190,7 +191,7 @@ sbgcCommandStatus_t SBGC32_RequestExtIMU_DebugInfo (sbgcGeneral_t *gSBGC, sbgcEx
 	gSBGC->_api->assignEvent(gSBGC, NULL, extIMU_DebugInfo, sizeof(sbgcExtIMU_DebugInfo_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -259,11 +260,13 @@ static void PostSendCmdToExtIMU (sbgcGeneral_t *gSBGC)
  *	@param	*cmdToIMU - serial command to external IMU
  *	@param	cmdType - direction of external IMU command
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SendCmdToExtIMU (sbgcGeneral_t *gSBGC, sbgcExtIMU_Command_t *cmdToIMU, sbgcExtIMU_CommandType_t cmdType
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_EXT_IMU)
+
 	if (cmdType == EXT_IMU_CMD_TYPE_TX)
 	{
 		gSBGC->_api->startWrite(gSBGC, CMD_EXT_IMU_CMD SBGC_ADVANCED_ARGS__);
@@ -293,7 +296,7 @@ sbgcCommandStatus_t SBGC32_SendCmdToExtIMU (sbgcGeneral_t *gSBGC, sbgcExtIMU_Com
 		gSBGC->_api->assignEvent(gSBGC, PostSendCmdToExtIMU, cmdToIMU, cmdToIMU->payloadSize);
 		gSBGC->_api->finishRead(gSBGC);
 
-		gSBGC->_api->bound(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
 	serialAPI_GiveToken()
@@ -347,7 +350,7 @@ static void PostSendCmdToExtSens (sbgcGeneral_t *gSBGC)
  *	@param	flags - additional command flags
  *	@param	cmdType - direction of external sensor command
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SendCmdToExtSens (sbgcGeneral_t *gSBGC, sbgcExtIMU_Command_t *cmdToSens, sbgcExtSensCommandFlag_t flags,
 											 sbgcExtIMU_CommandType_t cmdType
@@ -355,6 +358,7 @@ sbgcCommandStatus_t SBGC32_SendCmdToExtSens (sbgcGeneral_t *gSBGC, sbgcExtIMU_Co
 {
 	sbgcAssertBoardVer(36)
 	sbgcAssertFrwVer(2687)
+	sbgcAssertFeature(BF_EXT_IMU)
 
 	if (cmdType == EXT_IMU_CMD_TYPE_TX)
 	{
@@ -387,7 +391,7 @@ sbgcCommandStatus_t SBGC32_SendCmdToExtSens (sbgcGeneral_t *gSBGC, sbgcExtIMU_Co
 		gSBGC->_api->assignEvent(gSBGC, PostSendCmdToExtSens, cmdToSens, cmdToSens->payloadSize);
 		gSBGC->_api->finishRead(gSBGC);
 
-		gSBGC->_api->bound(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
 	serialAPI_GiveToken()
@@ -422,7 +426,7 @@ sbgcCommandStatus_t SBGC32_SendCmdToExtSens (sbgcGeneral_t *gSBGC, sbgcExtIMU_Co
  *	@param	*gyroCorrection - structure with written
  *			gyroscope zero bias parameters
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CorrectionGyro (sbgcGeneral_t *gSBGC, const sbgcGyroCorrection_t *gyroCorrection
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -493,7 +497,7 @@ static void PostCallAHRS_Helper (sbgcGeneral_t *gSBGC)
  *	@param	mode - a complex variable. For more, see
  *			@ref ParserSBGC32_PackAHRS_HelperMode function
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CallAHRS_Helper (sbgcGeneral_t *gSBGC, sbgcAHRS_Helper_t *AHRS_Helper, ui16 mode
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -520,7 +524,7 @@ sbgcCommandStatus_t SBGC32_CallAHRS_Helper (sbgcGeneral_t *gSBGC, sbgcAHRS_Helpe
 		gSBGC->_api->assignEvent(gSBGC, PostCallAHRS_Helper, AHRS_Helper, sizeof(sbgcAHRS_Helper_t));
 		gSBGC->_api->finishRead(gSBGC);
 
-		gSBGC->_api->bound(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
 	serialAPI_GiveToken()
@@ -542,25 +546,22 @@ sbgcCommandStatus_t SBGC32_CallAHRS_Helper (sbgcGeneral_t *gSBGC, sbgcAHRS_Helpe
  *
  *	@code
 
-			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) < 2600)
-			{
-				sbgcHelperData_t HelperData = { 0 };
-
-				HelperData.frameAngleRoll = sbgcAngleToDegree(-3);
-				HelperData.frameAnglePitch = sbgcAngleToDegree(2);
-
-				SBGC32_ProvideHelperData(&SBGC32_Device, &HelperData);
-			}
-
-			else
+			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2600)
 				(void)(1);  // Use the SBGC32_ProvideHelperDataExt function
+
+			sbgcHelperData_t HelperData = { 0 };
+
+			HelperData.frameAngleRoll = sbgcAngleToDegree(-3);
+			HelperData.frameAnglePitch = sbgcAngleToDegree(2);
+
+			SBGC32_ProvideHelperData(&SBGC32_Device, &HelperData);
 
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*helperData - prepared helper data structure
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ProvideHelperData (sbgcGeneral_t *gSBGC, sbgcHelperData_t *helperData
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -594,27 +595,24 @@ sbgcCommandStatus_t SBGC32_ProvideHelperData (sbgcGeneral_t *gSBGC, sbgcHelperDa
  *
  *	@code
 
-			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2600)
-			{
-				sbgcHelperDataExt_t HelperDataExt = { 0 };
-
-				HelperDataExt.frameAngleRoll = sbgcAngleToDegree(-3);
-				HelperDataExt.frameAnglePitch = sbgcAngleToDegree(2);
-				HelperDataExt.flags = HDF_COORD_SYS_GROUND;
-				HelperDataExt.frameHeading = sbgcAngleToDegree(5);
-
-				SBGC32_ProvideHelperDataExt(&SBGC32_Device, &HelperDataExt);
-			}
-
-			else
+			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) < 2600)
 				(void)(1);  // Use the SBGC32_ProvideHelperData function
+
+			sbgcHelperDataExt_t HelperDataExt = { 0 };
+
+			HelperDataExt.frameAngleRoll = sbgcAngleToDegree(-3);
+			HelperDataExt.frameAnglePitch = sbgcAngleToDegree(2);
+			HelperDataExt.flags = HDF_COORD_SYS_GROUND;
+			HelperDataExt.frameHeading = sbgcAngleToDegree(5);
+
+			SBGC32_ProvideHelperDataExt(&SBGC32_Device, &HelperDataExt);
 
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*helperDataExt - prepared extended helper data structure
  *
- *	@return Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ProvideHelperDataExt (sbgcGeneral_t *gSBGC, sbgcHelperDataExt_t *helperDataExt
 												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )

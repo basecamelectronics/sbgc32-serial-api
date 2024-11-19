@@ -41,7 +41,7 @@ void CDebugConsoleContainerM::Init (void)
 	wi.show = TRUE;
 	wi.parent = ghContainer;
 
-	gwinSetFont(ghContainer, MiniRemote.GetMediumFont());
+	gwinSetFont(ghContainer, MiniRemote.GetSmallFont());
 
 	/* Set the fore- and background colors for each console */
 	gwinSetColor(ghContainer, GFX_LIGHT_GRAY);

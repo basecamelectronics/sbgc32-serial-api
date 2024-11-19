@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		driverLinux.h
  *
@@ -113,7 +113,7 @@ typedef struct
 	char	*device;
 	int		devFD;
 
-}			sbgcDriver_t;
+}	sbgcDriver_t;
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

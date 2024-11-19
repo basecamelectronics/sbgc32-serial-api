@@ -18,8 +18,6 @@ extern 		"C" {
 #endif
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-//#include	"initialConfig.h"
-
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								Remote System Config
@@ -31,7 +29,7 @@ extern 		"C" {
 
 /* Common ------------------------------------------
  */
-#define		MINI_REMOTE_FIRMWARE_VERSION	120000	// 1 - major version, 2 : 3 - minor version, 4 : 5 : 6 - build
+#define		MINI_REMOTE_FIRMWARE_VERSION	131072	// 1 - major version, 2 : 3 - minor version, 4 : 5 : 6 - build
 
 #define		STATE_LIFO_SIZE					8		// Size of state machine LIFO buffer
 
@@ -69,20 +67,27 @@ extern 		"C" {
 #define		DISPLAY_WIDTH			240				// Units: pixels
 #define		DISPLAY_HEIGHT			135				// Units: pixels
 
-#define		SMALL_FONT_HEIGHT		12				// Units: pixels
-#define		MEDIUM_FONT_HEIGHT		14				// Units: pixels
-#define		LARGE_FONT_HEIGHT		16				// Units: pixels
+#define		SMALL_FONT_HEIGHT		16				// Units: pixels
+#define		MEDIUM_FONT_HEIGHT		20				// Units: pixels
+#define		LARGE_FONT_HEIGHT		24				// Units: pixels
 
-#define		PROGRESSBARS_THICK		8				// Units: pixels
-#define		WIDGET_IMAGE_SIZE		18				// Units: pixels. Width and height
+#define		MENU_TITLE_INDENT		6				// Units: pixels
+
+#define		PROGRESSBARS_THICK		12				// Units: pixels
+#define		WIDGET_IMAGE_SIZE		24				// Units: pixels. Width and height
+
+#define		WIDGET_IMAGE_CLEARANCE	2				// Units: pixels
+#define		WIDGET_VERT_MARGIN		1				// Units: pixels
+#define		WIDGET_HOR_MARGIN		2				// Units: pixels
 
 #define		SHOW_MESSAGE_TIME		2000			// Units: ms
 
-#define		STRING_SCROLLING_SPEED	2				// 1 Min --> 4 Max. Units: pixels
-#define		STRING_SCROLLING_DELAY	1500			// Units: milliseconds
+#define		STRING_SCROLLING_SPEED	1				// 1 Min --> 4 Max. Units: pixels
+#define		STRING_SCROLLING_START_DELAY	500		// Units: milliseconds
+#define		STRING_SCROLLING_FINISH_DELAY	1000	// Units: milliseconds
 
-#define		SELECT_ARROW_SIZE		18				// Units: pixels
-#define		SELECT_ARROW_CLEARANCE	5				// Units: pixels
+#define		SELECT_ARROW_SIZE		24				// Units: pixels
+#define		SELECT_ARROW_CLEARANCE	6				// Units: pixels
 
 #define		BRIGHTNESS_MIN_VALUE	0				// Driver-dependent value
 #define		BRIGHTNESS_MAX_VALUE	100				// Driver-dependent value
@@ -92,13 +97,14 @@ extern 		"C" {
 #define		CONTAINER_PROCESS_DELAY	20				// Unit: ms. General system task rate
 #define		CONTAINER_BLINK_DELAY	150				// Unit: ms. Elements blink time
 
-#define		CONTAINER_TOP_BOTTOM_HEIGHT		18		// Units: pixels
+#define		CONTAINER_TITLE_Y_MARGIN		2		// Units: pixels
+#define		CONTAINER_TOP_BOTTOM_HEIGHT		26		// Units: pixels
 
 #define		ENERGY_ECONOMIC_RATIO_MIN		1		// Unit: percents, constantly
 #define		ENERGY_ECONOMIC_RATIO_MAX		100		// Unit: percents, constantly
 
 #define		ENERGY_ECONOMIC_TIMER_MIN		5		// Unit: sec
-#define		ENERGY_ECONOMIC_TIMER_MAX		(300 + \
+#define		ENERGY_ECONOMIC_TIMER_MAX		(300 +\
 											(1))	//  Unit: sec. Max + 1 == infinity backlight
 
 #define		REALTIME_DATA_UPDATE_TIME		500		// Units: ms. A period of realtime data requesting
@@ -106,8 +112,9 @@ extern 		"C" {
 /* Message Window Container Config -----------------
  */
 #define		MESSAGE_WINDOW_DIALOG_BOX_W		50		// Units: pixels
-#define		MESSAGE_WINDOW_DIALOG_BOX_H		20		// Units: pixels
-#define		MESSAGE_WINDOW_DIALOG_CLEARANCE	10		// Units: pixels. Y pos / 2
+#define		MESSAGE_WINDOW_DIALOG_BOX_H		28		// Units: pixels
+#define		MESSAGE_WINDOW_DIALOG_CLEARANCE	14		// Units: pixels. Y pos / 2
+#define		MESSAGE_WINDOW_DIALOG_GAP		10		// Units: pixels
 
 #define		MESSAGE_WINDOW_CALIB_DURATION	5		// Units: sec
 
@@ -129,7 +136,7 @@ extern 		"C" {
 
 /* AdjVar and Parameter Edit Container Config ------
  */
-#define		EDIT_TITLE_TOTAL_HEIGHT			20		// Units: pixels. With additional space
+#define		EDIT_TITLE_TOTAL_HEIGHT			30		// Units: pixels. With additional space
 #define		EDIT_TOP_BOTTOM_LABELS_RAISE	3		// Units: pixels. Needed for correct drawing some font's symbols
 #define		EDIT_PROGRESSBARS_WIDTH			(DISPLAY_WIDTH / 1.5)
 #define		EDIT_VALUE_PRBAR_CLEARANCE		2		// Units: pixels
@@ -144,21 +151,19 @@ extern 		"C" {
 /* Stick and Pot Calib Container Config -------------
  */
 /* Units: pixels */
-#define		CALIB_LABELS_HEIGHT		16
+#define		CALIB_OBJECT_MARGINS	10
 
-#define		CALIB_OBJECT_MARGINS	5
-
-#define		CALIB_WINDOW_X_COORD	((DISPLAY_WIDTH / 2) + CALIB_OBJECT_MARGINS)
-#define		CALIB_WINDOW_Y_COORD	((DISPLAY_HEIGHT / 2) - (CALIB_WINDOW_SIZE / 2))
+#define		CALIB_WINDOW_X_COORD	((DISPLAY_WIDTH / 2) + (CALIB_WINDOW_SIZE / 2) + 4)
+#define		CALIB_WINDOW_Y_COORD	((DISPLAY_HEIGHT / 2) - (CALIB_WINDOW_SIZE / 2) + 4)
 
 #define		CALIB_WINDOW_SIZE		64				// Width and height
 #define		CALIB_CIRCLE_RADIUS		6
 
-#define		CALIB_STATE_LABEL_WIDTH			116
+#define		CALIB_STATE_LABEL_WIDTH			((DISPLAY_WIDTH / 2) + 10)
 #define		CALIB_STATE_LABEL_X_COORD		CALIB_OBJECT_MARGINS
-#define		CALIB_STATE_LABEL_Y_COORD		((DISPLAY_HEIGHT / 2) - CALIB_LABELS_HEIGHT)
+#define		CALIB_STATE_LABEL_Y_COORD		((DISPLAY_HEIGHT / 2) - MEDIUM_FONT_HEIGHT)
 
-#define		CALIB_VALUES_LABEL_WIDTH		116
+#define		CALIB_VALUES_LABEL_WIDTH		((DISPLAY_WIDTH / 2) + 10)
 #define		CALIB_VALUES_LABEL_X_COORD		CALIB_OBJECT_MARGINS
 #define		CALIB_VALUES_LABEL_Y_COORD		((DISPLAY_HEIGHT / 2) + CALIB_OBJECT_MARGINS)
 
@@ -169,7 +174,7 @@ extern 		"C" {
 #define		RESET_UPDATE_TIME		4000			// Units: ms
 #define		CALIB_INFO_UPDATE_TIME	250				// Units: ms. A period of calib info requesting
 
-#define		AUTO_PID_TIMEOUT		60				// Units: sec. Reset calibration state if PID auto tune isn't completed
+#define		AUTO_PID_TIMEOUT		30				// Units: sec. Reset calibration state if PID auto tune isn't completed
 
 #define		SCRIPT_FINISH_CMD_PARSER_WAIT	5000	// Units: ms. Defined by maximal script-command delay
 
@@ -224,14 +229,13 @@ extern 		"C" {
 #define		SBGC_NEED_PING					sbgcON	// ON : OFF a realtime ping system
 	#define	DISCONNECTION_UPDATE_TIME		2000	// Units: ms. Disconnection state waiting
 	#define	SBGC_PING_UPDATE_TIME			500		// Units: ms. Realtime ping. Not needed if data stream is on
-	#define	SBGC_REDUCED_COMMUNICATION_TIME	5		// Units: ms. Timeout in disconnection case. Big values freeze a system
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *									   Loader Config
  */
 #define		LOADER_USE_EXTERNAL_EEPROM		sbgcON	// When sbgcOFF - using internal FLASH
-#define		LOADER_NEED_CHANGE_SETTINGS		sbgcOFF	// SET_ON if the system settings were change its structure
+#define		LOADER_NEED_CHANGE_SETTINGS		sbgcOFF	// sbgcON if the system settings were change its structure
 
 /* FLASH memory parameters */
 #define		FLASH_LOADER_SECTOR		FLASH_SECTOR_7

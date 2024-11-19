@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		sbgc32.c
  *
@@ -44,7 +44,7 @@
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
 {
@@ -101,7 +101,7 @@ sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
 {
@@ -131,6 +131,26 @@ WEAK__ void SerialAPI_FatalErrorHandler (void)
 	/* User common error handler */
 
 	while (1);
+}
+
+
+/**	@brief	Called every time while waiting for
+ *			sending/receiving a command
+ *
+ *	@note	Weak function
+ *
+ *	@note	Avoid spending much time in this function, as it's called
+ *			on every serial data processing. Include only fast and
+ *			non-blocking operations. Otherwise, overloading it
+ *			may impact serial port performance
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ */
+WEAK__ void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC)
+{
+	/* Any user actions while waiting */
+
+	unused_(gSBGC);
 }
 /**	@}
  */

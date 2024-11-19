@@ -13,9 +13,9 @@
 #include "system.h"
 
 
-MiniRemoteGeneral MiniRemote(	gdispOpenFont("DejaVuSans12_aa"),
-								gdispOpenFont("DejaVuSans14_aa"),
-								gdispOpenFont("DejaVuSans16_aa"),
+MiniRemoteGeneral MiniRemote(	gdispOpenFont("DejaVuSans16_aa"),
+								gdispOpenFont("DejaVuSans20_aa"),
+								gdispOpenFont("DejaVuSans24_aa"),
 								SYSTEM_FUNCTIONS_TOTAL_NUMBER);
 
 

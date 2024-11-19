@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		sbgc32.h
  *
@@ -44,10 +44,38 @@
  *
  *	@defgroup	OS OS
  *		@brief	OS support library block
+ *
+ *	@defgroup	Readme Readme
  *	____________________________________________________________________
  */
-/**	@defgroup	Readme Readme
- *	@ingroup	Common
+/**	____________________________________________________________________
+ *
+ *	@defgroup	Readme_S1 Initializing
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S2 Operating Modes
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S3 Advanced Parameters
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S4 List of Available Functions
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S5 STM32 Driver Initialization
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S6 Additional Information
+ *	@ingroup	Readme
+ *
+ *	@defgroup	Readme_S7 Feedback
+ *	@ingroup	Readme
+ *	____________________________________________________________________
+ */
+/**	____________________________________________________________________
+ *
+ *	@addtogroup	Readme
+ *	@{
  *
  *	## SimpleBGC32 Serial API Open Source C Library
  *
@@ -58,11 +86,21 @@
  *	This note contains comprehensive information about the library,
  *	including how to use it more effectively and its specific features.
  *
+ *	@}
+ *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S1
+ *	@{
+ *
+ *	### Initializing
  *
  *	Use the followed code to initialize the library:
  *
  *	@code
+
+			// Link the library files
+			#include "sbgc32.h"
 
 			#if (SBGC_USES_CUSTOM_SPRINTF)
 
@@ -73,9 +111,6 @@
 				}
 
 			#endif
-
-			// Link the library files
-			#include "sbgc32.h"
 
 			// Declare a general SBGC32 object
 			sbgcGeneral_t SBGC32_Device;
@@ -97,7 +132,14 @@
 
  *	@endcode
  *
+ *	@}
+ *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S2
+ *	@{
+ *
+ *	### Operating Modes
  *
  *	The library operates using three different algorithms. The specific
  *	mode of operation is determined by the following parameters:
@@ -110,7 +152,9 @@
  *	expired. The time parameter is called @ref SBGC_DEFAULT_TIMEOUT
  *	and it specifies how much time in milliseconds is allocated to
  *	each command for executing the data sending and receiving
- *	operations.
+ *	operations.\n
+ *	*Protocol function return behavior: result only after the complete
+ *	transmission-reception cycle (either Tx or Rx only) is finished.*
  *
  *	**Non-blocking mode:**\n
  *	@ref SBGC_NON_BLOCKING_MODE == sbgcON, but the library don't use
@@ -120,9 +164,9 @@
  *	awaiting processing. For more information, see the documentation
  *	for the next functions: @ref SBGC32_Transmit, @ref SBGC32_Receive,
  *	@ref SBGC32_TransmitAllCommands, @ref SBGC32_ReceiveAllCommands,
- *	@ref SBGC32_ProcessAllCommands.
- *	Thus, the timing for each serial command starts only when its
- *	execution begins.
+ *	@ref SBGC32_ProcessAllCommands. Thus, the timing for each serial
+ *	command starts only when its execution begins.\n
+ *	*Protocol function return behavior: command registration result.*
  *
  *	**OS-mode:**\n
  *	@ref SBGC_NON_BLOCKING_MODE == sbgcON and the library are using an
@@ -146,9 +190,20 @@
  *	@ref SerialAPI_GetHandlerThread function.
  *	Similarly to the non-blocking mode you can also block the execution
  *	of the thread where a SBGC32_ command is called. Just provide this
- *	function with SCParam_FREEZE parameter for this.
+ *	function with SCParam_FREEZE parameter for this.\n
+ *	*Protocol function return behavior: command registration result. If
+ *	command(-s) was registered with the SCParam_FREEZE parameter, the
+ *	function will complete its execution only upon successful command
+ *	execution or upon timeout expiration.*
+ *
+ *	@}
  *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S3
+ *	@{
+ *
+ *	### Advanced Parameters
  *
  *	The advanced parameters of the SBGC32_ functions are available in
  *	the non-blocking and OS modes:
@@ -191,25 +246,14 @@
  *	confirmation is not required, fill this field with the
  *	@ref SBGC_NO_CONFIRM value.
  *
- *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *	The library's algorithm is designed such that if a command consists
- *	of two parts (Tx and Rx) and the first (Tx) part, which transmits
- *	data, fails to execute for some reason, the second (Rx) part will
- *	not be registered or executed. Instead, it will return an error
- *	from the function and log the error if logging is enabled.
- *
- *	See @ref sbgcCommandStatus_t enumeration to examine all possible
- *	high-layer errors. You can get this error code from the any SBGC32_
- *	function return value and from the sbgcGeneral_t._lastCommandStatus
- *	field. Also see @ref serialAPI_CommandStatus_t enumeration to
- *	investigate all possible lower-layer errors. It's possible to
- *	obtain this data from the sbgcGeneral_t._lastSerialCommandStatus
- *	field. Use the @ref SerialAPI_GetStatus and
- *	@ref SerialAPI_GetSerialStatus functions for more convenient
- *	handling of these values.
+ *	@}
  *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S4
+ *	@{
+ *
+ *	### List of Available Functions
  *
  *	The library contains a large number of different useful functions.
  *	They can be categorized by their purpose as follows:
@@ -541,9 +585,12 @@
  *			+ @ref SBGC32_SetTriggerPin - Triggers output pin											\n
  *			+ @ref SBGC32_ExecuteMenu - Executes menu command											\n
  *			+ @ref SBGC32_SetServoOut - Sets output PWM signal on the specified pins					\n
+ *			+ @ref SBGC32_SetServoOutExt - Sets output PWM signal on the specified
+ *			pins in extended format																		\n
  *			+ @ref SBGC32_PlayBeeper - Plays melody by motors or emit standard beep sound				\n
  *			+ @ref SBGC32_SignMessage - Signs the user message											\n
  *			+ @ref SBGC32_CAN_DeviceScan - Scans CAN bus devices										\n
+ *			+ @ref SBGC32_RequestModuleList - Requests version information for connected CAN devices	\n
  *
  *	The library also contains utility functions that are used in
  *	conjunction with the main protocol functions
@@ -558,6 +605,8 @@
  *			configurations, gets firmware and hardware versions of the board. Explore its
  *			documentation for more details																\n
  *			+ @ref SerialAPI_FatalErrorHandler (WEAK) - Will be executed upon any error occurrence		\n
+ *			+ @ref SerialAPI_CommandWaitingHandler (WEAK) - Called every time while waiting
+ *			for sending/receiving a command																\n
  *
  *		- @ref High_Layer
  *
@@ -577,6 +626,7 @@
  *			the lower level of the library																\n
  *			+ @ref SerialAPI_ResetTxBuffer - Resets Tx data serial buffer								\n
  *			+ @ref SerialAPI_ResetRxBuffer - Resets Rx data serial buffer								\n
+ *			+ @ref SerialAPI_LogCommandQueue - Displays command queue detailed info						\n
  *			+ @ref SerialAPI_GetStatus - Returns last SBGC32 command status								\n
  *			+ @ref SerialAPI_GetSerialStatus - Returns last SBGC32 serial command low-layer status		\n
  *			+ @ref SerialAPI_GetConfirmStatus - Returns the status of confirmation						\n
@@ -609,6 +659,7 @@
  *			+ @ref ParserSBGC32_ConvertCommandID_ToString - Converts the serial command ID to string	\n
  *			+ @ref ParserSBGC32_ConvertCommandStatusToString - Converts the serial command
  *			status to string																			\n
+ *			+ @ref ParserSBGC32_FormatDeviceType - Transforms SBGC32 device type to string				\n
  *			+ @ref ParserSBGC32_FormatBoardVersion - Transforms the board version variable to string	\n
  *			+ @ref ParserSBGC32_FormatFirmwareVersion - Transforms the firmware version
  *			variable to string																			\n
@@ -641,7 +692,14 @@
  *			+ @ref sbgcMalloc - Allocates specified bytes quantity										\n
  *			+ @ref sbgcFree - Frees part of memory														\n
  *
+ *	@}
+ *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S5
+ *	@{
+ *
+ *	### STM32 Driver Initialization
  *
  *	When using this library with STM32, it is necessary to link the
  *	built-in driver with the microcontroller's interrupts. Open
@@ -682,7 +740,60 @@
 
  *	@endcode
  *
+ *	@}
+ *
+ *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S6
+ *	@{
+ *
+ *	### Additional Information
+ *
+ *	The library's algorithm is designed such that if a command consists
+ *	of two parts (Tx and Rx) and the first (Tx) part, which transmits
+ *	data, fails to execute for some reason, the second (Rx) part will
+ *	not be registered or executed. Instead, it will return an error
+ *	from the function and log the error if logging is enabled.
+ *
+ *	See @ref sbgcCommandStatus_t enumeration to examine all possible
+ *	high-layer errors. You can get this error code from the any SBGC32_
+ *	function return value and from the sbgcGeneral_t._lastCommandStatus
+ *	field. Also see @ref serialAPI_CommandStatus_t enumeration to
+ *	investigate all possible lower-layer errors. It's possible to
+ *	obtain this data from the sbgcGeneral_t._lastSerialCommandStatus
+ *	field. Use the @ref SerialAPI_GetStatus and
+ *	@ref SerialAPI_GetSerialStatus functions for more convenient
+ *	handling of these values.
+ *
  *	* Notes and tips:
+ *
+ *		- @anchor Note1
+ *		*- If* @ref SBGC_SEVERAL_DEVICES == sbgcON, *it's possible to
+ *		use internal driver functions having manually initialized
+ *		driver structure. Arduino driver is exception. You need to
+ *		manage the driver functions manually in that case;*
+ *
+ *		- @anchor Note2
+ *		*- When* @ref SBGC_OPTIMIZE_COMMANDS == sbgcON, *such commands
+ *		like the CMD_EXECUTE_MENU, CMD_CONTROL (CMD_CONFIRM) anyway
+ *		will be registered again and won't be optimized;*
+ *
+ *		- @anchor Note3
+ *		*- Be careful when working with* @ref SBGC_SEND_IMMEDIATELY ==
+ *		sbgcON. *The following feature may not wait for the previous
+ *		command to complete and might exit with an error;*
+ *
+ *		- @anchor Note4
+ *		*- Reducing the* @ref SBGC_MAX_COMMAND_NUM,
+ *		@ref SBGC_TX_BUFFER_SIZE *and* @ref SBGC_RX_BUFFER_SIZE
+ *		*parameters you also reduce the load on the stack;*
+ *
+ *		- @anchor Note5
+ *		*- Be careful with* @ref SBGC_THREAD_STACK_SIZE *parameter.
+ *		With dynamic memory allocation, this parameter loses its
+ *		significance. Default value for AzureRTOS is 1024. You can
+ *		also monitor the exact memory usage of this task using
+ *		specific RTOS functions or debugging tools in the IDE;*
  *
  *		*- This file looks at the settings from the serialAPI_Config.h
  *		file. Rename the serialAPI_ConfigTemplate.h file like this;*\n
@@ -730,10 +841,6 @@
  *		*- Set the* @ref SBGC_SYS_BIG_ENDIAN *constant to sbgcON, if
  *		your general processing system uses BIG ENDIAN memory;*\n
  *
- *		*- Reducing the* @ref SBGC_MAX_COMMAND_NUM,
- *		@ref SBGC_TX_BUFFER_SIZE *and* @ref SBGC_RX_BUFFER_SIZE
- *		*parameters you also reduce the load on the stack;*\n
- *
  *		*- All examples provided in the documentation for the
  *		functions are presented for blocking mode. Add the
  *		SBGC_DEFAULT_ARGS_ substitution or fill the rest
@@ -743,14 +850,9 @@
  *		"adjVarsReferenceInfoArray" with auxiliary information about
  *		all adjustable variables at the time of the current version;*\n
  *
- *		*- Be careful when working with @ref SBGC_SEND_IMMEDIATELY ==
- *		sbgcON. The following feature may not wait for the previous
- *		command to complete and might exit with an error;*\n
- *
- *		*- If* @ref SBGC_SEVERAL_DEVICES == sbgcON, *it's possible to
- *		use internal driver functions having manually initialized
- *		driver structure. Arduino driver is exception. You need to
- *		manage the driver functions manually in that case;*\n
+ *		*- In the OS mode, the command timeout is converted into its
+ *		period. Now, this command will be processed once every x
+ *		milliseconds regardless of the execution result;*\n
  *
  *		*- It is possible to use the* @ref sbgcMalloc *macro to
  *		allocate memory space, but be careful when using AzureRTOS
@@ -769,19 +871,26 @@
  *	72 - notes constraint, 137 - object description constraint;
  *	150 - maximal number of the symbols in one string
  *
+ *	@}
+ *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *	@addtogroup	Readme_S7
+ *	@{
+ *
+ *	### Feedback
  *
  *	If you have any questions or suggestions about using this library,
  *	you can contact at:
  *
  *	support@basecamelectronics.com
  *
- *	a.ivanisov@basecamelectronics.com
+ *	@}
  *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *	<i>             https://www.basecamelectronics.com             </i>
- *
+ *                                                                    *
+ *	                https://www.basecamelectronics.com                *
+ *                                                                    *
  *	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
@@ -797,7 +906,8 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *									  Configurations
  */
-/* Specific configurations. Originate from the <serialAPI_ConfigTemplate.h> file */
+/* Specific configurations. Originate from the
+   serialAPI_ConfigTemplate.h file */
 #include	"serialAPI_Config.h"
 
 /* Auxiliary code */
@@ -869,6 +979,10 @@ extern		"C" {
 	#define	SBGC_SEND_IMMEDIATELY	sbgcOFF
 #endif
 
+#ifndef	SBGC_CHAINED_TIMEOUT
+	#define	SBGC_CHAINED_TIMEOUT	sbgcOFF
+#endif
+
 #ifndef	SBGC_MAX_COMMAND_NUM
 	#define	SBGC_MAX_COMMAND_NUM	2
 #endif
@@ -887,6 +1001,10 @@ extern		"C" {
 
 #ifndef SBGC_NEED_DEBUG
 	#define	SBGC_NEED_DEBUG			sbgcOFF
+#endif
+
+#ifndef SBGC_LOG_COMMAND_TIME
+	#define	SBGC_LOG_COMMAND_TIME	sbgcOFF
 #endif
 
 #ifndef SBGC_LOG_COMMAND_NUMBER
@@ -961,6 +1079,10 @@ extern		"C" {
 	#define	SBGC_USE_FREE_RTOS		sbgcOFF
 #endif
 
+#ifndef	SBGC_USE_LINUX_OS
+	#define	SBGC_USE_LINUX_OS		sbgcOFF
+#endif
+
 #ifndef	SBGC_THREAD_STACK_SIZE
 	#define	SBGC_THREAD_STACK_SIZE	256
 #endif
@@ -969,8 +1091,24 @@ extern		"C" {
 	#define	SBGC_THREAD_PRIOR		3
 #endif
 
-#ifndef	SBGC_USE_LINUX_OS
-	#define	SBGC_USE_LINUX_OS		sbgcOFF
+#ifndef	SBGC_THREAD_QUIET_PRIOR
+	#define	SBGC_THREAD_QUIET_PRIOR	1
+#endif
+
+#ifndef SBGC_NEED_AUTO_PING
+	#define	SBGC_NEED_AUTO_PING		sbgcOFF
+#endif
+
+#ifndef SBGC_AUTO_PING_PERIOD
+	#define	SBGC_AUTO_PING_PERIOD	1000
+#endif
+
+#ifndef SBGC_LOG_AUTO_PING
+	#define	SBGC_LOG_AUTO_PING		sbgcOFF
+#endif
+
+#ifndef SBGC_AUTO_PING_CALLBACK
+	#define	SBGC_AUTO_PING_CALLBACK	sbgcOFF
 #endif
 
 #ifndef SBGC_USE_ARDUINO_DRIVER
@@ -1035,6 +1173,14 @@ extern		"C" {
 	 (SBGC_USE_LINUX_DRIVER && SBGC_USE_STM32_DRIVER) ||\
 	 (SBGC_USE_STM32_DRIVER && SBGC_USE_ARDUINO_DRIVER))
 	#error "Error! Select the one driver supply"
+#endif
+
+#if (SBGC_USE_AZURE_RTOS && (SBGC_THREAD_PRIOR > SBGC_THREAD_QUIET_PRIOR))
+	#error "Error! The lowered priority must not be less than the normal"
+#endif
+
+#if (SBGC_USE_FREE_RTOS && (SBGC_THREAD_PRIOR < SBGC_THREAD_QUIET_PRIOR))
+	#error "Error! The lowered priority must not be higher than the normal"
 #endif
 
 
@@ -1137,6 +1283,7 @@ extern		"C" {
  */
 sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *sbgcGeneral);
 void SerialAPI_FatalErrorHandler (void);
+void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC);
 /**	@}
  */
 /**	@endcond

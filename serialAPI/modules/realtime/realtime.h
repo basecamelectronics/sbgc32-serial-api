@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		realtime.h
  *
@@ -133,12 +133,14 @@ extern		"C" {
  */
 typedef enum
 {
-	EID_EVENT_ID_MENU_BUTTON		= 1,
-	EID_EVENT_ID_MOTOR_STATE		= 2,
-	EID_EVENT_ID_EMERGENCY_STOP		= 3,
-	EID_EVENT_ID_CAMERA				= 4,
+	sbgcEVENT_ID_MENU_BUTTON		= 1,
+	sbgcEVENT_ID_MOTOR_STATE		= 2,
+	sbgcEVENT_ID_EMERGENCY_STOP		= 3,
+	sbgcEVENT_ID_CAMERA				= 4,
 	/* frw. ver. 2.68b8+ */
-	EID_EVENT_ID_SCRIPT				= 5
+	sbgcEVENT_ID_SCRIPT				= 5,
+	/* frw. ver. 2.73.1+ */
+	sbgcEVENT_ID_RETRACTED_POSITION	= 6
 
 }	sbgcEventID_t;
 
@@ -328,7 +330,10 @@ typedef enum
 	RTDCF_IMU_ANGLES_20				= BIT_17_SET,
 	RTDCF_TARGET_ANGLES_20			= BIT_18_SET,
 	RTDCF_COMM_ERRORS				= BIT_19_SET,
-	RTDCF_SYSTEM_STATE_FLAGS		= BIT_20_SET
+	RTDCF_SYSTEM_STATE				= BIT_20_SET,
+	RTDCF_IMU_QUAT					= BIT_21_SET,
+	RTDCF_TARGET_QUAT				= BIT_22_SET,
+	RTDCF_IMU_TO_FRAME_QUAT			= BIT_23_SET
 
 }	sbgcRealTimeDataCustomFlag_t;
 /**	@}
@@ -431,6 +436,7 @@ typedef enum
 	SSE_CAN_SERIAL_CONFLICT			= 52,			// Serial-over-CAN conflict
 	SSE_CAN_DRV_INIT_STAGE			= 53,			// CAN Drv initialization sequence failed though it responds
 	SSE_ENCODER_DATA_TIMEOUT		= 54,			// No fresh data from encoder for a long time
+	SSE_CAN_CONNECTION_LOST			= 55,			// Code for other CAN devices apart from sensor or driver
 	SSE_HSE_START_FAIL				= 56,			// HSE (quartz) start problem
 	SSE_FRAME_IMU_SENSOR_NOT_RESPONDING
 									= 57,			// Lost connection to FRAME IMU  sensor
@@ -637,9 +643,11 @@ typedef struct PACKED__
 			eventType;								/*!<  See @ref sbgcEventType_t enumeration											*/
 
 	ui8		param [2];								/*!<  Possible value and its meaning depends on the eventID & eventType parameters	*/
+
 	/* This command may be expanded by extra
 	   parameters in future versions... */
-}			sbgcEvent_t;
+
+}	sbgcEvent_t;
 
 
 /**	@brief	Structure type for work with
@@ -659,7 +667,7 @@ typedef struct PACKED__
 														  <a href=https://www.basecamelectronics.com/serialapi/>
 														  SimpleBGC32 Serial API protocol specification</a>								*/
 
-}			sbgcCAN_DrvTelemetry_t;
+}	sbgcCAN_DrvTelemetry_t;
 
 
 /**	@brief	Structure type for work with
@@ -681,7 +689,7 @@ typedef struct PACKED__
 	ui8		syncToData;								/*!<  See @ref sbgcSyncToData_t enumeration. Frw. ver. 2.70b1+						*/
 	ui8		reserved [9];
 
-}			sbgcDataStreamInterval_t;
+}	sbgcDataStreamInterval_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -715,7 +723,7 @@ typedef struct PACKED__
 	ui16	motorFlags;								/*!<  See @ref sbgcMotorFlag_t enumeration											*/
 	ui8		reserved [6];
 
-}			sbgcAxisMPS_t;
+}	sbgcAxisMPS_t;
 
 /**	@brief	Type of structure provides the
  *			system power information
@@ -730,7 +738,7 @@ typedef struct PACKED__
 														  by the hardware current sensor (if present)									*/
 	ui16	systemFlags;							/*!<  See @ref sbgcMotorSystemFlags_t enumeration									*/
 
-}			sbgcSystemPowerState_t;
+}	sbgcSystemPowerState_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -757,7 +765,7 @@ typedef struct PACKED__
 
 	ui8		CAN_ErrFlags;							/*!<  See @ref sbgcCAN_ErrFlag_t enumeration										*/
 
-}			sbgcCommunicationErrors_t;
+}	sbgcCommunicationErrors_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -765,6 +773,32 @@ typedef struct PACKED__
 	 */
 	extern const sbgcParameterReferenceInfo_t communicationErrorsReferenceInfoArray [];
 	extern const ui8 communicationErrorsReferenceInfoArrayElCnt;
+	/**	@endcond
+	 */
+#endif
+
+
+/**	@brief	Type of structure provides the special
+ *			system state information
+ *
+ *	@note	Part of sbgcRealTimeDataCustom_t
+ *			structure
+ */
+typedef struct
+{
+	ui32	flags;									/*!<  The special system flags. See @ref sbgcStateFlag_t enumeration				*/
+	ui8		calibMode;								/*!<  If not 0, calibration or automatic task is running. Otherwise see
+														  @ref sbgcCalibMode_t enumeration												*/
+	ui8		reserved [8];
+
+}	sbgcSystemState_t;
+
+
+#if (SBGC_USES_REF_INFO)
+	/**	@cond
+	 */
+	extern const sbgcParameterReferenceInfo_t systemStateReferenceInfoArray [];
+	extern const ui8 systemStateReferenceInfoArrayElCnt;
 	/**	@endcond
 	 */
 #endif
@@ -797,14 +831,14 @@ typedef struct
 			targetSpeed [3],						/*!<  Units: 0.06103701895 degree/sec. Target speed that gimbal should keep (Euler)	*/
 			frameCamAngle [3],						/*!<  Units: 0.02197265625 degree. Relative angle of joints (motors). Use the
 														  @ref sbgcDegreeToAngle macro to obtain this data conveniently					*/
-			gyroData [3],							/*!<  Units: 0.06103701895 degree/sec. Data from the gyroscope sensor				*/
+			gyroData [3],							/*!<  Units: 0.06103701895 degree/sec. Data from the main gyroscope sensor			*/
 			RC_Data [6];							/*!<  -16384 --> 16384. Value -32768 is for 'undefined' signal						*/
 
 	float	Z_Vector [3],							/*!<  ...																			*/
 			H_Vector [3];							/*!<  ...-1.0f --> 1.0f																*/
 
 	i16		RC_Channels [18];						/*!<  -16384 --> 16384. Value -32768 is for 'undefined' signal						*/
-	i16		accData [3];							/*!<  Units: 1/512 G																*/
+	i16		accData [3];							/*!<  Units: 1/512 G. Data from the main accelerometer sensor 						*/
 
 	sbgcMotor4_Control_t	Motor4_Control;			/*!<  See @ref sbgcMotor4_Control_t structure type									*/
 	sbgcAHRS_DebugInfo_t	AHRS_DebugInfo;			/*!<  See @ref sbgcAHRS_DebugInfo_t structure type									*/
@@ -814,22 +848,31 @@ typedef struct
 	float	IMU_AnglesRad [3];						/*!<  Main IMU Euler angles in radians. Frw. ver. 2.68b7+							*/
 
 	float	scriptVarsFloat [10];					/*!<  Script variables in floats													*/
-	i16		scriptVarsInt16 [10];					/*!<  Script variables in 16-byte signed integers									*/
+	i16		scriptVarsInt16 [10];					/*!<  Script variables in 16-bit signed integers									*/
 
 	sbgcSystemPowerState_t	SystemPowerState;		/*!<  Information about the system power and motors. Frw. ver. 2.70b6+				*/
 
 	i16		frameCamRate [3];						/*!<  Units: 0.06103701895 degree/sec. Rate of rotation of frame-to-camera
 														  joints (motors) Frw. ver. 2.70b6+												*/
-	i32		IMU_Angles20 [3],						/*!<  Units: 0.00034332275390625 degrees. Main IMU angles in 20bit resolution.
+	i32		IMU_Angles20 [3],						/*!<  Units: 0.00034332275390625 degrees. Main IMU angles in 20-bit resolution.
 														  Frw. ver. 2.70b8+																*/
-			targetAngles20 [3];						/*!<  Units: 0.00034332275390625 degrees. Target angles in 20bit resolution.
+			targetAngles20 [3];						/*!<  Units: 0.00034332275390625 degrees. Target angles in 20-bit resolution.
 														  Frw. ver. 2.70b8+																*/
 	sbgcCommunicationErrors_t
 					CommunicationErrors;			/*!<  System communication errors information. Frw. ver. 2.72b0+					*/
 
-	ui32	systemStateFlags;						/*!<  See @ref sbgcStateFlag_t enumeration. Frw. ver. 2.73+							*/
+	sbgcSystemState_t
+					SystemState;					/*!<  Special system state information. Frw. ver. 2.73+								*/
 
-}			sbgcRealTimeDataCustomReference_t;
+	ui8		IMU_Quat [8],							/*!<  IMU attitude as a compressed quaternion. See the sbgcQuatPackedReference_t
+														  structure type. Frw. ver. 2.73+												*/
+			targetQuat [8],							/*!<  Stabilization setpoint as a compressed quaternion. Available only for the
+														  "Extended" family when being controlled via CMD_CONTROL_QUAT command.
+														  See the sbgcQuatPackedReference_t structure type. Frw. ver. 2.73+				*/
+			IMU_ToFrameQuat [8];					/*!<  Relative rotation from IMU to frame as a compressed quaternion. See
+														  the sbgcQuatPackedReference_t structure type. Frw. ver. 2.73+					*/
+
+}	sbgcRealTimeDataCustomReference_t;
 /**	@}
  */
 
@@ -849,7 +892,7 @@ typedef struct PACKED__
 	i16		accData;								/*!<  Units: 1/512 G																*/
 	i16		gyroData;								/*!<  Units: 0.06103701895 degree/sec												*/
 
-}			sbgcAxisRTD_t;
+}	sbgcAxisRTD_t;
 
 /**	@brief	Structure type for work with
  *			RealTimeData3 (-4) parameters
@@ -915,7 +958,7 @@ typedef struct PACKED__
 
 	ui8		reserved2 [18];
 
-}			sbgcRealTimeData_t;
+}	sbgcRealTimeData_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -949,7 +992,7 @@ typedef struct PACKED__
 			targetSpeed;							/*!<  Units: 0.1220740379 degree/sec. Use the @ref sbgcValueToSpeed macro
 														  to obtain this data conveniently												*/
 
-}			sbgcAxisGA_t;
+}	sbgcAxisGA_t;
 
 /**	@brief	Structure type for work with
  *			GetAngles parameters
@@ -986,7 +1029,7 @@ typedef struct PACKED__
 
 	ui8		reserved [10];
 
-}			sbgcAxisGAE_t;
+}	sbgcAxisGAE_t;
 
 /**	@brief	Structure type for work with
  *			GetAnglesExt parameters
@@ -1028,7 +1071,7 @@ typedef struct
 	i16		RC_Val;									/*!<  Values for each RC source														*/
 	ui8		RC_Src;									/*!<  See @ref sbgcRC_MapSourceType_t and @ref sbgcRC_MapSource_t enumerations		*/
 
-}			sbgcRC_Inputs_t;
+}	sbgcRC_Inputs_t;
 /**	@}
  */
 

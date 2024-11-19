@@ -23,11 +23,11 @@ Files Description
 
 [os/](serialAPI/os) - a folder containing the OS-glue driver files;
 
-[adjunct.h](serialAPI/adjunct.h) - Header help-code file;
+[adjunct.h](serialAPI/adjunct.h) - header help-code file;
 
-[sbgc32.c](serialAPI/sbgc32.c) and [sbgc32.h](serialAPI/sbgc32.h) - Assembly files of the l;library;
+[sbgc32.c](serialAPI/sbgc32.c) and [sbgc32.h](serialAPI/sbgc32.h) - assembly files of the library;
 
-[serialAPI_ConfigTemplate.h](serialAPI/serialAPI_ConfigTemplate.h) - Configurations template header file of the library.
+[serialAPI_ConfigTemplate.h](serialAPI/serialAPI_ConfigTemplate.h) - configurations template header file of the library.
 
 Requirements
 ------------
@@ -68,5 +68,3 @@ Feedback
 If you have any questions or suggestions about using this library, you can contact at:
 
 support@basecamelectronics.com
-
-a.ivanisov@basecamelectronics.com

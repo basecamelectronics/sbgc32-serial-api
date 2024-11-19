@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueFreeRTOS.h
  *
@@ -92,11 +92,13 @@ typedef		xSemaphoreHandle		sbgcMutex_t;
 #define		sbgcTakeMutex(m, t)		xSemaphoreTake(m, t)
 #define		sbgcGiveMutex(m)		xSemaphoreGive(m)
 
+#define		sbgcSetPrior(pH, pr)	vTaskPrioritySet(pH, pr)
+
 #define		SBGC_THREAD_PRIOR_LOW			0
 #define		SBGC_THREAD_PRIOR_NORMAL		(configMAX_PRIORITIES / 2)
 #define		SBGC_THREAD_PRIOR_HIGH			(configMAX_PRIORITIES - 1)
 
-#define		SBGC_INIT_THREAD_STACK			128
+#define		SBGC_INIT_THREAD_STACK			64
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -116,6 +118,7 @@ void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex);
+void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior);
 /**	@}
  */
 

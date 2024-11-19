@@ -16,7 +16,6 @@
 MessageWindowDialogAnswer_t dialogAnswer = MWDA_CLEANED;
 
 extern ui32 lastAutoTuneTime;
-extern volatile bool PID_AutoTuneFinishFlag;
 
 
 void SBGC32_CalibrationFinishMW_Callback (void *gSBGC)
@@ -54,7 +53,7 @@ void CMessageWindowContainerM::Init (void)
 	wi.g.parent = ghContainer;
 
 	/* Return arrow (calibration state only) */
-	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
+	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_EXIT]);
 	wi.g.x = 0;
 	wi.g.y = 0;
 	wi.g.height = imageBuff->height;
@@ -62,7 +61,7 @@ void CMessageWindowContainerM::Init (void)
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(imageBuff);
 
@@ -181,32 +180,34 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 					{
 						dialogAnswer = MWDA_NO;
 
-						gdispFillStringBox((ghContainer->width / 2) - MESSAGE_WINDOW_DIALOG_BOX_W, (ghContainer->height / 2) +
-										   	   	   MESSAGE_WINDOW_DIALOG_CLEARANCE,
-										   MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
-										   "Yes", currentFont, GFX_LIGHT_GRAY, GFX_BLACK,
-										   (gJustify)(gJustifyCenter | gJustifyMiddle));
+						gdispFillStringBox((ghContainer->width / 2) - MESSAGE_WINDOW_DIALOG_BOX_W - MESSAGE_WINDOW_DIALOG_GAP,
+								(ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
+								MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
+								"Yes", currentFont, GFX_LIGHT_GRAY, GFX_BLACK,
+								(gJustify)(gJustifyCenter | gJustifyMiddle));
 
-						gdispFillStringBox((ghContainer->width / 2), (ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
-										   MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
-										   "No", currentFont, GFX_BLACK, GFX_LIGHT_GRAY,
-										   (gJustify)(gJustifyCenter | gJustifyMiddle));
+						gdispFillStringBox((ghContainer->width / 2) + MESSAGE_WINDOW_DIALOG_GAP,
+								(ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
+								MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
+								"No", currentFont, GFX_BLACK, GFX_LIGHT_GRAY,
+								(gJustify)(gJustifyCenter | gJustifyMiddle));
 					}
 
 					if (nav == ND_LEFT)
 					{
 						dialogAnswer = MWDA_YES;
 
-						gdispFillStringBox((ghContainer->width / 2) - MESSAGE_WINDOW_DIALOG_BOX_W, (ghContainer->height / 2) +
-										   	   	   MESSAGE_WINDOW_DIALOG_CLEARANCE,
-										   MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
-										   "Yes", currentFont, GFX_BLACK, GFX_LIGHT_GRAY,
-										   (gJustify)(gJustifyCenter | gJustifyMiddle));
+						gdispFillStringBox((ghContainer->width / 2) - MESSAGE_WINDOW_DIALOG_BOX_W - MESSAGE_WINDOW_DIALOG_GAP,
+								(ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
+								MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
+								"Yes", currentFont, GFX_BLACK, GFX_LIGHT_GRAY,
+								(gJustify)(gJustifyCenter | gJustifyMiddle));
 
-						gdispFillStringBox((ghContainer->width / 2), (ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
-										   MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
-										   "No", currentFont, GFX_LIGHT_GRAY, GFX_BLACK,
-										   (gJustify)(gJustifyCenter | gJustifyMiddle));
+						gdispFillStringBox((ghContainer->width / 2) + MESSAGE_WINDOW_DIALOG_GAP,
+								(ghContainer->height / 2) + MESSAGE_WINDOW_DIALOG_CLEARANCE,
+								MESSAGE_WINDOW_DIALOG_BOX_W, MESSAGE_WINDOW_DIALOG_BOX_H,
+								"No", currentFont, GFX_LIGHT_GRAY, GFX_BLACK,
+								(gJustify)(gJustifyCenter | gJustifyMiddle));
 					}
 
 					/* Exit */
@@ -351,7 +352,7 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 
 					/* Auto PID finish handle */
 					if ((Gimbal.GetCurrentState() & SBGC_PID_AUTOTUNE) &&
-						(PID_AutoTuneFinishFlag || ((osGetTickCount() - lastAutoTuneTime) > (AUTO_PID_TIMEOUT * 1000))))
+						((osGetTickCount() - lastAutoTuneTime) > (AUTO_PID_TIMEOUT * 1000)))
 					{
 						gwinHide(ghProgressbar);
 						gwinHide(ghImageReturn);
@@ -360,12 +361,31 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 						while (1);
 					}
 
+					/* AutoPID ending handle */
+					if (SerialAPI_GetFirmwareVersion(Gimbal.GetAddressGeneralSBGC()) >= 2730)
+					{
+						struct PACKED__ RealTimeDataCustomStruct
+						{
+							ui32 flag;
+							ui16 timestampMs;
+
+							sbgcSystemState_t SystemState;
+
+						} static RealTimeDataCustom;
+
+						RealTimeDataCustom.flag = RTDCF_SYSTEM_STATE;
+
+						if (Gimbal.RequestRealTimeDataCustom(&RealTimeDataCustom, sizeof(RealTimeDataCustom), SCParam_FREEZE, SCPrior_NORMAL,
+								SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
+							if (RealTimeDataCustom.SystemState.calibMode != CalibM_CALIB_MODE_AUTO_PID)
+								lastAutoTuneTime = 0;
+					}
+
 					/* Calib Info handle */
 					if (((osGetTickCount() - lastCalibInfoTime) > CALIB_INFO_UPDATE_TIME) &&
-						(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())) &&
-						PID_AutoTuneFinishFlag)  // It's not PID calibration
+						(SBGC_CalibrationStateMask(Gimbal.GetCurrentState())))
 					{
-						if (Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT,
+						if (Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT,
 									SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
 							lastCalibInfoTime = osGetTickCount();
 					}

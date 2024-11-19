@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		driverLinux.c
  *
@@ -102,7 +102,7 @@ sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver)
 
 	clock_gettime(CLOCK_REALTIME, &spec);
 
-	return ((spec.tv_sec & 0x000FFFFF) * 1000) + (ui32)((double)spec.tv_nsec / 1.0e6);
+	return ((spec.tv_sec & 0x000FFFFF) * 1000) + (sbgcTicks_t)((double)spec.tv_nsec / 1.0e6);
 }
 
 

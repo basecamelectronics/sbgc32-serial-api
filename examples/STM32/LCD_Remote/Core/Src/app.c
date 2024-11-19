@@ -104,12 +104,15 @@ void UpdateDisplay (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteG
 
 	LCD_RemoteGeneral->currentPage = (LCD_RemoteGeneral->currentPage + 50) % 5;  // Should be in the range of available pages
 
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-overflow"
+
 	switch (LCD_RemoteGeneral->currentPage)
 	{
 		case 0 : /* PAGE 0 */
 			if (LCD_RemoteGeneral->connectFlag)
-				sprintf(buf, "%2d.%02dV P:%d E:%03d", realTimeData->batLevel / 100, realTimeData->batLevel % 100,
-						realTimeData->curProfile + 1, LCD_RemoteGeneral->TargetErrorAverage.avgRes);
+				sprintf(buf, "%2d.%02dV P:%1d E:%02d", realTimeData->batLevel / 100, realTimeData->batLevel % 100,
+						realTimeData->curProfile + 1, constrain_(LCD_RemoteGeneral->TargetErrorAverage.avgRes, -99, 99));
 
 			else
 				LCD_PrintProgress(LCD_RemoteGeneral, print_str("CONNECTING"));
@@ -121,17 +124,19 @@ void UpdateDisplay (sbgcGeneral_t *sbgcGeneral, LCD_RemoteGeneral_t *LCD_RemoteG
 			break;
 
 		case 2 :  /* PAGE 2 */
-			sprintf(buf, " D1:%3d  D2:%3d", LCD_RemoteGeneral->debug1, LCD_RemoteGeneral->debug2);
+			sprintf(buf, " D1:%d  D2:%d", LCD_RemoteGeneral->debug1, LCD_RemoteGeneral->debug2);
 			break;
 
 		case 3 :  /* PAGE 3 */
-			sprintf(buf, " D3:%3d  D4:%3d", LCD_RemoteGeneral->debug3, LCD_RemoteGeneral->debug4);
+			sprintf(buf, " D3:%d  D4:%d", LCD_RemoteGeneral->debug3, LCD_RemoteGeneral->debug4);
 			break;
 
 		case 4 :  /* PAGE 4 */
-			sprintf(buf, "I2C_ERRORS: %03d", realTimeData->I2C_ErrorCount);
+			sprintf(buf, "I2C_ERRORS: %03d", (realTimeData->I2C_ErrorCount > 999) ? 999 : realTimeData->I2C_ErrorCount);
 			break;
 	}
+
+	#pragma GCC diagnostic pop
 
 	pos = print_str(buf);
 

@@ -129,7 +129,7 @@ sbgcCommandStatus_t SBGC32_System::CheckConfirmation (serialAPI_CommandID_t comm
 
 sbgcCommandStatus_t SBGC32_System::ExpectCommand (serialAPI_CommandID_t commandID, SBGC_ADVANCED_PARAMS_)
 {
-	return SBGC32_ExpectCommand(&GeneralSBGC, commandID, SBGC_ADVANCED_ARGS_);
+	return SBGC32_ExpectCommand(&GeneralSBGC, commandID, NULL, 0, SBGC_ADVANCED_ARGS_);
 }
 
 
@@ -264,6 +264,12 @@ void SBGC32_System::StopRealTimeDataCustomStream (SBGC_ADVANCED_PARAMS_)
 sbgcBoolean_t SBGC32_System::GetRealTimeDataCustomStreamStatus (void)
 {
 	return DataStreamInterval.cmdID ? sbgcTRUE : sbgcFALSE;
+}
+
+
+sbgcCommandStatus_t SBGC32_System::RequestRealTimeDataCustom (void *realTimeDataCustom, ui8 size, SBGC_ADVANCED_PARAMS_)
+{
+	return SBGC32_RequestRealTimeDataCustom(&GeneralSBGC, realTimeDataCustom, size, SBGC_ADVANCED_ARGS_);
 }
 
 
@@ -562,7 +568,7 @@ sbgcCommandStatus_t SBGC32_System::TuneAutoPID (SBGC_ADVANCED_PARAMS_)
 	{
 		sbgcAutoPID2_t AutoPID2 = { 0 };
 
-		AutoPID2.action = APID2A_ACTION_START_SAVE;
+		AutoPID2.action = APID2_ACTION_START_SAVE;
 		AutoPID2.cfgVersion = 1;
 
 		for (ui8 i = 0; i < 3; i++)
@@ -590,7 +596,7 @@ sbgcCommandStatus_t SBGC32_System::Reset (SBGC_ADVANCED_PARAMS_)
 {
 	SBGC32_Reset(&GeneralSBGC, RESET_FLAG_NEED_CONFIRMATION | RESET_FLAG_RESTORE_STATE, 0, SBGC_ADVANCED_ARGS_);
 
-	return SBGC32_ExpectCommand(&GeneralSBGC, CMD_RESET, SBGC_ADVANCED_ARGS_);
+	return SBGC32_ExpectCommand(&GeneralSBGC, CMD_RESET, NULL, 0, SBGC_ADVANCED_ARGS_);
 }
 
 

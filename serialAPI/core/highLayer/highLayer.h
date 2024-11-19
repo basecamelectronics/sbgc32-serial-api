@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		highLayer.h
  *
@@ -96,7 +96,7 @@ extern		"C" {
 
 #define		SBGC_RC_ADC_CHANNELS_NUM		3U
 #define		SBGC_RC_AUX_CHANNELS_NUM		3U
-#define		SBGC_VIRTUAL_CHANNELS_NUM		31U
+#define		SBGC_VIRTUAL_CHANNELS_NUM		32U
 
 #define		SBGC_ALL_RC_CHANNELS_NUM		(SBGC_RC_CHANNELS_NUM + SBGC_RC_ADC_CHANNELS_NUM +\
 											SBGC_RC_AUX_CHANNELS_NUM + SBGC_VIRTUAL_CHANNELS_NUM)
@@ -106,7 +106,11 @@ extern		"C" {
 /* Other Constants ---------------------------------
  */
 /** A placeholder for signaling the function not to
-	wait for a confirmation command as a response */
+	wait for a confirmation command as a response.
+	It is also used in examples for functions for
+	brevity. Replace it with an object of
+	sbgcConfirm_t type if you want to receive
+	confirmation command data from this function */
 #define		SBGC_NO_CONFIRM			NULL
 
 /** A value that notifies the SBGC32_ command not
@@ -123,6 +127,15 @@ extern		"C" {
 
 /* Conversion Macros and Constants -----------------
  */
+/** Maximum rotation speed for SBGC32 is 2000
+ 	degrees per second. This speed is limited
+ 	by the operational characteristics of the
+ 	gyroscope. All other limitations pertain
+ 	exclusively to the hardware components
+ 	of the gimbal system, particularly the
+ 	motor specifications */
+#define		SBGC_MAX_SPEED			2000
+
 /** SBGC32 gets the value of the encoders
 	in 14-bit resolution. This is a number
 	of values per encoder revolution */
@@ -146,6 +159,10 @@ extern		"C" {
 	high resolution */
 #define		SBGC_ANGLE_SCALE_HI_RES	((float)SBGC_ANGLE_FULL_TURN_HR / 360.0F)
 
+/** SBGC32 quaternion scale
+	factor value */
+#define		SBGC_QUAT_SCALE_FACTOR	741453.78597590288385109097614973F
+
 
 /** @brief	Converts speed value to system speed
  *			(0.1220740379 degree/sec)
@@ -154,7 +171,8 @@ extern		"C" {
  *			sbgcAxisC_t.speed \n
  *			sbgcAxisCE_t.speed
  *
- *	@param	s - speed in degrees per second
+ *	@param	s - speed in degrees per second. Should not
+ *			exceed the @ref SBGC_MAX_SPEED (2000) value
  *
  *	@return	System speed value
  */
@@ -247,6 +265,33 @@ extern		"C" {
  */
 #define		sbgcDegreeToRadians(d)	((d) ? (((d) * M_PI) / 180.0) : 0)
 
+
+/** @brief	Compresses quaternion
+ *
+ *	@param	v - absolute value
+ *
+ *	@return	Compressed quaternion value
+ */
+#define		sbgcCompressQuat(v)		((v) * SBGC_QUAT_SCALE_FACTOR)
+
+/** @brief	Restores original value
+ *
+ *	@param	q - quaternion value
+ *
+ *	@return	Original value
+ */
+#define		sbgcRestoreQuat(q)		((q) * (1 / SBGC_QUAT_SCALE_FACTOR))
+
+/** @brief	Restores the 4th component
+ *
+ *	@param	a - 1st quaternion component
+ *	@param	b - 2nd quaternion component
+ *	@param	c - 3rd quaternion component
+ *
+ *	@return	Restored 4th component
+ */
+#define		sbgcRestoreQuatLargest(a, b, c)	(sqrt(1 - (((a) * (a)) + ((b) * (b)) + ((c) * (c)))))
+
 /* Other Macros ------------------------------------
  */
 #if (SBGC_NON_BLOCKING_MODE)
@@ -327,6 +372,70 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Common System Flags
  */
+/**	@note	serialAPI_General_t.boardFeatures
+ *			sbgcBoardInfo_t.boardFeatures
+ */
+typedef enum
+{
+	BF_3_AXIS						= BIT_0_SET,
+	BF_BAT_MONITORING				= BIT_1_SET,
+	BF_ENCODERS						= BIT_2_SET,
+	BF_BODE_TEST					= BIT_3_SET,
+	BF_SCRIPTING					= BIT_4_SET,
+	BF_CURRENT_SENSOR				= BIT_5_SET,
+	BF_MAG_SENSOR					= BIT_6_SET,
+	BF_ORDER_OF_AXES_LETUS			= BIT_7_SET,
+	BF_IMU_EEPROM					= BIT_8_SET,
+	BF_FRAME_IMU_EEPROM				= BIT_9_SET,
+	BF_CAN_PORT						= BIT_10_SET,
+	BF_MOMENTUM						= BIT_11_SET,
+	BF_COGGING_CORRECTION			= BIT_12_SET,
+	BF_MOTOR4_CONTROL				= BIT_13_SET,
+	BF_ACC_AUTO_CALIB				= BIT_14_SET,
+	BF_BIG_FLASH					= BIT_15_SET,	// Firmware needs 256Kb of FLASH
+
+	/* Artificial expanding for
+	   serialAPI_General_t.boardFeatures only */
+	BF_EXT_IMU						= BIT_16_SET,
+	BF_STATE_VARS					= BIT_18_SET,
+	BF_POWER_MANAGEMENT				= BIT_19_SET,
+	BF_GYRO_ADVANCED_CALIB			= BIT_20_SET,
+	BF_LIMITED_VERSION				= BIT_21_SET,
+	BF_REACTION						= BIT_22_SET,
+	BF_ENCODER_LUT					= BIT_23_SET
+
+}	sbgcBoardFeature_t;
+
+
+/**	@note	sbgcBoardInfo_t.boardFeaturesExt
+ */
+typedef enum
+{
+	BFE_EXT_IMU						= BIT_0_SET,
+	BFE_STATE_VARS					= BIT_2_SET,
+	BFE_POWER_MANAGEMENT			= BIT_3_SET,
+	BFE_GYRO_ADVANCED_CALIB			= BIT_4_SET,
+	BFE_LIMITED_VERSION				= BIT_5_SET,
+	BFE_REACTION					= BIT_6_SET,
+	BFE_ENCODER_LUT					= BIT_7_SET
+
+}	sbgcBoardFeatureExt_t;
+
+
+/**	@note	serialAPI_General_t.boardFeatures2
+ *			sbgcBoardInfo3_t.boardFeaturesExt2
+ */
+typedef enum
+{
+	BFE2_PLUS_VER					= BIT_0_SET,
+	BFE2_SHAKE_GENERATOR			= BIT_1_SET,
+	BFE2_EXT_MOTORS					= BIT_2_SET,
+	BFE2_QUAT_CONTROL				= BIT_3_SET,
+	BFE2_ADC4						= BIT_4_SET
+
+}	sbgcBoardFeatureExt2_t;
+
+
 /**	@brief	Special codes for menu commands
  *
  *	@note	@ref SBGC32_ExecuteMenu, 2 arg\n
@@ -418,6 +527,10 @@ typedef enum
 	MENU_CMD_TRIPOD_MODE_OFF		= 72,
 	MENU_CMD_TRIPOD_MODE_ON			= 73,
 	MENU_CMD_SET_RC_TRIM			= 74,
+	MENU_CMD_HOME_POSITION_MOTORS	= 75,
+	MENU_CMD_RETRACTED_POSITION		= 76,
+	MENU_CMD_SHAKE_GENERATOR_OFF	= 77,
+	MENU_CMD_SHAKE_GENERATOR_ON		= 78,
 
 	/* only for sbgcMainParamsExt2_t.startupAction */
 	sbgcMENU_BUTTON_IS_PRESSED		= BIT_7_SET
@@ -434,19 +547,31 @@ typedef enum
  */
 typedef enum
 {
-	/* Will be greatly changed in the future versions */
-
 	sbgcERR_NO						= 0,
-	sbgcERR_EEPROM_FAULT			= 1,
-	sbgcERR_FILE_NOT_FOUND			= 2,
-	sbgcERR_FAT						= 3,
-	sbgcERR_NO_FREE_SPACE			= 4,
-	sbgcERR_FAT_IS_FULL				= 5,
-	sbgcERR_FILE_SIZE				= 6,
-	sbgcERR_CRC						= 7,
-	sbgcERR_LIMIT_REACHED			= 8,
-	sbgcERR_FILE_CORRUPTED			= 9,
-	sbgcERR_WRONG_PARAMS			= 10
+
+	sbgcERR_CMD_SIZE				= 1,
+	sbgcERR_WRONG_PARAMS			= 2,
+	sbgcERR_CRYPTO					= 4,
+	sbgcERR_UNKNOWN_COMMAND			= 6,
+	sbgcERR_WRONG_STATE				= 8,
+	sbgcERR_NOT_SUPPORTED			= 9,
+	sbgcERR_OPERATION_FAILED		= 10,
+	sbgcERR_TEMPORARY				= 11
+
+	/*	Codes related to file operations:
+
+		sbgcERR_EEPROM_FAULT		= 1,
+		sbgcERR_FILE_NOT_FOUND		= 2,
+		sbgcERR_FAT					= 3,
+		sbgcERR_NO_FREE_SPACE		= 4,
+		sbgcERR_FAT_IS_FULL			= 5,
+		sbgcERR_FILE_SIZE			= 6,
+		sbgcERR_CRC					= 7,
+		sbgcERR_LIMIT_REACHED		= 8,
+		sbgcERR_FILE_CORRUPTED		= 9,
+		sbgcERR_WRONG_PARAMS		= 10
+
+	*/
 
 }	sbgcErrorCode_t;
 
@@ -599,11 +724,11 @@ typedef enum
 
 	sbgcRCMap_SERIAL_VIRT_CH_1		= (sbgcRCMap_RC_SERIAL_TYPE + 1),
 	/* ... */
-	sbgcRCMap_SERIAL_VIRT_CH_31		= (sbgcRCMap_RC_SERIAL_TYPE + 31),
+	sbgcRCMap_SERIAL_VIRT_CH_32		= (sbgcRCMap_RC_SERIAL_TYPE + 32),
 
 	sbgcRCMap_API_VIRT_CH_1			= (sbgcRCMap_API_VIRT_CH_TYPE + 1),
 	/* ... */
-	sbgcRCMap_API_VIRT_CH_31		= (sbgcRCMap_API_VIRT_CH_TYPE + 31),
+	sbgcRCMap_API_VIRT_CH_32		= (sbgcRCMap_API_VIRT_CH_TYPE + 32),
 
 	sbgcRCMap_STEP_SIGNAL_CH_1		= (sbgcRCMap_STEP_SIGNAL_TYPE + 1),
 	/* ... */
@@ -762,7 +887,11 @@ typedef enum
 	SF_POWER_MANAGER_ENABLED		= BIT_5_SET,	// For CAN_MCU board only
 	/* For real-time data custom only.
 	   Frw.ver. 2.73+ */
-	SF_SHAKE_GENERATOR_ENABLED		= BIT_8_SET
+	SF_SHAKE_GENERATOR_ENABLED		= BIT_8_SET,
+	SF_SERVO_MODE_IS_ACTIVE			= BIT_9_SET,	// "Servo mode" is active (gimbal is controlled in motor coordinates)
+	SF_FOLLOW_MODE_ROLL_IS_ACTIVE	= BIT_10_SET,
+	SF_FOLLOW_MODE_PITCH_IS_ACTIVE	= BIT_11_SET,
+	SF_FOLLOW_MODE_YAW_IS_ACTIVE	= BIT_12_SET
 
 }	sbgcStateFlag_t;
 
@@ -899,7 +1028,7 @@ typedef struct PACKED__
 
 	ui8		reserved [13];
 
-}			sbgcAHRS_DebugInfo_t;
+}	sbgcAHRS_DebugInfo_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -923,7 +1052,7 @@ typedef struct PACKED__
 	float	PID_Out;								/*!<  The output of the internal PID loop running over the ANGLE_ERROR
 														  with the FF_SPEED mixed, scaled by the 'scale factor' parameter				*/
 
-}			sbgcMotor4_Control_t;
+}	sbgcMotor4_Control_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -984,7 +1113,51 @@ typedef struct
 	i8		motorTemperature,						/*!<  Units: °C																		*/
 			driverTemperature;						/*!<  Units: °C																		*/
 
-}			sbgcExtMotorsStateReference_t;
+}	sbgcExtMotorsStateReference_t;
+
+
+/**	@brief	Structure reference for work with
+ *			quaternions
+ *
+ *	@note	Compressing to packed format:\n
+ *			1. Find the largest component and store
+ *			its index (0..3) in the 'largest' field.
+ *			If the value is negative, set
+ *			the 'largestSign' bit to 1;\n
+ *			2. Take an absolute value of other 3
+ *			components, multiply them by
+ *			@ref SBGC_QUAT_SCALE_FACTOR and store
+ *			to a, b, c fields (preserving the
+ *			original order). If any value is
+ *			negative, set the corresponding sign
+ *			bit to 1
+ *
+ *	@note	Restoring from packed format:\n
+ *			1. Restore 3 components a, b, c to
+ *			floats using the @ref sbgcRestoreQuat
+ *			and taking into account the 'sign' bit;\n
+ *			2. Restore the 4th component referenced
+ *			by the 'largest' index, using the
+ *			@ref sbgcRestoreQuatLargest taking into
+ *			account the 'largestSign' bit
+ */
+typedef struct
+{
+	ui32	a				: 19;					/*!<  Component 'a'																	*/
+	ui16	aSign			: 1;					/*!<  Component 'a' sign (1 - negative)												*/
+
+	ui32	b				: 19;					/*!<  Component 'b'																	*/
+	ui16	bSign			: 1;					/*!<  Component 'b' sign (1 - negative)												*/
+
+	ui32	c				: 19;					/*!<  Component 'c'																	*/
+	ui16	cSign			: 1;					/*!<  Component 'c' sign (1 - negative)												*/
+
+	ui16	largest			: 2;					/*!<  Index of the largest component in quaternion, 0..3							*/
+	ui16	largestSign		: 1;					/*!<  Sign of the largest component (1 - negative)									*/
+
+	ui16	reserved		: 1;					/*!<  Not used, padding to 64-bits													*/
+
+}	sbgcQuatPackedReference_t;
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -1200,12 +1373,15 @@ static inline sbgcBoolean_t SerialAPI_IsRxEmpty (sbgcGeneral_t *gSBGC)
 	sbgcCommandStatus_t SBGC32_ReceiveAllCommands (sbgcGeneral_t *gSBGC);
 	sbgcCommandStatus_t SBGC32_ProcessAllCommands (sbgcGeneral_t *gSBGC);
 #endif
+#if (SBGC_USES_OS_SUPPORT && SBGC_AUTO_PING_CALLBACK)
+	void SBGC32_AutoPingCallback (void *gSBGC);
+#endif
 sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC);
 #if (SBGC_NEED_CONFIRM_CMD)
 	sbgcCommandStatus_t SBGC32_CheckConfirmation (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm, serialAPI_CommandID_t cmdID SBGC_ADVANCED_PARAMS__);
 #endif
 sbgcCommandStatus_t SBGC32_SendRawCommand (sbgcGeneral_t *gSBGC, ui32 cmdID, ...);
-sbgcCommandStatus_t SBGC32_ExpectCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_ExpectCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID, void *pDestination, ui8 size SBGC_ADVANCED_PARAMS__);
 sbgcBoolean_t SBGC32_DeleteCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID);
 void SerialAPI_LinkDriver (sbgcGeneral_t *gSBGC, sbgcTx_t tx, sbgcRx_t rx,
 						   sbgcAvailableBytes_t availableBytes, sbgcTxDebug_t txDebug,
@@ -1215,6 +1391,9 @@ void SerialAPI_LinkDriver (sbgcGeneral_t *gSBGC, sbgcTx_t tx, sbgcRx_t rx,
 #endif
 void SerialAPI_ResetTxBuffer (sbgcGeneral_t *gSBGC);
 void SerialAPI_ResetRxBuffer (sbgcGeneral_t *gSBGC);
+#if ((SBGC_USES_LOGS & SBGC_NON_BLOCKING_MODE) || SBGC_USES_DOXYGEN)
+	void SerialAPI_LogCommandQueue (sbgcGeneral_t *gSBGC);
+#endif
 /**	@}
  */
 

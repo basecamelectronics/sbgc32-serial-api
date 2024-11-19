@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueLinuxOS.h
  *
@@ -78,7 +78,7 @@ typedef		pthread_mutex_t			sbgcMutex_t;
 #define		sbgcFree(ptr)			free(ptr)
 
 #define		sbgcDelay(tick)			usleep((tick) * 1000)
-#define		sbgcGetTick()			DriverSBGC_GetTimeMs()
+#define		sbgcGetTick()			DriverSBGC32_GetTimeMs(NULL)
 #define		sbgcMsToTicks(ms)		(ms)
 
 #define		sbgcCreateMutex(m)		pthread_mutex_init(m, 0)
@@ -99,7 +99,6 @@ typedef		pthread_mutex_t			sbgcMutex_t;
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg);
 void SystemSBGC32_Init (void *gSBGC);
 void SystemSBGC32_CreateThread (SBGC_THREAD_FUNCTION((*fn), arg), sbgcThreadArg_t threadArg);
 void SystemSBGC32_DestroyThreadItself (void);
@@ -110,6 +109,7 @@ void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex);
+void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newPrior);
 /**	@}
  */
 

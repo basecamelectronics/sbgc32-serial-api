@@ -3,6 +3,27 @@
                                 Releases
 ________________________________________________________________________
 
+### Release 2.1  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+- MiniRemote v1.3 - major GUI improvements, minor optimizations
+- A new settings added:
+	* SBGC_CHAINED_TIMEOUT
+	* SBGC_LOG_COMMAND_TIME
+	* SBGC_DETAILED_CONFIRM
+	* SBGC_THREAD_QUIET_PRIOR
+	* SBGC_NEED_AUTO_PING
+	* SBGC_AUTO_PING_PERIOD
+	* SBGC_LOG_AUTO_PING
+	* SBGC_AUTO_PING_CALLBACK
+- The next functions added:
+	* SBGC32_SetServoOutExt
+	* SBGC32_RequestModuleList
+	* SerialAPI_LogCommandQueue
+	* SerialAPI_CommandWaitingHandler
+- The SBGC32_ExpectCommand function gets +2 additional arguments
+- The initialization process have optimized
+- Minor code optimizations and grammar corrections
+
 ### Release 2.0 (incompatible with old version)  - - - - - - - - - - - -
 
 - Two new operating modes added to the library: non-blocking and OS-compatible

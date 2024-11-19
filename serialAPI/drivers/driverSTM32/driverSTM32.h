@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		driverSTM32.h
  *
@@ -459,6 +459,7 @@ typedef struct
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
+void DriverSBGC32_MX_Init (void);
 void DriverSBGC32_Init (void **driver, SBGC_DRV_UART_TYPE_DEF__ *uart, SBGC_DRV_TIMER_TYPE_DEF__ *tim);
 void DriverSBGC32_Deinit (void **driver);
 
@@ -466,9 +467,7 @@ sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver);
 void DriverSBGC32_TimerCallBack (void *driver);
 
 ui8 DriverSBGC32_UartTransmitData (void *driver, ui8 *data, ui16 size);
-//#if (SBGC_DRV_HAL_NVIC_UART || SBGC_DRV_LL_NVIC_UART)
-	void DriverSBGC32_UART_TxCallBack (void *driver);
-//#endif
+void DriverSBGC32_UART_TxCallBack (void *driver);
 void DriverSBGC32_ClearTxBuff (void *driver);
 
 ui16 DriverSBGC32_GetAvailableBytes (void *Driver);

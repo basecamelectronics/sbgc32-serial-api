@@ -200,11 +200,11 @@ sPrefMenu exsPrefSBGC32_BoardInfo =
 sMenuItem exsSBGC32_RealTimeDataItems [] =
 {
 	/* Realtime Data 3 */
-	{ ITEM_TYPE_VALUE, "ACC Data [ROLL]", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Acc Data [ROLL]", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Gyro Data [ROLL]", 0, 0, NULL, NULL },
-	{ ITEM_TYPE_VALUE, "ACC Data [PITCH]", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Acc Data [PITCH]", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Gyro Data [PITCH]", 0, 0, NULL, NULL },
-	{ ITEM_TYPE_VALUE, "ACC Data [YAW]", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Acc Data [YAW]", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Gyro Data [YAW]", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Serial Error Count", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "System Error", 0, 0, NULL, NULL },
@@ -623,7 +623,7 @@ static void OtherAdjVarsMenuInit (void)
 	memset(exsPrefSBGC32_AdjvarsDataOther.Menu->psItems, 0, (sizeof(sMenuItem) * otherAdjvarCount));
 
 	exsPrefSBGC32_AdjvarsDataOther.Menu->nItems = otherAdjvarCount;
-	exsPrefSBGC32_AdjvarsDataOther.Menu->pszTitle = "Other Adj. Vars.";
+	exsPrefSBGC32_AdjvarsDataOther.Menu->pszTitle = " Other Adj. Vars.";  // special ' ' GUI cheat
 	exsPrefSBGC32_AdjvarsDataOther.nItems = 1;
 
 	/* Reading active adjvars */
@@ -780,22 +780,22 @@ void CSBGCInfoContainerM::Init (void)
 
 	/* Return arrow */
 	static gdispImage *gdispImageBuff;
-	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
-	wi.g.x = 0;
-	wi.g.y = 0;
+	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageBuff);
 
 	/* Adjvar synchronization arrow */
 	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ADJ_VARS_SYNC]);
-	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE;
-	wi.g.y = 0;
+	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE - WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
@@ -807,10 +807,10 @@ void CSBGCInfoContainerM::Init (void)
 	gwinHide(ghImageSync);
 
 	/* Title label */
-	wi.g.x = wi.g.height;
-	wi.g.width = ghContainer->width - (WIDGET_IMAGE_SIZE * 2);
+	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE) * 2) + WIDGET_HOR_MARGIN;
 	wi.g.height = LARGE_FONT_HEIGHT + 2;
-	wi.g.y = 1;
+	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
+	wi.g.y = CONTAINER_TITLE_Y_MARGIN;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
 	wi.customParam = (void*)(justifyCenter | justifyMiddle);
@@ -923,10 +923,9 @@ void CSBGCInfoContainerM::vTask (void *pvParameters)
 				for (ui8 i = 0; i < countof_(exsSBGC32_RealTimeDataItems); i++)
 					osFree(exsSBGC32_RealTimeDataItems[i].value);
 
-				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
-
 				xRealTimeDataUpdateTime = osGetTickCount();
 
+				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
 				MiniRemote.UpdateLastResponseTime();
 			}
 		}
@@ -944,10 +943,9 @@ void CSBGCInfoContainerM::vTask (void *pvParameters)
 				for (ui8 i = 0; i < Gimbal.GetRC_InputsActiveNum(); i++)
 					osFree(exsPrefSBGC32_RC_Inputs.Menu->psItems[i].value);
 
-				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
-
 				xRealTimeDataUpdateTime = osGetTickCount();
 
+				MiniRemote.SetRedrawMenuFlag(sbgcTRUE);
 				MiniRemote.UpdateLastResponseTime();
 			}
 		}
@@ -1022,8 +1020,8 @@ bool CSBGCInfoContainerM::EnterPrefMenu (sPrefMenu *menuPath)
 	wi.g.show = TRUE;
 	wi.g.parent = ghContainer;
 	wi.g.width = ghContainer->width;
-	wi.g.height = ghContainer->height - 20;
-	wi.g.y = 20;
+	wi.g.height = ghContainer->height - LARGE_FONT_HEIGHT - MENU_TITLE_INDENT;
+	wi.g.y = LARGE_FONT_HEIGHT + MENU_TITLE_INDENT;
 	wi.g.x = 0;
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 
@@ -1067,7 +1065,7 @@ void CSBGCInfoContainerM::Process (GimbalMenuState_t currentState)
 			break;
 
 		case SBGC_MENU_CONTROL_HANDLER_SETTINGS :
-			exsPrefControlHandler.Menu->psItems[3].param = Gimbal.GetChosenControlHandler()->invert;
+			exsPrefControlHandler.Menu->psItems[4].param = Gimbal.GetChosenControlHandler()->invert;
 			break;
 
 		case SBGC_MENU_CONTROL_ATTACHED_AXIS :

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		commandBuild.c
  *
@@ -317,29 +317,40 @@ static void SerialAPI_SkipBytes (sbgcGeneral_t *gSBGC, ui8 size)
 }
 
 
-/**	@brief	Initializes the write a serial command
+/**	@brief	Registers a new serial command
  *
  *	@note	Private function
  *
  *	@param	*gSBGC - serial connection descriptor
  *	@param	cmdID - SBGC32 command identifier
+ *	@param	thisCommandRx - command direction type
  */
-static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID
-								  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+static void SerialAPI_RegisterCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID, sbgcBoolean_t thisCommandRx
+									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
-	/* Lock all SerialAPI operations to add a new command */
-	serialAPI_Lock()
+	#if (!(SBGC_NON_BLOCKING_MODE || SBGC_OPTIMIZE_COMMANDS))
+		unused_(thisCommandRx);
+	#endif
 
 	#if (SBGC_NON_BLOCKING_MODE)
 
 		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-			if ((gSBGC->_api->commandBuff[i]._commandID == cmdID) && (!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX)) &&
-				(gSBGC->_api->commandBuff[i].parameters & SCParam_RETAIN) && (!(parameters & SCParam_RETAIN)))
+			if ((gSBGC->_api->commandBuff[i]._commandID == cmdID) && (!(parameters & SCParam_RETAIN)) &&
+				(gSBGC->_api->commandBuff[i].parameters & SCParam_RETAIN))
 			/* The serial command must be freed */
 			{
+				#if (SBGC_NEED_AUTO_PING)
+					if (gSBGC->_api->commandBuff[i]._CID < 7)
+						continue;
+				#endif
+
 				serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[i];
 
 				serialAPI_CurCmd_->parameters = (serialAPI_CommandParam_t)parameters;
+
+				if (thisCommandRx)
+					serialAPI_CurCmd_->parameters |= SCParam_RX;
+
 				serialAPI_CurCmd_->priority = priority;
 				serialAPI_CurCmd_->timeout = timeout;
 
@@ -352,7 +363,19 @@ static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cm
 
 				serialAPI_CurCmd_->_state = SCState_FORMING;
 
-				/* Continue to register the command */
+				gSBGC->_api->retainedCommandNumber--;
+
+				#if (SBGC_USES_OS_SUPPORT)
+
+					if (gSBGC->_api->threadState == SATS_LOW_PRIOR)
+					{
+						gSBGC->_api->threadState = SATS_NORMAL;
+						serialAPI_RestoreThreadPrior()
+					}
+
+				#endif
+
+				/* Continue to fill the command */
 				return;
 			}
 
@@ -366,33 +389,48 @@ static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cm
 
 	#if (SBGC_OPTIMIZE_COMMANDS)
 
-		/* Looking for a command with the same commandID. Exit if found */
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-			if ((gSBGC->_api->commandBuff[i]._commandID == cmdID) && (!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX)))
+		/* Check for not-optimized serial commands */
+		switch (cmdID)
+		{
+			case CMD_EXECUTE_MENU :
+			case CMD_CONTROL /* CMD_CONFIRM also */ :
+				break;
+
+			default :
 			{
-				gSBGC->_lastCommandStatus = sbgcCOMMAND_BUFFER_OPTIMIZED;
-				serialAPI_Error()
+				/* Looking for a command with the same commandID. Exit if found */
+				for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
+					if (gSBGC->_api->commandBuff[i]._commandID == cmdID)
+					{
+						if (((!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX)) && (!thisCommandRx)) ||
+							((gSBGC->_api->commandBuff[i].parameters & SCParam_RX) && thisCommandRx))
+						{
+							gSBGC->_lastCommandStatus = sbgcCOMMAND_BUFFER_OPTIMIZED;
+							serialAPI_Error()
+						}
+					}
 			}
+		}
 
 	#endif
 
-	/* Begin to registration for a new command */
 	serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber];
 	gSBGC->_api->commandNumber++;
 
 	clearCmd_(serialAPI_CurCmd_);
 
-	serialAPI_CurCmd_->_payload = &gSBGC->_api->txCommandBuff[gSBGC->_api->txCommandBuffHead];
-
-	serialAPI_CurCmd_->_id = ++gSBGC->_api->commandTotalCount;
+	serialAPI_CurCmd_->_CID = ++gSBGC->_api->commandTotalCount;
 	serialAPI_CurCmd_->_state = SCState_FORMING;
 	serialAPI_CurCmd_->_commandID = cmdID;
 
 	#if (SBGC_NON_BLOCKING_MODE)
 
-		serialAPI_CurCmd_->parameters = (serialAPI_CommandParam_t)(serialAPI_CurCmd_->parameters | parameters);
+		serialAPI_CurCmd_->parameters = parameters;
 		serialAPI_CurCmd_->priority = priority;
 		serialAPI_CurCmd_->timeout = timeout;
+
+		if (serialAPI_CurCmd_->parameters & SCParam_RETAIN)
+			gSBGC->_api->retainedCommandNumber++;
 
 		#if (SBGC_USES_CALLBACKS)
 
@@ -404,6 +442,26 @@ static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cm
 		gSBGC->_api->commandSortFlag = sbgcFALSE;
 
 	#endif
+}
+
+
+/**	@brief	Initializes the write a serial command
+ *
+ *	@note	Private function
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	cmdID - SBGC32 command identifier
+ */
+static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID
+								  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	/* Lock all SerialAPI operations to add a new command */
+	serialAPI_Lock()
+
+	/* Begin to registration for a new command */
+	SerialAPI_RegisterCommand(gSBGC, cmdID, sbgcFALSE SBGC_ADVANCED_ARGS__);
+
+	serialAPI_CurCmd_->_payload = &gSBGC->_api->txCommandBuff[gSBGC->_api->txCommandBuffHead];
 }
 
 
@@ -421,79 +479,10 @@ static void SerialAPI_StartRead (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmd
 
 	serialAPI_Assert()
 
-	#if (SBGC_NON_BLOCKING_MODE)
-
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-			if ((gSBGC->_api->commandBuff[i]._commandID == cmdID) && (gSBGC->_api->commandBuff[i].parameters & SCParam_RX) &&
-				(gSBGC->_api->commandBuff[i].parameters & SCParam_RETAIN) && (!(parameters & SCParam_RETAIN)))
-			/* The serial command must be freed */
-			{
-				serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[i];
-
-				serialAPI_CurCmd_->parameters = (serialAPI_CommandParam_t)(parameters | SCParam_RX);
-				serialAPI_CurCmd_->priority = priority;
-				serialAPI_CurCmd_->timeout = timeout;
-
-				#if (SBGC_USES_CALLBACKS)
-
-					serialAPI_CurCmd_->callback = callback;
-					serialAPI_CurCmd_->callbackArg = callbackArg;
-
-				#endif
-
-				serialAPI_CurCmd_->_state = SCState_FORMING;
-
-				/* Continue to register the command */
-				return;
-			}
-
-	#endif
-
-	if (gSBGC->_api->commandNumber >= SBGC_MAX_COMMAND_NUM)
-	{
-		gSBGC->_lastCommandStatus = sbgcCOMMAND_BUFFER_OVERFLOW_ERROR;
-		serialAPI_Error()
-	}
-
-	#if (SBGC_OPTIMIZE_COMMANDS)
-
-		/* Looking for a command with the same commandID. Exit if found */
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-			if ((gSBGC->_api->commandBuff[i].parameters & SCParam_RX) && (gSBGC->_api->commandBuff[i]._commandID == cmdID))
-			{
-				gSBGC->_lastCommandStatus = sbgcCOMMAND_BUFFER_OPTIMIZED;
-				serialAPI_Error()
-			}
-
-	#endif
-
 	/* Begin to registration for a new command */
-	serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber];
-	gSBGC->_api->commandNumber++;
+	SerialAPI_RegisterCommand(gSBGC, cmdID, sbgcTRUE SBGC_ADVANCED_ARGS__);
 
-	clearCmd_(serialAPI_CurCmd_);
-
-	serialAPI_CurCmd_->_id = ++gSBGC->_api->commandTotalCount;
-	serialAPI_CurCmd_->_state = SCState_FORMING;
-	serialAPI_CurCmd_->_commandID = cmdID;
-	serialAPI_CurCmd_->parameters = SCParam_RX;
-
-	#if (SBGC_NON_BLOCKING_MODE)
-
-		serialAPI_CurCmd_->parameters = (serialAPI_CommandParam_t)(serialAPI_CurCmd_->parameters | parameters);
-		serialAPI_CurCmd_->priority = priority;
-		serialAPI_CurCmd_->timeout = timeout;
-
-		#if (SBGC_USES_CALLBACKS)
-
-			serialAPI_CurCmd_->callback = callback;
-			serialAPI_CurCmd_->callbackArg = callbackArg;
-
-		#endif
-
-		gSBGC->_api->commandSortFlag = sbgcFALSE;
-
-	#endif
+	serialAPI_CurCmd_->parameters |= SCParam_RX;
 }
 
 
@@ -528,7 +517,7 @@ static void SerialAPI_FinishWrite (sbgcGeneral_t *gSBGC)
 	#endif
 
 	#if (SBGC_USES_TOKENS)
-		gSBGC->_api->lastCommandToken = ((sbgcCommandToken_t)serialAPI_CurCmd_->_id) & 0x000000FF;
+		gSBGC->_api->lastCommandToken = ((sbgcCommandToken_t)serialAPI_CurCmd_->_CID) & 0x000000FF;
 	#endif
 
 	serialAPI_CurCmd_->_state = SCState_PREPARED;
@@ -563,7 +552,7 @@ static void SerialAPI_FinishRead (sbgcGeneral_t *gSBGC)
 	#if (SBGC_USES_TOKENS)
 
 		gSBGC->_api->lastCommandToken &= 0x00FF;
-		gSBGC->_api->lastCommandToken |= (((sbgcCommandToken_t)serialAPI_CurCmd_->_id) << 8) & 0x0000FF00;
+		gSBGC->_api->lastCommandToken |= (((sbgcCommandToken_t)serialAPI_CurCmd_->_CID) << 8) & 0x0000FF00;
 
 	#endif
 
@@ -580,11 +569,19 @@ static void SerialAPI_FinishRead (sbgcGeneral_t *gSBGC)
 static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 {
 	#if (SBGC_USES_LOGS)
-		gSBGC->_api->writeLog(gSBGC, &lastCommand_);
+		gSBGC->_api->log(gSBGC, &lastCommand_);
 	#endif
 
-	clearCmd_(&lastCommand_);
+	#if (SBGC_NON_BLOCKING_MODE)
+
+		if (lastCommand_.parameters & SCParam_RETAIN)
+			gSBGC->_api->retainedCommandNumber--;
+
+	#endif
+
 	gSBGC->_api->commandNumber--;
+
+	gSBGC->_api->serialAPI_Status = serialAPI_ERROR;
 }
 
 
@@ -612,6 +609,18 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 				confirm->cmdData = SerialAPI_ReadWord(gSBGC);
 
 			confirm->status = sbgcCONFIRM_RECEIVED;
+
+			#if (SBGC_DETAILED_CONFIRM)
+
+				if (confirm->cmdData)
+				{
+					char cmdData [24];
+
+					gSBGC->_ll->debugSprintf(cmdData, "Command Data: %d\n", confirm->cmdData);
+					DebugSBGC32_PrintMessage(gSBGC, cmdData);
+				}
+
+			#endif
 		}
 
 		else if (serialAPI_CurCmd_->_commandID == CMD_ERROR)
@@ -622,6 +631,24 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 				SerialAPI_ReadBuff(gSBGC, confirm->errorData, 4);
 
 			confirm->status = sbgcCONFIRM_ERROR;
+
+			#if (SBGC_DETAILED_CONFIRM)
+
+				if (confirm->errorCode)
+				{
+					char errorCode [64] = { 0 };
+					ui8 pointer;
+
+					pointer = gSBGC->_ll->debugSprintf(errorCode, "Error Code: #%d (x%02X x%02X x%02X x%02X): ", confirm->errorCode,
+							confirm->errorData[0], confirm->errorData[1], confirm->errorData[2], confirm->errorData[3]);
+
+					pointer += ParserSBGC32_ConvertErrorCodeToString(confirm, &errorCode[pointer], sizeof(errorCode) - pointer);
+					errorCode[pointer] = '\n';
+
+					DebugSBGC32_PrintMessage(gSBGC, errorCode);
+				}
+
+			#endif
 		}
 	}
 
@@ -676,13 +703,10 @@ static void SerialAPI_AddConfirmationCommand (sbgcGeneral_t *gSBGC, sbgcConfirm_
 
 		#if (SBGC_NON_BLOCKING_MODE)
 
-			if (serialAPI_CurCmd_ == NULL)
-			/* Break, if depended Tx command doesn't exist */
-				return;
-
-			else if (serialAPI_CurCmd_->_state != SCState_PREPARED)
-			/* Break, if depended Tx command is faulted */
-				return;
+			if (serialAPI_CurCmd_ != NULL)
+				if (serialAPI_CurCmd_->_state != SCState_PREPARED)
+				/* Break, if depended Tx command is faulted */
+					return;
 
 		#endif
 
@@ -718,57 +742,44 @@ static void SerialAPI_DefinePayloadSize (sbgcGeneral_t *gSBGC, ui8 payloadSize)
 }
 
 
-/**	@brief	Bounds Tx and Rx serial commands
+/**	@brief	Links Tx and Rx serial commands
  *
  *	@note	Private function
  *
  *	@param	*gSBGC - serial connection descriptor
  */
-static void SerialAPI_BoundCommands (sbgcGeneral_t *gSBGC)
+static void SerialAPI_LinkCommands (sbgcGeneral_t *gSBGC)
 {
-	#if (SBGC_USES_BLOCKING_MODE)
-		return;
-	#endif
+	#if (SBGC_NON_BLOCKING_MODE)
 
-	if (gSBGC->_api->serialAPI_Status == serialAPI_ERROR)
-	{
-		if (serialAPI_CurCmd_->parameters & SCParam_RX)
-		/* It means that Rx command was corrupted but still exist. Abort previous Tx command */
-			gSBGC->_api->commandBuff[gSBGC->_api->commandNumber - 2]._state = SCState_ABORTED;
+		serialAPI_Assert()
 
-		else
-			serialAPI_CurCmd_->_state = SCState_ABORTED;
+		/* Link commands if everything is OK */
+		serialAPI_Command_t *TxCmd = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber - 2];
+		serialAPI_Command_t *RxCmd = serialAPI_CurCmd_;
 
-		return;
-	}
+		/* ID exchange */
+		TxCmd->_chainedCommandID = RxCmd->_CID;
+		RxCmd->_chainedCommandID = TxCmd->_CID;
 
-	if (gSBGC->_api->commandNumber == 0) return;
-	if (!(serialAPI_CurCmd_->parameters & SCParam_RX)) return;
+		#if (SBGC_USES_CALLBACKS)
 
-	serialAPI_Assert()
+			if (TxCmd->parameters & SCParam_TX_CALLBACK)
+			{
+				RxCmd->callback = NULL;
+				RxCmd->callbackArg = NULL;
+			}
 
-	/* Bound commands if everything is OK */
-	serialAPI_Command_t *TxCmd = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber - 2];
-	serialAPI_Command_t *RxCmd = serialAPI_CurCmd_;
+			else
+			{
+				TxCmd->callback = NULL;
+				TxCmd->callbackArg = NULL;
+			}
 
-	/* ID exchange */
-	TxCmd->_relatedCommandID = RxCmd->_id;
-	RxCmd->_relatedCommandID = TxCmd->_id;
+		#endif
 
-	#if (SBGC_USES_CALLBACKS)
-
-		if (TxCmd->parameters & SCParam_TX_CALLBACK)
-		{
-			RxCmd->callback = NULL;
-			RxCmd->callbackArg = NULL;
-		}
-
-		else
-		{
-			TxCmd->callback = NULL;
-			TxCmd->callbackArg = NULL;
-		}
-
+	#else
+		unused_(gSBGC);
 	#endif
 }
 
@@ -780,17 +791,13 @@ static void SerialAPI_BoundCommands (sbgcGeneral_t *gSBGC)
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 static sbgcCommandStatus_t SerialAPI_Exit (sbgcGeneral_t *gSBGC)
 {
 	if (gSBGC->_api->serialAPI_Status == serialAPI_ERROR)
 	/* Check what's wrong */
 	{
-		while ((lastCommand_._state == SCState_ABORTED) && gSBGC->_api->commandNumber)
-		/* Delete all corrupted commands */
-			SerialAPI_AbortLastCmd(gSBGC);
-
         serialAPI_Unlock()
 
 		/* Return error code */
@@ -823,33 +830,38 @@ static sbgcCommandStatus_t SerialAPI_Exit (sbgcGeneral_t *gSBGC)
 
 	#if (SBGC_USES_OS_SUPPORT)
 
-		sbgcCommandStatus_t lastCommandStatus = gSBGC->_lastCommandStatus;
-
 		if (lastCommand_.parameters & SCParam_FREEZE)
 		{
+			sbgcCommandStatus_t lastCommandStatus = gSBGC->_lastCommandStatus;
+
 			/* If Tx or Rx only using Last. If Tx-Rx: Tx - Prev, Rx - Last */
 			serialAPI_Command_t *freezeCommandPrev, *freezeCommandLast;
 
 			freezeCommandLast = &lastCommand_;
-			freezeCommandPrev = gSBGC->_api->findCmd(gSBGC, lastCommand_._relatedCommandID);
+			freezeCommandPrev = gSBGC->_api->findCmd(gSBGC, lastCommand_._chainedCommandID);
 
-			ui32 freezeCommandLastID = lastCommand_._id;
+			ui32 freezeCommandLastID = lastCommand_._CID;
 			ui32 freezeCommandPrevID;
 
 			serialAPI_CommandParam_t freezeCommandLastParam = lastCommand_.parameters;
 			serialAPI_CommandParam_t freezeCommandPrevParam;
 
 			if (freezeCommandPrev)
-			/* Freeze also Tx command that may bounds with Rx command */
+			/* Freeze also Tx command that may be chained with Rx command */
 			{
-				freezeCommandPrevID = freezeCommandPrev->_id;
+				freezeCommandPrevID = freezeCommandPrev->_CID;
 				freezeCommandPrevParam = freezeCommandPrev->parameters;
 			}
 
 			serialAPI_Unlock()
 
 			/* Launch SerialAPI handler */
+			if (gSBGC->_api->threadState == SATS_LOW_PRIOR)
+				serialAPI_RestoreThreadPrior()
+
 			serialAPI_Resume()
+
+			gSBGC->_api->threadState = SATS_FREEZE_HANDLE;
 
 			if (freezeCommandPrev)
 			{
@@ -895,6 +907,16 @@ static sbgcCommandStatus_t SerialAPI_Exit (sbgcGeneral_t *gSBGC)
 					break;
 				}
 			}
+
+			/* Finish the command */
+			gSBGC->_lastCommandStatus = lastCommandStatus;
+
+			serialAPI_Unlock()
+
+			/* Launch SerialAPI handler */
+			serialAPI_Resume()
+
+			return lastCommandStatus;
 		}
 
 		serialAPI_Unlock()
@@ -902,11 +924,9 @@ static sbgcCommandStatus_t SerialAPI_Exit (sbgcGeneral_t *gSBGC)
 		/* Launch SerialAPI handler */
 		serialAPI_Resume()
 
-		return lastCommandStatus;
+		return sbgcCOMMAND_OK;
 
-	#endif
-
-	#if (SBGC_NON_BLOCKING_MODE)
+	#elif (SBGC_NON_BLOCKING_MODE)
 
 		if (gSBGC->_api->serialAPI_Status == serialAPI_FORMING)
 			serialAPI_Unlock()
@@ -924,9 +944,13 @@ static sbgcCommandStatus_t SerialAPI_Exit (sbgcGeneral_t *gSBGC)
 
 	#endif
 
-	serialAPI_Unlock()
+	#if (SBGC_USES_OS_SUPPORT == sbgcOFF)
 
-	return gSBGC->_lastCommandStatus;
+		serialAPI_Unlock()
+
+		return gSBGC->_lastCommandStatus;
+
+	#endif
 }
 
 
@@ -961,7 +985,7 @@ void PrivateSerialAPI_LinkCommandBuild (sbgcGeneral_t *gSBGC)
 							= SerialAPI_AssignSystemEvent;
 	gSBGC->_api->definePayload
 							= SerialAPI_DefinePayloadSize;
-	gSBGC->_api->bound		= SerialAPI_BoundCommands;
+	gSBGC->_api->link		= SerialAPI_LinkCommands;
 	gSBGC->_api->exit		= SerialAPI_Exit;
 }
 /**	@}

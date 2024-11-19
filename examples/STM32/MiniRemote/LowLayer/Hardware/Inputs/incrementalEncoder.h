@@ -19,7 +19,7 @@
 
 #define		INCREMENTAL_ENCODER_MAX_VALUE	16383
 
-#define		INCREMENTAL_ENCODER_LOGIC		-1 : 1	// Without braces
+#define		INCREMENTAL_ENCODER_LOGIC		(-1) : (1)
 
 
 class IncrementalEncoder : public Input

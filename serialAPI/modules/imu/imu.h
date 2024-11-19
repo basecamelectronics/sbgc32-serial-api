@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		imu.h
  *
@@ -340,7 +340,7 @@ typedef struct PACKED__
 	i16		gyroZeroCorr [3];						/*!<  Units: 0.001 gyro sensor unit													*/
 	i16		gyroZeroHeadingCorr;					/*!<  Units: 0.001 gyro sensor unit													*/
 
-}			sbgcGyroCorrection_t;
+}	sbgcGyroCorrection_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -372,7 +372,7 @@ typedef struct PACKED__
 			H_Vector [3];							/*!<  -1.0f --> 1.0f. Unit vector that points towards North in
 														  the END coordinate system														*/
 
-}			sbgcAHRS_Helper_t;
+}	sbgcAHRS_Helper_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -408,7 +408,7 @@ typedef struct PACKED__
 														  this information. Use the @ref sbgcAngleToDegree macro to
 														  comfortable work with these fields											*/
 
-}			sbgcHelperData_t;
+}	sbgcHelperData_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -443,7 +443,7 @@ typedef struct PACKED__
 														  macro to comfortable work with this field										*/
 	ui8		reserved;
 
-}			sbgcHelperDataExt_t;
+}	sbgcHelperDataExt_t;
 
 
 #if (SBGC_USES_REF_INFO)

@@ -30,7 +30,7 @@ DigitalInput Encoder2_Button(	DIN_2POS_SWITCH,
 								Encoder2_ButtonReadValue);
 
 DigitalInput Button1(			DIN_2POS_SWITCH,
-								DINL_INVERT,
+								DINL_DIRECT,
 								PRPH_BUTTON1,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 2],
 								DIG_CH_PRPH_PINS_NUM,
@@ -38,7 +38,7 @@ DigitalInput Button1(			DIN_2POS_SWITCH,
 								Button1_ReadValue);
 
 DigitalInput Button2(			DIN_2POS_SWITCH,
-								DINL_INVERT,
+								DINL_DIRECT,
 								PRPH_BUTTON2,
 								&GPIO_ReferenceArray[DIG_CH_PRPH_OFFSET + 3],
 								DIG_CH_PRPH_PINS_NUM,

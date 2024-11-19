@@ -19,20 +19,20 @@
 
 #define		INITIAL_SHORTCUT_NUM	5				// Number of shortcuts on displayed at the same time
 
-#define		SIDE_ARROW_IMAGE_CLEARANCE		2		// Units: pixels. Clearance from sides
+#define		SIDE_ARROW_IMAGE_CLEARANCE		1		// Units: pixels. Clearance from borders
 #define		SIDE_ARROW_IMAGE_HEIGHT			10		// Units: pixels
 #define		SIDE_ARROW_IMAGE_WIDTH			4		// Units: pixels
 
-#define		SIDE_ARROW_IMAGE_Y_POS			((DISPLAY_HEIGHT - SIDE_ARROW_IMAGE_HEIGHT) / 2)
+#define		SIDE_ARROW_IMAGE_Y_POS			((DISPLAY_HEIGHT / 2) - 4)
 
-#define		SHORTCUT_IMAGE_SIZE				28		// Units: pixels (28 x 28)
-#define		SHORTCUT_IMAGE_CLEARANCE		((DISPLAY_WIDTH / 6) - SHORTCUT_IMAGE_SIZE)
+#define		SHORTCUT_IMAGE_SIZE				40		// Units: pixels (28 x 28)
+#define		SHORTCUT_IMAGE_CLEARANCE		4
 
 #define		DOWN_ARROW_IMAGE_CLEARANCE		6		// Units: pixels. Clearance from bottom of shortcuts
-#define		DOWN_ARROW_Y_POS				((DISPLAY_HEIGHT / 2) + (SHORTCUT_IMAGE_SIZE / 2) + SELECT_ARROW_CLEARANCE)
+#define		DOWN_ARROW_Y_POS				(SHORTCUT_IMAGE_Y_POS + SHORTCUT_IMAGE_SIZE + SELECT_ARROW_CLEARANCE)
 
 /* Units: pixels */
-#define		SHORTCUT_IMAGE_Y_POS			((DISPLAY_HEIGHT - SHORTCUT_IMAGE_SIZE) / 2)
+#define		SHORTCUT_IMAGE_Y_POS			(SIDE_ARROW_IMAGE_Y_POS - (SHORTCUT_IMAGE_SIZE / 2))
 #define		SHORTCUT_X_STEP					(SHORTCUT_IMAGE_SIZE + SHORTCUT_IMAGE_CLEARANCE)
 
 #define		SHORTCUT_ACTIVE_BLINK_TIME		100		// Units: milliseconds
@@ -87,6 +87,7 @@ class CShortcutContainerM : public CXContainer
 		ShortcutCurrentStatus_t
 							previousShortcutStatuses [SHORTCUT_TOTAL_NUM];
 
+		GHandle				ghLabelTitle;
 		GHandle				ghLabelSelect;
 		GHandle				ghProgressbar;
 		GHandle				ghImageReturn;

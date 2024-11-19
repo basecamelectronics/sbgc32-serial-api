@@ -26,6 +26,7 @@ class CStickCalibContainerM : public CXContainer
 	private:
 
 		GHandle				ghJoystickVisual,
+							ghImageReturn,
 							ghLabelStatus,
 							ghLabelPercentY;
 

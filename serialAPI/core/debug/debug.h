@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		debug.h
  *
@@ -53,7 +53,7 @@ extern		"C" {
 	 *	@{
 	 */
 	void DebugSBGC32_PrintMessage (sbgcGeneral_t *gSBGC, const char *str);
-	void DebugSBGC32_PrintBuffer (sbgcGeneral_t *gSBGC, char *data, ui16 lenght);
+	void DebugSBGC32_PrintBuffer (sbgcGeneral_t *gSBGC, char *data, ui16 length);
 	void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const char *str, sbgcVarType_t vType);
 	#if (SBGC_NEED_REF_INFO)
 		void DebugSBGC32_PrintWholeStruct (sbgcGeneral_t *gSBGC, void *structure, sbgcParserMap_t parserMap);

@@ -36,8 +36,8 @@ void CPotentiometerCalibContainerM::Init (void)
 	wi.g.show = TRUE;
 	wi.g.parent = ghContainer;
 
-	/* Return image */
-	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
+	/* Exit image */
+	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_EXIT]);
 	wi.g.x = 0;
 	wi.g.y = 0;
 	wi.g.height = gdispImageReturn->height;
@@ -45,13 +45,13 @@ void CPotentiometerCalibContainerM::Init (void)
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageReturn);
 
 	/* Current status label */
 	wi.g.width = CALIB_STATE_LABEL_WIDTH;
-	wi.g.height = CALIB_LABELS_HEIGHT;
+	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = CALIB_STATE_LABEL_X_COORD;
 	wi.g.y = CALIB_STATE_LABEL_Y_COORD;
 	wi.text = "";
@@ -62,7 +62,7 @@ void CPotentiometerCalibContainerM::Init (void)
 
 	/* Percents label */
 	wi.g.width = CALIB_VALUES_LABEL_WIDTH;
-	wi.g.height = CALIB_LABELS_HEIGHT;
+	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = CALIB_VALUES_LABEL_X_COORD;
 	wi.g.y = CALIB_VALUES_LABEL_Y_COORD;
 	wi.text = "";

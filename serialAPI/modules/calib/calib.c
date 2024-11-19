@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		calib.c
  *
@@ -160,7 +160,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibAcc (sbgcGeneral_t *gSBGC
 									 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -190,7 +190,7 @@ sbgcCommandStatus_t SBGC32_CalibAcc (sbgcGeneral_t *gSBGC
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibGyro (sbgcGeneral_t *gSBGC
 									  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -222,11 +222,13 @@ sbgcCommandStatus_t SBGC32_CalibGyro (sbgcGeneral_t *gSBGC
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibMag (sbgcGeneral_t *gSBGC
 									 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_MAG_SENSOR)
+
 	return SBGC32_SendEmptyCommand(gSBGC, CMD_CALIB_MAG SBGC_ADVANCED_ARGS__);
 }
 
@@ -269,7 +271,7 @@ sbgcCommandStatus_t SBGC32_CalibMag (sbgcGeneral_t *gSBGC
  *	@param	*IMU_ExtCalib - additional command's info
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibAccExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t *IMU_ExtCalib, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -280,7 +282,7 @@ sbgcCommandStatus_t SBGC32_CalibAccExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_ACC SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -326,7 +328,7 @@ sbgcCommandStatus_t SBGC32_CalibAccExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t
  *	@param	*IMU_ExtCalib - additional command's info
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibGyroExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t *IMU_ExtCalib, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -337,7 +339,7 @@ sbgcCommandStatus_t SBGC32_CalibGyroExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_GYRO SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -385,18 +387,20 @@ sbgcCommandStatus_t SBGC32_CalibGyroExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_
  *	@param	*IMU_ExtCalib - additional command's info
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibMagExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t *IMU_ExtCalib, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_MAG_SENSOR)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_CALIB_MAG SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeBuff(gSBGC, IMU_ExtCalib, sizeof(sbgcIMU_ExtCalib_t));
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_MAG SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -448,7 +452,7 @@ sbgcCommandStatus_t SBGC32_CalibMagExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_t
  *	@param	*calibInfo - structure storing IMU calibration state
  *	@param	IMU_Type - IMU sensor in calibration process
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestCalibInfo (sbgcGeneral_t *gSBGC, sbgcCalibInfo_t *calibInfo, sbgcIMU_Type_t IMU_Type
 											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -464,7 +468,7 @@ sbgcCommandStatus_t SBGC32_RequestCalibInfo (sbgcGeneral_t *gSBGC, sbgcCalibInfo
 	gSBGC->_api->assignEvent(gSBGC, NULL, calibInfo, sizeof(sbgcCalibInfo_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -496,11 +500,13 @@ sbgcCommandStatus_t SBGC32_RequestCalibInfo (sbgcGeneral_t *gSBGC, sbgcCalibInfo
  *	@param 	forMotor - axis to calibrate. Optional parameter.
  *			Frw. ver. 2.68b7+
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibEncodersOffset (sbgcGeneral_t *gSBGC, sbgcCalibParameter_t forMotor
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_ENCODERS)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_ENCODERS_CALIB_OFFSET_4 SBGC_ADVANCED_ARGS__);
 
 	if (gSBGC->_api->baseFirmwareVersion >= 2687)
@@ -532,11 +538,13 @@ sbgcCommandStatus_t SBGC32_CalibEncodersOffset (sbgcGeneral_t *gSBGC, sbgcCalibP
  *
  *	@param 	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibEncodersFldOffset (sbgcGeneral_t *gSBGC
 												   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_ENCODERS)
+
 	return SBGC32_SendEmptyCommand(gSBGC, CMD_ENCODERS_CALIB_FLD_OFFSET_4 SBGC_ADVANCED_ARGS__);
 }
 
@@ -572,11 +580,13 @@ sbgcCommandStatus_t SBGC32_CalibEncodersFldOffset (sbgcGeneral_t *gSBGC
  *	@param	*calibEncodersOffset - writable structure with extended
  *			information about encoders offset calibration
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibEncodersFldOffsetExt (sbgcGeneral_t *gSBGC, const sbgcCalibEncodersOffset_t *calibEncodersOffset
 													  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_ENCODERS)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_ENCODERS_CALIB_FLD_OFFSET_4 SBGC_ADVANCED_ARGS__);
 	for (ui8 i = 0; i < 3; i++) gSBGC->_api->writeWord(gSBGC, calibEncodersOffset->calibAngle[i]);
 	for (ui8 i = 0; i < 3; i++) gSBGC->_api->writeWord(gSBGC, calibEncodersOffset->calibSpeed[i]);
@@ -610,7 +620,7 @@ sbgcCommandStatus_t SBGC32_CalibEncodersFldOffsetExt (sbgcGeneral_t *gSBGC, cons
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibPoles (sbgcGeneral_t *gSBGC
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -635,7 +645,7 @@ sbgcCommandStatus_t SBGC32_CalibPoles (sbgcGeneral_t *gSBGC
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibOffset (sbgcGeneral_t *gSBGC
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -665,18 +675,20 @@ sbgcCommandStatus_t SBGC32_CalibOffset (sbgcGeneral_t *gSBGC
  *	@param	voltage - reference voltage value. Units: 0.01 V
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibBat (sbgcGeneral_t *gSBGC, ui16 voltage, sbgcConfirm_t *confirm
 									 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_BAT_MONITORING)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_CALIB_BAT SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeWord(gSBGC, voltage);
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_BAT SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -726,7 +738,7 @@ sbgcCommandStatus_t SBGC32_CalibBat (sbgcGeneral_t *gSBGC, ui16 voltage, sbgcCon
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibOrientCorr (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -739,7 +751,7 @@ sbgcCommandStatus_t SBGC32_CalibOrientCorr (sbgcGeneral_t *gSBGC, sbgcConfirm_t 
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_ORIENT_CORR SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -752,7 +764,7 @@ sbgcCommandStatus_t SBGC32_CalibOrientCorr (sbgcGeneral_t *gSBGC, sbgcConfirm_t 
  *	####	TX —> CMD_CALIB_ACC_EXT_REF :	20 bytes
  *	####	RX <— CMD_CONFIRM :				1-6 bytes
  *
- *	@attention	Firmware: 2.62b7+
+ *	@attention	Firmware: 2.62b7+ ("Encoder", "plus")
  *
  *	@code
 
@@ -766,16 +778,23 @@ sbgcCommandStatus_t SBGC32_CalibOrientCorr (sbgcGeneral_t *gSBGC, sbgcConfirm_t 
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
- *	@param	*accRef - reference Acc vector [X,Y,Z] in gimbal
+ *	@param	*accRef - reference acc. vector [X,Y,Z] in gimbal
  *			frame's coordinates. Units: 1g/512 ≈ 0.019160156 m/sec²
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibAccExtRef (sbgcGeneral_t *gSBGC, const i16 accRef [3], sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2627)
+
+	#if (SBGC_NEED_ASSERTS)
+
+		if (!((gSBGC->_api->boardFeatures & BF_ENCODERS) || (gSBGC->_api->boardFeatures2 & BFE2_PLUS_VER)))
+			return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
+
+	#endif
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CALIB_ACC_EXT_REF SBGC_ADVANCED_ARGS__);
 	for (ui8 i = 0; i < 3; i++) gSBGC->_api->writeWord(gSBGC, accRef[i]);
@@ -784,7 +803,7 @@ sbgcCommandStatus_t SBGC32_CalibAccExtRef (sbgcGeneral_t *gSBGC, const i16 accRe
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_ACC_EXT_REF SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -843,7 +862,7 @@ sbgcCommandStatus_t SBGC32_CalibAccExtRef (sbgcGeneral_t *gSBGC, const i16 accRe
  *	@param	*calibCogging - data structure with values
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CalibCogging (sbgcGeneral_t *gSBGC, const sbgcCalibCogging_t *calibCogging, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -854,7 +873,7 @@ sbgcCommandStatus_t SBGC32_CalibCogging (sbgcGeneral_t *gSBGC, const sbgcCalibCo
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CALIB_COGGING SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 

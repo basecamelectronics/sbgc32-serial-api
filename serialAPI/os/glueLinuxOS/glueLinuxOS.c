@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueLinuxOS.c
  *
@@ -61,9 +61,7 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 {
 	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)threadArg;
 
-	gSBGC->_api->busyFlag = sbgcFALSE;
-
-	SBGC32_EnterInit(gSBGC);
+	PrivateSBGC32_EnterInit(gSBGC);
 
 	#if (SBGC_NEED_ASSERTS)
 
@@ -199,6 +197,18 @@ void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex)
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex)
 {
 	sbgcGiveMutex(mutex);
+}
+
+
+/**	@brief	Changes the priority of a thread
+ *
+ *	@param	*threadHandle - pointer to thread handle
+ *	@param	newPrior - new thread priority
+ */
+void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newPrior)
+{
+	unused_(threadHandle);
+	unused_(newPrior);
 }
 /**	@}
  */

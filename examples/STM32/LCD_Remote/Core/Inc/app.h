@@ -336,7 +336,7 @@ typedef struct
  	ui8 	connectFlag;
  	i8 		currentPage;
 
- 	i16 	debug1,
+ 	ui8	 	debug1,
 	 		debug2,
 			debug3,
 			debug4;

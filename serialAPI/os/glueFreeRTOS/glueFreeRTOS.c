@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueFreeRTOS.c
  *
@@ -190,6 +190,17 @@ void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex)
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex)
 {
 	sbgcGiveMutex(*mutex);
+}
+
+
+/**	@brief	Changes the priority of a thread
+ *
+ *	@param	*threadHandle - pointer to thread handle
+ *	@param	newPrior - new thread priority
+ */
+void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior)
+{
+	sbgcSetPrior(*threadHandle, newPrior);
 }
 /**	@}
  */

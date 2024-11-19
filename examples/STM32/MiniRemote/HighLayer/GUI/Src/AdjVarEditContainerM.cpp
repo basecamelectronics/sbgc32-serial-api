@@ -140,23 +140,23 @@ void CAdjVarEditContainerM::Init (void)
 	wi.g.show = TRUE;
 	wi.g.parent = ghContainer;
 
-	/* Return image */
-	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
-	wi.g.x = 0;
-	wi.g.y = 0;
+	/* Exit image */
+	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageBuff);
 
 	/* Edit image */
 	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ADJ_VARS_EDIT]);
-	wi.g.x = DISPLAY_WIDTH - (WIDGET_IMAGE_SIZE * 2);
-	wi.g.y = 0;
+	wi.g.x = DISPLAY_WIDTH - (WIDGET_IMAGE_SIZE * 2) - WIDGET_HOR_MARGIN - WIDGET_IMAGE_CLEARANCE;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
@@ -168,8 +168,8 @@ void CAdjVarEditContainerM::Init (void)
 
 	/* Add image */
 	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ADJ_VARS_ADD]);
-	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE;
-	wi.g.y = 0;
+	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE - WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
@@ -182,8 +182,8 @@ void CAdjVarEditContainerM::Init (void)
 
 	/* Remove image */
 	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_ADJ_VARS_REMOVE]);
-	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE;
-	wi.g.y = 0;
+	wi.g.x = DISPLAY_WIDTH - WIDGET_IMAGE_SIZE - WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageBuff->height;
 	wi.g.width = gdispImageBuff->width;
 	wi.text = "";
@@ -193,10 +193,10 @@ void CAdjVarEditContainerM::Init (void)
 	ghImageRemove = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageBuff);
 
-	/* Label title */
-	wi.g.width = DISPLAY_WIDTH - (WIDGET_IMAGE_SIZE * 4);
+	/* Title label */
+	wi.g.width = DISPLAY_WIDTH - (WIDGET_HOR_MARGIN * 2) - ((WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE) * 4);
 	wi.g.height = LARGE_FONT_HEIGHT;
-	wi.g.x = WIDGET_IMAGE_SIZE * 2;
+	wi.g.x = WIDGET_HOR_MARGIN + ((WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE) * 2);
 	wi.g.y = ((EDIT_TITLE_TOTAL_HEIGHT - MEDIUM_FONT_HEIGHT) / 2) - 1;
 	wi.text = "Adjvar. Edit";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
@@ -204,7 +204,7 @@ void CAdjVarEditContainerM::Init (void)
 	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
 	ghLabelTitle = gwinLabelCreate(0, &wi);
 
-	/* Label value */
+	/* Value label */
 	wi.g.width = DISPLAY_WIDTH;
 	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = 0;
@@ -219,7 +219,7 @@ void CAdjVarEditContainerM::Init (void)
 	wi.g.width = EDIT_BOUND_LABELS_WIDTH;
 	wi.g.height = SMALL_FONT_HEIGHT;
 	wi.g.x = EDIT_MIN_LABEL_X_COORD;
-	wi.g.y = (DISPLAY_HEIGHT / 2) - ADJVAR_EDIT_Y_CENTER_OFFSET + 12;
+	wi.g.y = (DISPLAY_HEIGHT / 2) - ADJVAR_EDIT_Y_CENTER_OFFSET + SMALL_FONT_HEIGHT + 2;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
 	wi.customParam = (void*)justifyCenter;
@@ -268,8 +268,15 @@ void CAdjVarEditContainerM::OnHide (void)
 		Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].minValue = (i16)ParameterHandle.minValue;
 		Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].maxValue = (i16)ParameterHandle.maxValue;
 
+		/* It's enough to save the max value too */
 		SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].minValue);
-		SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].maxValue);
+
+		if ((ParameterHandle.minValue > ParameterHandle.initValue) || (ParameterHandle.maxValue < ParameterHandle.initValue))
+		/* We must to save value anyway if its min or max change it */
+		{
+			Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].value = ParameterHandle.tempValue;
+			SettingsLoader.SaveGimbalParameter(&Gimbal.Presets.AdjVarGeneral[selectedAdjVarID].value);
+		}
 	}
 }
 
@@ -363,6 +370,8 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 		/* List moving */
 		if ((nav == ND_UP) && (editState == AVES_EDIT_VALUE))
 		{
+			OnHide();
+
 			selectedAdjVarID = Gimbal.FindPreviousAdjVar(containerPhase, selectedAdjVarID);
 			InitAdjVarEditContainerHandler(selectedAdjVarID);
 			Redraw();
@@ -370,6 +379,8 @@ void CAdjVarEditContainerM::vTask (void *pvParameters)
 
 		if ((nav == ND_DOWN) && (editState == AVES_EDIT_VALUE))
 		{
+			OnHide();
+
 			selectedAdjVarID = Gimbal.FindNextAdjVar(containerPhase, selectedAdjVarID);
 			InitAdjVarEditContainerHandler(selectedAdjVarID);
 			Redraw();
@@ -542,7 +553,7 @@ void CAdjVarEditContainerM::ValueToggle (void)
 
 		case AVES_EDIT_MAX :
 			gwinSetText(ghLabelMaxValue, (const char*)maxBuff, FALSE);
-			editState = AVES_EDIT_VALUE;
+			OnHide();
 			break;
 	}
 }

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		parser.c
  *
@@ -40,12 +40,11 @@
 /* RealtimeData3 command structure part elements number */
 #define		COUNTOF_REALTIME_DATA_3	27
 
-#define		SBGC_LL_STATUS_NAME_MAX_LENGTH	26
-#define		SBGC_COMM_STATUS_NAME_MAX_LEN	32
-#define		SBGC_CMD_ID_NAME_MAX_LEN		32
+#define		SBGC_LL_STATUS_NAME_MAX_LENGTH	25
+#define		SBGC_COMM_STATUS_NAME_MAX_LEN	33
+#define		SBGC_CMD_ID_NAME_MAX_LEN		31
 #define		SBGC_CMD_STATUS_NAME_MAX_LEN	10
-#define		SBGC_BOARD_VERSION_MAX_LEN		5
-#define		SBGC_FIRMWARE_VERSION_MAX_LEN	8
+#define		SBGC_ERROR_CODE_NAME_MAX_LEN	20
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -164,10 +163,6 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 					*buffArr = controlQuatReferenceInfoArray;
 					return controlQuatReferenceInfoArrayElCnt;
 
-				case PM_EXT_MOTORS_CONTROL :
-					*buffArr = extMotorsControlReferenceInfoArray;
-					return extMotorsControlReferenceInfoArrayElCnt;
-
 				case PM_CONTROL_CONFIG :
 					*buffArr = controlConfigReferenceInfoArray;
 					return controlConfigReferenceInfoArrayElCnt;
@@ -240,6 +235,10 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 					*buffArr = communicationErrorsReferenceInfoArray;
 					return communicationErrorsReferenceInfoArrayElCnt;
 
+				case PM_SYSTEM_STATE :
+					*buffArr = systemStateReferenceInfoArray;
+					return systemStateReferenceInfoArrayElCnt;
+
 				case PM_REALTIME_DATA_3 :
 				case PM_REALTIME_DATA_4 :
 				{
@@ -248,8 +247,7 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 					if (parserMap == PM_REALTIME_DATA_3)
 						return COUNTOF_REALTIME_DATA_3;
 
-					else
-						return realTimeDataReferenceInfoArrayElCnt;
+					return realTimeDataReferenceInfoArrayElCnt;
 				}
 
 				case PM_GET_ANGLES :
@@ -487,7 +485,9 @@ ui8 ParserSBGC32_ConvertCommunicationStatusToString (sbgcCommandStatus_t communi
 		case sbgcCOMMAND_QUEUE_IS_EMPTY :			memcpy(str, TEXT_LENGTH_("COMMAND_QUEUE_IS_EMPTY")); break;
 		case sbgcCOMMAND_TX_ERROR :					memcpy(str, TEXT_LENGTH_("COMMAND_TX_ERROR")); break;
 		case sbgcCOMMAND_RX_ERROR :					memcpy(str, TEXT_LENGTH_("COMMAND_RX_ERROR")); break;
-		case sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE :memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_BY_FRWARE")); break;
+		case sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE :memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_BY_FIRMWARE")); break;
+		case sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE :memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_BY_HARDWARE")); break;
+		case sbgcCOMMAND_NOT_SUPPORTED_FEATURE :	memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_FEATURE")); break;
 		case sbgcCOMMAND_PARAM_ASSERT_ERROR :		memcpy(str, TEXT_LENGTH_("COMMAND_PARAM_ASSERT_ERROR")); break;
 		case sbgcCOMMAND_NOTHING_TO_CHANGE :		memcpy(str, TEXT_LENGTH_("COMMAND_NOTHING_TO_CHANGE")); break;
 		case sbgcCOMMAND_DESTINATION_IS_NULL :		memcpy(str, TEXT_LENGTH_("COMMAND_DESTINATION_IS_NULL")); break;
@@ -540,6 +540,7 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_WRITE_PARAMS_EXT :					memcpy(str, TEXT_LENGTH_("CMD_WRITE_PARAMS_EXT")); break;
 		case CMD_AUTO_PID :							memcpy(str, TEXT_LENGTH_("CMD_AUTO_PID")); break;
 		case CMD_SERVO_OUT :						memcpy(str, TEXT_LENGTH_("CMD_SERVO_OUT")); break;
+		case CMD_BODE_TEST_START_STOP :				memcpy(str, TEXT_LENGTH_("CMD_BODE_TEST_START_STOP")); break;
 		case CMD_I2C_WRITE_REG_BUF :				memcpy(str, TEXT_LENGTH_("CMD_I2C_WRITE_REG_BUF")); break;
 		case CMD_I2C_READ_REG_BUF :					memcpy(str, TEXT_LENGTH_("CMD_I2C_READ_REG_BUF")); break;
 		case CMD_WRITE_EXTERNAL_DATA :				memcpy(str, TEXT_LENGTH_("CMD_WRITE_EXTERNAL_DATA")); break;
@@ -567,8 +568,7 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_GET_ADJ_VARS_VAL :					memcpy(str, TEXT_LENGTH_("CMD_GET_ADJ_VARS_VAL")); break;
 		case CMD_CALIB_ACC :						memcpy(str, TEXT_LENGTH_("CMD_CALIB_ACC")); break;
 		case CMD_CALIB_BAT :						memcpy(str, TEXT_LENGTH_("CMD_CALIB_BAT")); break;
-		case 67 :
-			/* CMD_CONFIRM or CMD_CONTROL */
+		case /* CMD_CONFIRM or CMD_CONTROL */ 67 :
 			if (serialCommand->parameters &
 				SCParam_RX)							memcpy(str, TEXT_LENGTH_("CMD_CONFIRM"));
 			else									memcpy(str, TEXT_LENGTH_("CMD_CONTROL"));
@@ -581,6 +581,7 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_GET_ANGLES :						memcpy(str, TEXT_LENGTH_("CMD_GET_ANGLES")); break;
 		case CMD_CALIB_MOTOR_MAG_LINK :				memcpy(str, TEXT_LENGTH_("CMD_CALIB_MOTOR_MAG_LINK")); break;
 		case CMD_GYRO_CORRECTION :					memcpy(str, TEXT_LENGTH_("CMD_GYRO_CORRECTION")); break;
+		case CMD_MODULE_LIST :						memcpy(str, TEXT_LENGTH_("CMD_MODULE_LIST")); break;
 		case CMD_MOTORS_ON :						memcpy(str, TEXT_LENGTH_("CMD_MOTORS_ON")); break;
 		case CMD_CALIB_OFFSET :						memcpy(str, TEXT_LENGTH_("CMD_CALIB_OFFSET")); break;
 		case CMD_CALIB_POLES :						memcpy(str, TEXT_LENGTH_("CMD_CALIB_POLES")); break;
@@ -630,6 +631,7 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_EXT_MOTORS_CONTROL_CONFIG :		memcpy(str, TEXT_LENGTH_("CMD_EXT_MOTORS_CONTROL_CONFIG")); break;
 		case CMD_EXT_MOTORS_STATE :					memcpy(str, TEXT_LENGTH_("CMD_EXT_MOTORS_STATE")); break;
 		case CMD_ADJ_VARS_INFO :					memcpy(str, TEXT_LENGTH_("CMD_ADJ_VARS_INFO")); break;
+		case CMD_SERVO_OUT_EXT :					memcpy(str, TEXT_LENGTH_("CMD_SERVO_OUT_EXT")); break;
 		case CMD_CONTROL_QUAT :						memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT")); break;
 		case CMD_CONTROL_QUAT_STATUS :				memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT_STATUS")); break;
 		case CMD_CONTROL_QUAT_CONFIG :				memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT_CONFIG")); break;
@@ -674,6 +676,67 @@ ui8 ParserSBGC32_ConvertCommandStatusToString (serialAPI_Command_t *serialComman
 }
 
 
+#if (SBGC_DETAILED_CONFIRM)
+
+	/**	@brief	Converts the error code to string
+	 *
+	 *	@param	*confirm - pointer to confirm structure
+	 *	@param	*str - writable buffer
+	 *	@param	size - buffer size
+	 *
+	 *	@return	Length of a writable string
+	 */
+	ui8 ParserSBGC32_ConvertErrorCodeToString (sbgcConfirm_t *confirm, char *str, ui8 size)
+	{
+		if (size < SBGC_ERROR_CODE_NAME_MAX_LEN) return 0;
+
+		switch (confirm->errorCode)
+		{
+			case sbgcERR_CMD_SIZE :					memcpy(str, TEXT_LENGTH_("ERR_CMD_SIZE")); break;
+			case sbgcERR_WRONG_PARAMS :				memcpy(str, TEXT_LENGTH_("ERR_WRONG_PARAMS")); break;
+			case sbgcERR_CRYPTO :					memcpy(str, TEXT_LENGTH_("ERR_CRYPTO")); break;
+			case sbgcERR_UNKNOWN_COMMAND :			memcpy(str, TEXT_LENGTH_("ERR_UNKNOWN_COMMAND")); break;
+			case sbgcERR_WRONG_STATE :				memcpy(str, TEXT_LENGTH_("ERR_WRONG_STATE")); break;
+			case sbgcERR_NOT_SUPPORTED :			memcpy(str, TEXT_LENGTH_("ERR_NOT_SUPPORTED")); break;
+			case sbgcERR_OPERATION_FAILED :			memcpy(str, TEXT_LENGTH_("ERR_OPERATION_FAILED")); break;
+			case sbgcERR_TEMPORARY :				memcpy(str, TEXT_LENGTH_("ERR_TEMPORARY")); break;
+
+			default :								return 0;
+		}
+
+		return strlen(str);
+	}
+
+#endif
+
+
+/**	@brief	Transforms SBGC32 device type to string
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	boardVer - sbgcBoardInfo_t.boardVer
+ *	@param	*pBuff - buffer to write
+ *	@param	size - buffer size
+ */
+void ParserSBGC32_FormatDeviceType (sbgcGeneral_t *gSBGC, ui8 boardVer, char *pBuff, ui8 size)
+{
+	if ((!pBuff) || (size < SBGC_DEVICE_TYPE_MAX_LEN)) return;
+
+	switch (boardVer)
+	{
+		case 25 :	gSBGC->_ll->debugSprintf(pBuff, "Tiny rev. C GD32");	break;
+		case 27 :	gSBGC->_ll->debugSprintf(pBuff, "Extended Long GD32");	break;
+		case 30 :	gSBGC->_ll->debugSprintf(pBuff, "Regular rev. A/B");	break;
+		case 31 :	gSBGC->_ll->debugSprintf(pBuff, "Tiny rev. B/C");		break;
+		case 34 :	gSBGC->_ll->debugSprintf(pBuff, "OEM");					break;
+		case 36 :	gSBGC->_ll->debugSprintf(pBuff, "Extended");			break;
+		case 42 :	gSBGC->_ll->debugSprintf(pBuff, "Pro");					break;
+		case 50 :	gSBGC->_ll->debugSprintf(pBuff, "CAN MCU");				break;
+
+		default:	break;
+	}
+}
+
+
 /**	@brief	Transforms the board version variable to string
  *
  *	@param	*gSBGC - serial connection descriptor
@@ -687,6 +750,7 @@ void ParserSBGC32_FormatBoardVersion (sbgcGeneral_t *gSBGC, ui8 boardVer, char *
 
 	ui8 majorVer = boardVer / 10;
 	ui8 minorVer = boardVer % 10;
+
 	gSBGC->_ll->debugSprintf(pBuff, "%u.%u", majorVer, minorVer);
 }
 
@@ -780,6 +844,7 @@ static sbgcParserMap_t ParserSBGC32_GetCommandParserMap (serialAPI_Command_t *se
 	#if (SBGC_SYS_BIG_ENDIAN == sbgcOFF)
 
 		unused_(serialCommand);
+
 		return PM_DEFAULT_8BIT;
 
 	#else

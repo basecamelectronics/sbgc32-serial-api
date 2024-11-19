@@ -17,8 +17,6 @@
 
 RemoteMenuState_t CMenuContainerM::menuCurrentState;
 
-static volatile ui8 chosenMixChannel = 0;
-
 ParameterHandle_t *mixMinHandle, *mixMaxHandle, *mixOffsetHandle, *mixMultiplierHandle, *mixAverageHandle;
 
 
@@ -301,6 +299,8 @@ static void MixChannelsMenuInit (void)
 
 static void MixChannelSettingsMenuInit (void)
 {
+	ui8 chosenMixChannel = MiniRemote.GetCurrentMixerChannel();
+
 	mixMinHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 	mixMaxHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
 	mixOffsetHandle = (ParameterHandle_t*)osMalloc(sizeof(ParameterHandle_t));
@@ -347,6 +347,7 @@ static void MixChannelSettingsMenuInit (void)
 
 	/* Inversion */
 	exsPrefMixSettings.Menu->psItems[6].param = (ui32)&MiniRemote.Presets.mixChannel[chosenMixChannel].inversion;
+	exsPrefMixSettings.Menu->psItems[6].FuncID = FUNC_EDIT_MIXER_INVERSION;
 
 	/* Input */
 	for (ui8 i = 0; i < countof_(exsMixInputsItems); i++)
@@ -394,24 +395,25 @@ void CMenuContainerM::Init (void)
 
 	ghMenu = 0;
 
+	/* Exit image */
 	static gdispImage *gdispImageReturn;
-	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
-	wi.g.x = 0;
-	wi.g.y = 0;
+	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageReturn->height;
 	wi.g.width = gdispImageReturn->width;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageReturn);
 
 	/* Title label */
-	wi.g.x = wi.g.height;
-	wi.g.width = ghContainer->width - (WIDGET_IMAGE_SIZE * 2);
+	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE) * 2);
 	wi.g.height = LARGE_FONT_HEIGHT + 2;
-	wi.g.y = 1;
+	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
+	wi.g.y = CONTAINER_TITLE_Y_MARGIN;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
 	wi.customParam = (void*)(justifyCenter | justifyMiddle);
@@ -473,11 +475,11 @@ void CMenuContainerM::vTask (void *pvParameters)
 					break;
 
 				case REMOTE_MENU_MIX_CHANNELS :
-					chosenMixChannel = (ui8)MiniRemote.Presets.mixChannel[((GMenuObject*)ghMenu)->class_obj->SelectedItemIdx].number;
+					MiniRemote.SetCurrentMixerChannel((ui8)MiniRemote.Presets.mixChannel[((GMenuObject*)ghMenu)->class_obj->SelectedItemIdx].number);
 					break;
 
 				case REMOTE_MENU_MIX_CHANNEL_SETTINGS_INPUT :
-					MiniRemote.SetMixInput(&MiniRemote.Presets.mixChannel[chosenMixChannel],
+					MiniRemote.SetMixInput(&MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()],
 										   (InputID_t)((GMenuObject*)ghMenu)->class_obj->GetSelectedItem()->FuncID);
 
 					for (ui8 i = 0; i < countof_(exsMixInputsItems); i++)
@@ -487,7 +489,7 @@ void CMenuContainerM::vTask (void *pvParameters)
 
 
 				case  REMOTE_MENU_MIX_CHANNEL_SETTINGS_OUTPUT :
-					MiniRemote.SetMixOutput(&MiniRemote.Presets.mixChannel[chosenMixChannel],
+					MiniRemote.SetMixOutput(&MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()],
 											(SystemFunctionID_t)((GMenuObject*)ghMenu)->class_obj->GetSelectedItem()->FuncID);
 
 					for (ui8 i = 0; i < countof_(exsMixOutputsItems); i++)
@@ -566,8 +568,8 @@ bool CMenuContainerM::EnterPrefMenu (sPrefMenu *menuPath)
 	wi.g.show = TRUE;
 	wi.g.parent = ghContainer;
 	wi.g.width = ghContainer->width;
-	wi.g.height = ghContainer->height - 20;
-	wi.g.y = 20;
+	wi.g.height = ghContainer->height - LARGE_FONT_HEIGHT - MENU_TITLE_INDENT;
+	wi.g.y = LARGE_FONT_HEIGHT + MENU_TITLE_INDENT;
 	wi.g.x = 0;
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 
@@ -579,6 +581,22 @@ bool CMenuContainerM::EnterPrefMenu (sPrefMenu *menuPath)
 		oneTimeDrawObjectsFlag = sbgcTRUE;
 
 	Process(menuCurrentState);
+
+	/* A little shift to left */
+	ui16 stringLength = gdispGetStringWidth((const char*)PrefMenu->Menu->pszTitle, MiniRemote.GetLargeFont());
+	i16 titleWidthAdd = (stringLength - ghLabelTitle->width) + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE;
+
+	if (titleWidthAdd > 0)
+	{
+		ghLabelTitle->width += titleWidthAdd;
+		ghLabelTitle->x = WIDGET_IMAGE_SIZE + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE + 2;
+	}
+
+	else
+	{
+		ghLabelTitle->width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE) * 2);
+		ghLabelTitle->x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
+	}
 
 	gwinSetText(ghLabelTitle, (const char*)PrefMenu->Menu->pszTitle, FALSE);
 	ghMenu = CGWIN_Menu::Create(GDISP, 0, &wi, MENU_REMOTE, (void*)PrefMenu->Menu, PrefMenu->nItems, PrefMenu->nSelect);

@@ -19,6 +19,8 @@ sContainerDraw sStickCalibContainerDraw = {"Joystick Calib.", "Press \"Enter\" f
 
 void CStickCalibContainerM::Init (void)
 {
+	static gdispImage *gdispImageReturn;
+
 	static GWidgetInit wi;
 	gwinWidgetClearInit(&wi);
 
@@ -34,9 +36,22 @@ void CStickCalibContainerM::Init (void)
 	wi.g.show = TRUE;
 	wi.g.parent = ghContainer;
 
+	/* Exit image */
+	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = 0;
+	wi.g.y = 0;
+	wi.g.height = gdispImageReturn->height;
+	wi.g.width = gdispImageReturn->width;
+	wi.text = "";
+	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
+	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
+	ghImageReturn = gwinImageWCreate(0, &wi);
+	Utils::imageCloseFile(gdispImageReturn);
+
 	/* Current status label */
 	wi.g.width = CALIB_STATE_LABEL_WIDTH;
-	wi.g.height = CALIB_LABELS_HEIGHT;
+	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = CALIB_STATE_LABEL_X_COORD;
 	wi.g.y = CALIB_STATE_LABEL_Y_COORD;
 	wi.text = "";
@@ -47,7 +62,7 @@ void CStickCalibContainerM::Init (void)
 
 	/* Percents label */
 	wi.g.width = CALIB_VALUES_LABEL_WIDTH;
-	wi.g.height = CALIB_LABELS_HEIGHT;
+	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = CALIB_VALUES_LABEL_X_COORD;
 	wi.g.y = CALIB_VALUES_LABEL_Y_COORD;
 	wi.text = "";
@@ -135,7 +150,7 @@ void CStickCalibContainerM::vTask (void *pvParameters)
 		/* Bounds calibration */
 		if ((osGetTickCount() - timestamp) > STICK_CALIB_BOUNDS_PASS_TIME)
 		{
-			gwinSetText(ghLabelStatus, "Bounds calib.", FALSE);
+			gwinSetText(ghLabelStatus, "Bound. calib.", FALSE);
 
 			if (!isZeroApplied)
 			{
@@ -156,7 +171,7 @@ void CStickCalibContainerM::vTask (void *pvParameters)
 		}
 
 		else
-			gwinSetText(ghLabelStatus, "Move to center", FALSE);
+			gwinSetText(ghLabelStatus, "Align center", FALSE);
 
 		/* Min/Max correction */
 		if (joyX_ValueRaw < MiniRemote.Presets.handlersCalibs.joyX_Min)

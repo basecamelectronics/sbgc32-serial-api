@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueAzureRTOS.h
  *
@@ -91,14 +91,16 @@ typedef		TX_MUTEX				sbgcMutex_t;
 #define		sbgcTakeMutex(m, t)		tx_mutex_get(m, t)
 #define		sbgcGiveMutex(m)		tx_mutex_put(m)
 
-#define		SBGC_THREAD_PRIOR_LOW			(TX_MAX_PRIORITIES - 1)
-#define		SBGC_THREAD_PRIOR_NORMAL		(TX_MAX_PRIORITIES / 2)
-#define		SBGC_THREAD_PRIOR_HIGH			5
+#define		sbgcSetPrior(pH, newPr, oldPr)	tx_thread_priority_change(pH, newPr, oldPr)
 
-#if (TX_MINIMUM_STACK > 1024)
+#define		SBGC_THREAD_PRIOR_LOW			(TX_MAX_PRIORITIES - 1)
+#define		SBGC_THREAD_PRIOR_NORMAL		((int)(TX_MAX_PRIORITIES / 2))
+#define		SBGC_THREAD_PRIOR_HIGH			((int)(TX_MAX_PRIORITIES / 4))
+
+#if (TX_MINIMUM_STACK > 512)
 	#define	SBGC_INIT_THREAD_STACK	TX_MINIMUM_STACK
 #else
-	#define	SBGC_INIT_THREAD_STACK	1024
+	#define	SBGC_INIT_THREAD_STACK	512
 #endif
 
 #define		SBGC_HANDLER_THREAD_PRIOR		(SBGC_THREAD_PRIOR_NORMAL + 1)
@@ -125,6 +127,7 @@ void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex);
+void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior);
 /**	@}
  */
 

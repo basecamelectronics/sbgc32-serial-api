@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		service.h
  *
@@ -107,6 +107,15 @@
  *
  *				###	CMD_TRANSPARENT_SAPI
  *
+ *	@defgroup	Servo_Out Servo Out
+ *	@ingroup	Service
+ *		@brief	Servo Out Module
+ *
+ *				Covered Commands:
+ *
+ *				### CMD_SERVO_OUT
+ *				### CMD_SERVO_OUT_EXT
+ *
  *	@defgroup	Service_Other Service Other
  *	@ingroup	Service
  *		@brief	Service Other Module
@@ -115,10 +124,10 @@
  *
  *				### CMD_TRIGGER_PIN
  *				### CMD_EXECUTE_MENU
- *				### CMD_SERVO_OUT
  *				### CMD_BEEP_SOUND
  *				### CMD_SIGN_MESSAGE
  *				### CMD_CAN_DEVICE_SCAN
+ *				### CMD_MODULE_LIST
  *	____________________________________________________________________
  */
 
@@ -141,13 +150,34 @@ extern		"C" {
 /**	@addtogroup	Service_Other
  *	@{
  */
-/** Maximal quantity of servo output pins in SBGC32.
+/** Maximal number of servo output pins in SBGC32.
 	See @ref SBGC32_SetServoOut */
 #define		SBGC_SERVO_OUTS_NUM				4
 
 /** Value to disable controller's servo signal out.
-	See @ref SBGC32_SetServoOut */
+	See @ref SBGC32_SetServoOut and
+	@ref SBGC32_SetServoOutExt */
 #define		SBGC_SERVO_OUT_DISABLED			(-1)
+
+/** Minimum value for standard servo motor.
+	See @ref SBGC32_SetServoOut and
+	@ref SBGC32_SetServoOutExt */
+#define		SBGC_SERVO_OUT_MIN_VALUE		500
+
+/** Middle value for standard servo motor.
+ 	See @ref SBGC32_SetServoOut and
+ 	@ref SBGC32_SetServoOutExt */
+#define		SBGC_SERVO_OUT_MIDDLE_VALUE		1500
+
+/** Maximal value for standard servo motor.
+ 	See @ref SBGC32_SetServoOut and
+ 	@ref SBGC32_SetServoOutExt */
+#define		SBGC_SERVO_OUT_MAX_VALUE		2500
+
+/** Absolute maximum for the @ref SBGC32_SetServoOut
+	and @ref SBGC32_SetServoOutExt functions. It
+	means 100% PWM duty cycle */
+#define		SBGC_SERVO_OUT_LIMIT_VALUE		20000
 
 /** Maximal length of message to sign.
 	See @ref SBGC32_SignMessage */
@@ -166,40 +196,6 @@ extern		"C" {
 /**	@addtogroup	Board_Info
  *	@{
  */
-/**	@note	sbgcBoardInfo_t.boardFeatures
- */
-typedef enum
-{
-	BF_3_AXIS						= BIT_0_SET,
-	BF_BAT_MONITORING				= BIT_1_SET,
-	BF_ENCODERS						= BIT_2_SET,
-	BF_BODE_TEST					= BIT_3_SET,
-	BF_SCRIPTING					= BIT_4_SET,
-	BF_CURRENT_SENSOR				= BIT_5_SET,
-	BF_MAG_SENSOR					= BIT_6_SET,
-	BF_ORDER_OF_AXES_LETUS			= BIT_7_SET,
-	BF_IMU_EEPROM					= BIT_8_SET,
-	BF_FRAME_IMU_EEPROM				= BIT_9_SET,
-	BF_CAN_PORT						= BIT_10_SET,
-	BF_MOMENTUM						= BIT_11_SET,
-	BF_COGGING_CORRECTION			= BIT_12_SET,
-	BF_MOTOR4_CONTROL				= BIT_13_SET,
-	BF_ACC_AUTO_CALIB				= BIT_14_SET,
-	BF_BIG_FLASH					= BIT_15_SET,	// Firmware needs 256Kb of FLASH
-
-	/* Artificial expanding for
-	   serialAPI_General_t.boardFeatures only */
-	BF_EXT_IMU						= BIT_16_SET,
-	BF_STATE_VARS					= BIT_18_SET,
-	BF_POWER_MANAGEMENT				= BIT_19_SET,
-	BF_GYRO_ADVANCED_CALIB			= BIT_20_SET,
-	BF_LIMITED_VERSION				= BIT_21_SET,
-	BF_REACTION						= BIT_22_SET,
-	BF_ENCODER_LUT					= BIT_23_SET
-
-}	sbgcBoardFeature_t;
-
-
 /**	@note	sbgcBoardInfo_t.connectionFlag
  */
 typedef enum
@@ -208,21 +204,6 @@ typedef enum
 	ConnF_CONNECTION_USB			= 1
 
 }	sbgcConnectionFlag_t;
-
-
-/**	@note	sbgcBoardInfo_t.boardFeaturesExt
- */
-typedef enum
-{
-	BFE_EXT_IMU						= BIT_0_SET,
-	BFE_STATE_VARS					= BIT_2_SET,
-	BFE_POWER_MANAGEMENT			= BIT_3_SET,
-	BFE_GYRO_ADVANCED_CALIB			= BIT_4_SET,
-	BFE_LIMITED_VERSION				= BIT_5_SET,
-	BFE_REACTION					= BIT_6_SET,
-	BFE_ENCODER_LUT					= BIT_7_SET
-
-}	sbgcBoardFeatureExt_t;
 
 
 /**	@note	sbgcBoardInfo3_t.profileSetSlots
@@ -237,19 +218,6 @@ typedef enum
 	PSS_PROFILE_SET_BACKUP			= BIT_5_SET
 
 }	sbgcProfileSetSlots_t;
-
-
-/**	@note	sbgcBoardInfo3_t.boardFeaturesExt2
- */
-typedef enum
-{
-	BFE2_PLUS_VER					= BIT_0_SET,
-	BFE2_SHAKE_GENERATOR			= BIT_1_SET,
-	BFE2_EXT_MOTORS					= BIT_2_SET,
-	BFE2_QUAT_CONTROL				= BIT_3_SET,
-	BFE2_ADC4						= BIT_4_SET
-
-}	sbgcBoardFeatureExt2_t;
 /**	@}
  */
 
@@ -280,11 +248,11 @@ typedef enum
  */
 typedef enum
 {
-	APID2A_ACTION_START				= 1,
-	APID2A_ACTION_START_SAVE		= 2,
-	APID2A_ACTION_SAVE				= 3,
-	APID2A_ACTION_STOP				= 5,
-	APID2A_ACTION_READ				= 6
+	APID2_ACTION_START				= 1,
+	APID2_ACTION_START_SAVE			= 2,
+	APID2_ACTION_SAVE				= 3,
+	APID2_ACTION_STOP				= 5,
+	APID2_ACTION_READ				= 6
 
 }	sbgcAutoPID2_Action_t;
 
@@ -308,10 +276,10 @@ typedef enum
  */
 typedef enum
 {
-	APID2AF_NOTCH_FILTER_TUNE_0		= 0,
-	APID2AF_NOTCH_FILTER_TUNE_1		= 1,
-	APID2AF_NOTCH_FILTER_TUNE_2		= 2,
-	APID2AF_NOTCH_FILTER_TUNE_3		= 3
+	APID2A_NOTCH_FILTER_TUNE_0		= 0,
+	APID2A_NOTCH_FILTER_TUNE_1		= 1,
+	APID2A_NOTCH_FILTER_TUNE_2		= 2,
+	APID2A_NOTCH_FILTER_TUNE_3		= 3
 
 }	sbgcAutoPID2_AxisNotchFilter_t;
 
@@ -340,7 +308,12 @@ typedef enum
 									= BIT_1_SET,
 	APID2GF_TUNE_GAIN_ONLY			= BIT_2_SET,
 	/* bit 3 - reserved */
-	APID2GF_AUTOSAVE				= BIT_4_SET
+	APID2GF_AUTOSAVE				= BIT_4_SET,
+
+	APID2GF_RUN_AT_SYSTEM_START_TUNE_ALL
+									= BIT_14_SET,	// Tune all parameters
+	APID2GF_RUN_AT_SYSTEM_START_TUNE_GAIN
+									= BIT_15_SET	// Tune gain only
 
 }	sbgcAutoPID2_GeneralFlag_t;
 /**	@}
@@ -559,6 +532,33 @@ typedef enum
 }	sbgcPinState_t;
 
 
+/**	@note	@ref SBGC32_SetServoOutExt, 2 arg
+ */
+typedef enum
+{
+	SOI_PIN_FC_ROLL					= BIT_0_SET,
+	SOI_PIN_FC_PITCH				= BIT_1_SET,
+	SOI_PIN_RC_PITCH				= BIT_2_SET,
+	SOI_PIN_AUX_1					= BIT_3_SET,
+
+	SOE_CAN_DRV_1_PIN_1				= BIT_4_SET,
+	SOE_CAN_DRV_1_PIN_2				= BIT_5_SET,
+	SOE_CAN_DRV_2_PIN_1				= BIT_6_SET,
+	SOE_CAN_DRV_2_PIN_2				= BIT_7_SET,
+	SOE_CAN_DRV_3_PIN_1				= BIT_8_SET,
+	SOE_CAN_DRV_3_PIN_2				= BIT_9_SET,
+	SOE_CAN_DRV_4_PIN_1				= BIT_10_SET,
+	SOE_CAN_DRV_4_PIN_2				= BIT_11_SET,
+	SOE_CAN_DRV_5_PIN_1				= BIT_12_SET,
+	SOE_CAN_DRV_5_PIN_2				= BIT_13_SET,
+	SOE_CAN_DRV_6_PIN_1				= BIT_14_SET,
+	SOE_CAN_DRV_6_PIN_2				= BIT_15_SET,
+	SOE_CAN_DRV_7_PIN_1				= BIT_16_SET,
+	SOE_CAN_DRV_7_PIN_2				= BIT_17_SET
+
+}	sbgcServoOutput_t;
+
+
 /**	@brief	Various beep modes
  *
  *	@note	sbgcMainParams3_t.beeperModes \n
@@ -582,18 +582,18 @@ typedef enum
  */
 typedef enum
 {
-	CDI_CAN_IMU_MAIN				= 5,
-	CDI_CAN_IMU_FRAME				= 6,
-	CDI_GPS_IMU_MAIN				= 7,
-	CDI_CAN_DRV_1					= 17,
-	CDI_CAN_DRV_2					= 18,
-	CDI_CAN_DRV_3					= 19,
-	CDI_CAN_DRV_4					= 20,
-	CDI_CAN_DRV_5					= 21,
-	CDI_CAN_DRV_6					= 22,
-	CDI_CAN_DRV_7					= 23,
-	CDI_CAN_IMU_MAIN_OLD			= 28,
-	CDI_CAN_IMU_FRAME_OLD			= 29
+	CDID_CAN_IMU_MAIN				= 5,
+	CDID_CAN_IMU_FRAME				= 6,
+	CDID_GPS_IMU_MAIN				= 7,
+	CDID_CAN_DRV_1					= 17,
+	CDID_CAN_DRV_2					= 18,
+	CDID_CAN_DRV_3					= 19,
+	CDID_CAN_DRV_4					= 20,
+	CDID_CAN_DRV_5					= 21,
+	CDID_CAN_DRV_6					= 22,
+	CDID_CAN_DRV_7					= 23,
+	CDID_CAN_IMU_MAIN_OLD			= 28,
+	CDID_CAN_IMU_FRAME_OLD			= 29
 
 }	sbgcCAN_DeviceID_t;
 
@@ -608,6 +608,27 @@ typedef enum
 	CDT_HARDWARE_ASSIGNED			= BIT_7_SET
 
 }	sbgcCAN_DeviceType_t;
+
+
+/**	@note sbgcCAN_DeviceScan_t.ID
+ */
+typedef enum
+{
+	CDID2_CAN_IMU_SENSOR_MAIN		= 1,
+	CDID2_CAN_IMU_SENSOR_FRAME		= 2,
+	CDID2_CAN_DRV_1					= 3,
+	CDID2_CAN_DRV_2					= 4,
+	CDID2_CAN_DRV_3					= 5,
+	CDID2_CAN_DRV_4					= 6,
+	CDID2_CAN_DRV_5					= 7,
+	CDID2_CAN_DRV_6					= 8,
+	CDID2_CAN_DRV_7					= 9,
+	CDID2_GPS_IMU					= 10,
+	CDID2_CAN_HUB_GNSS				= 11,
+	CDID2_CAN_HUB1					= 12,
+	CDID2_CAN_HUB2					= 13
+
+}	sbgcCAN_DeviceID2_t;
 /**	@}
  */
 
@@ -640,7 +661,7 @@ typedef struct PACKED__
 	ui8		buildNumber;							/*!<  Firmware version build number. Frw. ver. 2.73+								*/
 	ui16	baseFrwVer;								/*!<  For "experimental" versions encodes the main version which they are based on	*/
 
-}           sbgcBoardInfo_t;
+}	sbgcBoardInfo_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -686,12 +707,12 @@ typedef struct PACKED__
 
 	ui8		CAN_DrvMainLimit,						/*!<  ...																			*/
 			CAN_DrvAuxLimit;						/*!<  ...The number of licensed external motor drivers "CAN Driver" for the main
-														  stabilization axes and auxiliary motors. Frw. ver. 2.73+						*/
+														  stabilization axes and auxiliary motors. Frw. ver. 2.72.3+					*/
 
 	ui8		adjVarsTotalNum;						/*!<  A total number of adjustable variables in the system. Frw. ver. 2.73+			*/
 	ui8		reserved [10];
 
-}			sbgcBoardInfo3_t;
+}	sbgcBoardInfo3_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -726,7 +747,7 @@ typedef struct PACKED__
 			action,									/*!<  0 - start tuning																*/
 			reserved [14];
 
-}			sbgcAutoPID_t;
+}	sbgcAutoPID_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -755,7 +776,7 @@ typedef struct PACKED__
 			problemMargin,							/*!<  0 --> 255. Units: dB/10. Problematic margin									*/
 			reserved2 [6];
 
-}			sbgcAxisAPID2_t;
+}	sbgcAxisAPID2_t;
 
 /**	@brief	Structure type for work with
  *			AutoPID2 parameters
@@ -768,8 +789,9 @@ typedef struct PACKED__
 	ui8		reserved1 [10];
 
 	/* The following data is required only for
-	   APID2A_ACTION_START, APID2A_ACTION_START_SAVE */
-	ui8		cfgVersion;
+	   APID2_ACTION_START, APID2_ACTION_SAVE,
+	   APID2_ACTION_START_SAVE */
+	ui8		cfgVersion;								/*!<  Version = 1																	*/
 
 	sbgcAxisAPID2_t	AxisAPID2 [3];					/*!<  ROLL : PITCH : YAW															*/
 
@@ -781,7 +803,7 @@ typedef struct PACKED__
 
 	ui8		reserved4 [17];
 
-}			sbgcAutoPID2_t;
+}	sbgcAutoPID2_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -803,7 +825,7 @@ typedef struct PACKED__
 	float	trackingError;							/*!< Current error between the target and actual system response					*/
 	ui8		reserved1 [6];
 
-}			sbgcAxisAPIDS_t;
+}	sbgcAxisAPIDS_t;
 
 /**	@brief	Structure type for work with
  *			AutoPID_Continuous parameters
@@ -823,7 +845,7 @@ typedef struct PACKED__
 
 	ui8		reserved2 [10];
 
-}			sbgcAutoPID_State_t;
+}	sbgcAutoPID_State_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -856,7 +878,7 @@ typedef struct
 	ui16	timeMs;									/*!<  0 --> 65535. Power is applied for the given time, then motors are turned OFF	*/
 	ui16	angle;									/*!<  Angle to rotate. 0 to hold the current position								*/
 
-}			sbgcSyncMotors_t;
+}	sbgcSyncMotors_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -887,7 +909,7 @@ typedef struct
 	ui16	curComCounter;							/*!<  Current command counter														*/
 	ui8		errorCode;								/*!<  See @ref sbgcErrorCode_t enumeration											*/
 
-}			sbgcScriptDebugInfo_t;
+}	sbgcScriptDebugInfo_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -935,7 +957,7 @@ typedef struct PACKED__
 	float	avgCurrent;								/*!<  Units: A																		*/
 	ui8		reserved [152];
 
-}			sbgcStateVars_t;
+}	sbgcStateVars_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -970,7 +992,7 @@ typedef struct PACKED__
 														  recommended to allocate @ref SBGC_MAX_PAYLOAD_SIZE (255) bytes
 														  of space for this buffer														*/
 
-}			sbgcDebugPortData_t;
+}	sbgcDebugPortData_t;
 /**	@}
  */
 
@@ -997,7 +1019,7 @@ typedef struct
 														  data. Initialized manually by user. It's recommended to allocate
 														  @ref SBGC_MAX_PAYLOAD_SIZE (255) bytes of space for this buffer				*/
 
-}			sbgcTransparentCommand_t;
+}	sbgcTransparentCommand_t;
 /**	@}
  */
 
@@ -1025,7 +1047,7 @@ typedef struct PACKED__
 	ui16	*notesFreqHz;							/*!<  Units: Hz. Initializes manually by user										*/
 	ui8		notesQuan;								/*!<  Number of notes in one message. The parameter is only used in the function	*/
 
-}			sbgcBeeperSettings_t;
+}	sbgcBeeperSettings_t;
 
 
 /**	@brief	Structure type for work with
@@ -1042,7 +1064,7 @@ typedef struct PACKED__
 
 	ui8		type;									/*!<  See @ref sbgcCAN_DeviceType_t enumeration										*/
 
-}			sbgcCAN_DeviceScan_t;
+}	sbgcCAN_DeviceScan_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -1053,6 +1075,23 @@ typedef struct PACKED__
 	/**	@endcond
 	 */
 #endif
+
+
+/**	@brief	Structure type for work with
+ *			CAN modules information
+ *
+ *	@ref	SBGC32_RequestModuleList function
+ */
+typedef struct
+{
+	ui8		ID;										/*!<  See @ref sbgcCAN_DeviceID2_t enumeration										*/
+	ui16	boardVer,								/*!<  ...																			*/
+			bootloaderVer,							/*!<  ...																			*/
+			firmwareVer;							/*!<  ...Version format xx.xx														*/
+
+	ui8		reserved [6];
+
+}	sbgcCAN_ModuleInfo_t;
 /**	@}
  */
 
@@ -1125,8 +1164,8 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
 /**	@addtogroup	Debug_Port
  *	@{
  */
-sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortData_t *debugPortSettings, sbgcDebugPortAction_t action,
-										 ui32 filter, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortAction_t action, ui32 filter, sbgcConfirm_t *confirm
+										 SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ReadDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortData_t *debugPortSettings SBGC_ADVANCED_PARAMS__);
 /**	@}
  */
@@ -1141,21 +1180,30 @@ sbgcCommandStatus_t SBGC32_ReadTransparentCommand (sbgcGeneral_t *gSBGC, sbgcTra
  */
 
 
+/**	@addtogroup	Servo_Out
+ *	@{
+ */
+sbgcCommandStatus_t SBGC32_SetServoOut (sbgcGeneral_t *gSBGC, const i16 *servoTime SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_SetServoOutExt (sbgcGeneral_t *gSBGC, ui32 bits, i16 *servoTime SBGC_ADVANCED_PARAMS__);
+/**	@}
+ */
+
+
 /**	@addtogroup	Service_Other
  *	@{
  */
 sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID_t pinID, sbgcPinState_t state, sbgcConfirm_t *confirm
 										  SBGC_ADVANCED_PARAMS__);
-sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCommandID, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
-sbgcCommandStatus_t SBGC32_SetServoOut (sbgcGeneral_t *gSBGC, const i16 *servoTime SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCmdID, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSettings_t *beeperSettings SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, const char *txMessage, char *rxMessage SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceScan_t *CAN_DeviceScan SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_RequestModuleList (sbgcGeneral_t *gSBGC, sbgcCAN_ModuleInfo_t *CAN_ModuleInfo, ui8 deviceNumMax SBGC_ADVANCED_PARAMS__);
 /**	@endcond
  */
 
-#endif		/* SBGC_SERVICE_MODULE */
+#endif /* SBGC_SERVICE_MODULE */
 
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */

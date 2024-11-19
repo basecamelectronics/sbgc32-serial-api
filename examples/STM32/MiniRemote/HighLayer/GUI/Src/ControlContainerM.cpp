@@ -322,6 +322,7 @@ void CControlContainerM::vTask (void *pvParameters)
 			pwmResY;
 
 	static AverageValue_t potentiometerAverage;
+	static sbgcBoolean_t potentiometerAverageNeedInit = sbgcTRUE;
 
 	sbgcBoolean_t firstTimeShowing = sbgcTRUE;
 
@@ -364,12 +365,16 @@ void CControlContainerM::vTask (void *pvParameters)
 		ControlFilterExpo[i].SetRate(Gimbal.GetActiveControlProfile()->controlHandler[i].exponent);
 
 	DrawPotentiometerCircle(CONTROL_CIRCLE_COORD_X, CONTROL_CIRCLE_COORD_Y, CONTROL_CIRCLE_RADIUS);
-	AverageInit(&potentiometerAverage, CONTROL_POT_AVERAGE_FACTOR);
-
 	MiniRemote.ProcessFunction(VSF_AXIS_CONTROL_SENS, &incrementalCounter);
 
-	MiniRemote.ProcessFunction(VSF_AXIS_TRIMMING, &pRes);
-	potentiometerAverage.avgBuff = pRes << potentiometerAverage._factor;
+	if (potentiometerAverageNeedInit)
+	{
+		AverageInit(&potentiometerAverage, CONTROL_POT_AVERAGE_FACTOR);
+		MiniRemote.ProcessFunction(VSF_AXIS_TRIMMING, &pRes);
+		potentiometerAverage.avgBuff = pRes << potentiometerAverage._factor;
+
+		potentiometerAverageNeedInit = sbgcFALSE;
+	}
 
 	/* Data stream init */
 	if (!Gimbal.GetRealTimeDataCustomStreamStatus())
@@ -391,7 +396,6 @@ void CControlContainerM::vTask (void *pvParameters)
 		}
 
 		/* User's control handling */
-		pResOld = pRes;
 		incrementalCounterOld = incrementalCounter;
 
 		MiniRemote.ProcessFunction(VSF_SC_MENU_ADJ_VARS, &controlSenseToggleButton);  // Control sensitivity adjust for this container
@@ -542,34 +546,39 @@ void CControlContainerM::vTask (void *pvParameters)
 		}
 
 		/* Draw progressbars */
-		if ((deadbandcross_(xRes, IN_MIDDLE_VALUE, CONTROL_AXIS_X_DEADBAND)) ||
-			(deadbandcross_(yRes, IN_MIDDLE_VALUE, CONTROL_AXIS_Y_DEADBAND)) ||
-			firstTimeShowing)
+		if (deadbandcross_(xRes, IN_MIDDLE_VALUE, CONTROL_AXIS_X_DEADBAND) || firstTimeShowing)
 		{
 			pwmResX = (xRes / 65535.) * CONTROL_PROGRESSBAR_RESOLUTION;
-			pwmResY = (yRes / 65535.) * CONTROL_PROGRESSBAR_RESOLUTION;
 
 			if (gwinProgressbarGetPosition(ghProgressbarX) != pwmResX)
 				gwinProgressbarSetPosition(ghProgressbarX, pwmResX);
+		}
+
+		if (deadbandcross_(yRes, IN_MIDDLE_VALUE, CONTROL_AXIS_Y_DEADBAND) || firstTimeShowing)
+		{
+			pwmResY = (yRes / 65535.) * CONTROL_PROGRESSBAR_RESOLUTION;
 
 			if (gwinProgressbarGetPosition(ghProgressbarY) != pwmResY)
 				gwinProgressbarSetPosition(ghProgressbarY, pwmResY);
 		}
 
 		/* Draw pot's circle */
-		if (deadbandcross_(pRes, pResOld, CONTROL_POT_DEADBAND) ||
-			firstTimeShowing)
+		if (deadbandcross_(pRes, pResOld, CONTROL_POT_DEADBAND) || firstTimeShowing)
 		{
+			/* Erasing */
 			gdispFillCircle(CONTROL_CIRCLE_COORD_X, CONTROL_CIRCLE_COORD_Y,
-							CONTROL_CIRCLE_RADIUS - CONTROL_CIRCLE_THICK - 1, GFX_BLACK);
+					CONTROL_CIRCLE_RADIUS - CONTROL_CIRCLE_THICK - 1, GFX_BLACK);
 
+			/* Redrawing */
 			DrawPotentiometerArrow(CONTROL_CIRCLE_COORD_X, CONTROL_CIRCLE_COORD_Y,
-								   CONTROL_CIRCLE_RADIUS - CONTROL_CIRCLE_THICK - 2,
-								   ConvertPotentiometerValueToAngle(pRes), GFX_LIGHT_GRAY);
-		}
+					CONTROL_CIRCLE_RADIUS - CONTROL_CIRCLE_THICK - 2,
+					ConvertPotentiometerValueToAngle(pRes), GFX_LIGHT_GRAY);
 
-		if (firstTimeShowing)
-			firstTimeShowing = sbgcFALSE;
+			if (firstTimeShowing)
+				firstTimeShowing = sbgcFALSE;
+
+			pResOld = pRes;
+		}
 
 
 		/* System awaking */

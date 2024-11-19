@@ -111,7 +111,7 @@ typedef enum
 typedef enum
 {
 	MIX_CHANNEL_DIRECT				= 0,
-	MIX_CHANNEL_INVERTED
+	MIX_CHANNEL_INVERTED			= 1
 
 }	MixChannelInvert_t;
 

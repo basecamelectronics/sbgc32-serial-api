@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		realtime.c
  *
@@ -109,6 +109,19 @@
 	};
 
 	const ui8 communicationErrorsReferenceInfoArrayElCnt = countof_(communicationErrorsReferenceInfoArray);
+
+
+	/** @brief	Sample for big endian mapping and reference info
+	 */
+	const sbgcParameterReferenceInfo_t systemStateReferenceInfoArray [] =
+	{
+		PARAM_BLOCK_(	"Flags",					sbgcUINT						),  // 0
+		PARAM_BLOCK_(	"Calib Mode",				sbgcUCHAR						),  // 1
+		PARAMS_BLOCK_(	"Reserved",					sbgcRCHAR,					8	),  // 2
+
+	};
+
+	const ui8 systemStateReferenceInfoArrayElCnt = countof_(systemStateReferenceInfoArray);
 	/**	@}
 	 */
 
@@ -215,6 +228,40 @@
 	const ui8 getAnglesExtReferenceInfoArrayElCnt = countof_(getAnglesExtReferenceInfoArray);
 	/**	@}
 	 */
+
+#endif
+
+
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *														Static Functions
+ */
+#if (SBGC_NEED_ASSERTS)
+
+	/**	@brief	Asserts the realtime data custom flags
+	 *
+	 *	@note	Private function
+	 *
+	 *	@param	*gSBGC - serial connection descriptor
+	 *	@param	flags - required data
+	 *
+	 *	@return	Assert result
+	 */
+	static sbgcCommandStatus_t SerialAPI_AssertRealTimeDataCustomFlags (sbgcGeneral_t *gSBGC, ui32 flags)
+	{
+		if (flags & RTDCF_ENCODER_RAW24)
+			sbgcAssertFeature(BF_ENCODERS)
+
+		if ((flags & RTDCF_SCRIPT_VARS_FLOAT) || (flags & RTDCF_SCRIPT_VARS_INT16))
+			sbgcAssertFeature(BF_SCRIPTING)
+
+		if (flags & RTDCF_SYSTEM_POWER_STATE)
+			sbgcAssertFeature(BF_POWER_MANAGEMENT)
+
+		if ((flags & RTDCF_IMU_QUAT) || (flags & RTDCF_TARGET_QUAT) || (flags & RTDCF_IMU_TO_FRAME_QUAT))
+			sbgcAssertFeature2(BFE2_QUAT_CONTROL)
+
+		return sbgcCOMMAND_OK;
+	}
 
 #endif
 
@@ -369,12 +416,42 @@
  *			command parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_StartDataStream (sbgcGeneral_t *gSBGC, const sbgcDataStreamInterval_t *dataStreamInterval, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2600)
+
+	#if (SBGC_NEED_ASSERTS)
+
+		if ((gSBGC->_api->baseFirmwareVersion < 2657) && (dataStreamInterval->cmdID == DSC_CMD_EVENT))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
+		if ((gSBGC->_api->baseFirmwareVersion < 2720 || (gSBGC->_api->boardVersion < 36)) &&
+			(dataStreamInterval->cmdID == DSC_CMD_CAN_DRV_TELEMETRY))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
+		if ((gSBGC->_api->baseFirmwareVersion < 2730) && (dataStreamInterval->cmdID == DSC_CMD_EXT_MOTORS_STATE))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
+		if (dataStreamInterval->cmdID == DSC_CMD_CAN_DRV_TELEMETRY)
+			sbgcAssertFeature(BF_CAN_PORT)
+
+		if (dataStreamInterval->cmdID == DSC_CMD_EXT_MOTORS_STATE)
+			sbgcAssertFeature2(BFE2_EXT_MOTORS)
+
+		if (dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM)
+		{
+			ui32 flags;
+
+			memcpy(&flags, dataStreamInterval->config, sizeof(ui32));
+
+			if (SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags) != sbgcCOMMAND_OK)
+				return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
+		}
+
+	#endif
 
 	gSBGC->_api->startWrite(gSBGC, CMD_DATA_STREAM_INTERVAL SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeBuff(gSBGC, dataStreamInterval, sizeof(sbgcDataStreamInterval_t));
@@ -382,7 +459,7 @@ sbgcCommandStatus_t SBGC32_StartDataStream (sbgcGeneral_t *gSBGC, const sbgcData
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_DATA_STREAM_INTERVAL SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -407,7 +484,7 @@ sbgcCommandStatus_t SBGC32_StartDataStream (sbgcGeneral_t *gSBGC, const sbgcData
  *	@param	*dataStreamInterval - working data stream descriptor
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_StopDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamInterval_t *dataStreamInterval, sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -421,7 +498,7 @@ sbgcCommandStatus_t SBGC32_StopDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamI
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_DATA_STREAM_INTERVAL SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -528,7 +605,7 @@ static void PostReadDataStream (sbgcGeneral_t *gSBGC)
  *			structs to the cmdID parameter
  *	@param	size - data stream buffer size
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamCommand_t cmdID, void *dataStreamStruct, ui8 size
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -732,8 +809,21 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 														sizeof(sbgcCommunicationErrors_t), PM_COMMUNICATION_ERRORS);
 					}
 
-		if (realTimeDataCustom->flags & RTDCF_SYSTEM_STATE_FLAGS)
-			realTimeDataCustom->systemStateFlags = gSBGC->_api->readLong(gSBGC);
+		if (realTimeDataCustom->flags & RTDCF_SYSTEM_STATE)
+		{
+			serialAPI_CurCmd_->_payload +=
+					gSBGC->_api->convWithPM(&realTimeDataCustom->SystemState, serialAPI_CurCmd_->_payload,
+							sizeof(sbgcSystemState_t), PM_SYSTEM_STATE);
+		}
+
+					if (realTimeDataCustom->flags & RTDCF_IMU_QUAT)
+						 gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->IMU_Quat, sizeof(realTimeDataCustom->IMU_Quat));
+
+		if (realTimeDataCustom->flags & RTDCF_TARGET_QUAT)
+			gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->targetQuat, sizeof(realTimeDataCustom->targetQuat));
+
+					if (realTimeDataCustom->flags & RTDCF_IMU_TO_FRAME_QUAT)
+						gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->IMU_ToFrameQuat, sizeof(realTimeDataCustom->IMU_ToFrameQuat));
 
 	#endif
 }
@@ -767,14 +857,17 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *				bit17:		sbgcRealTimeDataCustomReference_t.IMU_Angles20 [3]			RTDCF_IMU_ANGLES_20			Frw. ver. 2.70b8+	\n
  *				bit18:		sbgcRealTimeDataCustomReference_t.targetAngles20 [3]		RTDCF_TARGET_ANGLES_20		Frw. ver. 2.70b8+	\n
  *				bit19:		sbgcRealTimeDataCustomReference_t.CommunicationErrors		RTDCF_COMM_ERRORS			Frw. ver. 2.72b0+	\n
- *				bit20:		sbgcRealTimeDataCustomReference_t.systemStateFlags			RTDCF_SYSTEM_STATE_FLAGS	Frw. ver. 2.73+
+ *				bit20:		sbgcRealTimeDataCustomReference_t.SystemStateFlags			RTDCF_SYSTEM_STATE			Frw. ver. 2.73+		\n
+ *				bit21:		sbgcRealTimeDataCustomReference_t.IMU_Quat [8]				RTDCF_IMU_QUAT				Frw. ver. 2.73+		\n
+ *				bit22:		sbgcRealTimeDataCustomReference_t.targetQuat [8]			RTDCF_TARGET_QUAT			Frw. ver. 2.73+		\n
+ *				bit23:		sbgcRealTimeDataCustomReference_t.IMU_ToFrameQuat [8]		RTDCF_IMU_TO_FRAME_QUAT		Frw. ver. 2.73+
  *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
  *			function with PM_MOTOR_4_CONTROL or
  *			PM_AHRS_DEBUG_INFO or PM_SYSTEM_POWER_STATE or
- *			PM_COMMUNICATION_ERRORS to print received data.
- *			The function should receive a pointer to this
- *			part of the common structure exact
+ *			PM_COMMUNICATION_ERRORS or PM_SYSTEM_STATE to
+ *			print received data. The function should receive a
+ *			pointer to this part of the common structure exact
  *
  *	@attention	Firmware: 2.60+
  *
@@ -839,7 +932,7 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *			sbgcRealTimeDataCustomReference_t structure
  *	@param	size - data structure size
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void *realTimeDataCustom, ui8 size
 													  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -850,12 +943,19 @@ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void
 
 	#if (SBGC_NEED_ASSERTS)
 
+		if (SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags) != sbgcCOMMAND_OK)
+			return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
+
+	#endif
+
+	#if (SBGC_NEED_ASSERTS)
+
 		if (((gSBGC->_api->baseFirmwareVersion < 2680) && (flags >= RTDCF_ENCODER_RAW24)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2687) && (flags >= RTDCF_IMU_ANGLES_RAD)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2706) && (flags >= RTDCF_SYSTEM_POWER_STATE)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2708) && (flags >= RTDCF_IMU_ANGLES_20)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2720) && (flags >= RTDCF_COMM_ERRORS)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2730) && (flags >= RTDCF_SYSTEM_STATE_FLAGS)))
+			((gSBGC->_api->baseFirmwareVersion < 2730) && (flags >= RTDCF_SYSTEM_STATE)))
 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
 
 	#endif
@@ -869,7 +969,7 @@ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void
 	gSBGC->_api->assignEvent(gSBGC, PostRequestRealTimeDataCustom, realTimeDataCustom, size);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -906,7 +1006,7 @@ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*realTimeData - structure for storing real-time data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadRealTimeData3 (sbgcGeneral_t *gSBGC, sbgcRealTimeData_t *realTimeData
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -918,7 +1018,7 @@ sbgcCommandStatus_t SBGC32_ReadRealTimeData3 (sbgcGeneral_t *gSBGC, sbgcRealTime
 	gSBGC->_api->assignEvent(gSBGC, NULL, realTimeData, SIZEOF_REALTIME_DATA_3);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -942,7 +1042,7 @@ sbgcCommandStatus_t SBGC32_ReadRealTimeData3 (sbgcGeneral_t *gSBGC, sbgcRealTime
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*realTimeData - structure for storing real-time data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadRealTimeData4 (sbgcGeneral_t *gSBGC, sbgcRealTimeData_t *realTimeData
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -954,7 +1054,7 @@ sbgcCommandStatus_t SBGC32_ReadRealTimeData4 (sbgcGeneral_t *gSBGC, sbgcRealTime
 	gSBGC->_api->assignEvent(gSBGC, NULL, realTimeData, sizeof(sbgcRealTimeData_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -991,7 +1091,7 @@ sbgcCommandStatus_t SBGC32_ReadRealTimeData4 (sbgcGeneral_t *gSBGC, sbgcRealTime
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*getAngles - structure for storing angles state
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_GetAngles (sbgcGeneral_t *gSBGC, sbgcGetAngles_t *getAngles
 									  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1003,7 +1103,7 @@ sbgcCommandStatus_t SBGC32_GetAngles (sbgcGeneral_t *gSBGC, sbgcGetAngles_t *get
 	gSBGC->_api->assignEvent(gSBGC, NULL, getAngles, sizeof(sbgcGetAngles_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1028,7 +1128,7 @@ sbgcCommandStatus_t SBGC32_GetAngles (sbgcGeneral_t *gSBGC, sbgcGetAngles_t *get
  *	@param	*getAnglesExt - structure for storing
  *			angles state in extended format
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_GetAnglesExt (sbgcGeneral_t *gSBGC, sbgcGetAnglesExt_t *getAnglesExt
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1040,7 +1140,7 @@ sbgcCommandStatus_t SBGC32_GetAnglesExt (sbgcGeneral_t *gSBGC, sbgcGetAnglesExt_
 	gSBGC->_api->assignEvent(gSBGC, NULL, getAnglesExt, sizeof(sbgcGetAnglesExt_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1109,7 +1209,7 @@ static void PostReadRC_Inputs (sbgcGeneral_t *gSBGC)
  *	@param	cfgFlags - RC configuration flags
  *	@param	srcQuan - quantity of RC sources
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadRC_Inputs (sbgcGeneral_t *gSBGC, sbgcRC_Inputs_t *RC_Inputs, sbgcInitCfgFlag_t cfgFlags, ui8 srcQuan
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1125,7 +1225,7 @@ sbgcCommandStatus_t SBGC32_ReadRC_Inputs (sbgcGeneral_t *gSBGC, sbgcRC_Inputs_t 
 	gSBGC->_api->assignEvent(gSBGC, PostReadRC_Inputs, RC_Inputs, sizeof(RC_Inputs->RC_Val) * srcQuan);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1222,7 +1322,7 @@ static void PostRequestDebugVarInfo3 (sbgcGeneral_t *gSBGC)
  *	@param	varQuan - maximal number of debug variables
  *			the buffer can hold
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestDebugVarInfo3 (sbgcGeneral_t *gSBGC, sbgcDebugVar3_Info_t *debugVar3_Info, ui8 startIndex, ui8 varQuan
 												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1238,7 +1338,7 @@ sbgcCommandStatus_t SBGC32_RequestDebugVarInfo3 (sbgcGeneral_t *gSBGC, sbgcDebug
 	gSBGC->_api->assignEvent(gSBGC, PostRequestDebugVarInfo3, debugVar3_Info, sizeof(sbgcDebugVar3_Info_t) * varQuan);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1305,7 +1405,7 @@ static void PostRequestDebugVarValue3 (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*debugVars3 - structure to storing debug variables
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestDebugVarValue3 (sbgcGeneral_t *gSBGC, sbgcDebugVars3_t *debugVars3
 												  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1322,7 +1422,7 @@ sbgcCommandStatus_t SBGC32_RequestDebugVarValue3 (sbgcGeneral_t *gSBGC, sbgcDebu
 	gSBGC->_api->assignEvent(gSBGC, PostRequestDebugVarValue3, debugVars3, SBGC_MAX_PAYLOAD_SIZE);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1362,7 +1462,7 @@ sbgcCommandStatus_t SBGC32_RequestDebugVarValue3 (sbgcGeneral_t *gSBGC, sbgcDebu
  *			is good balance between precision and speed
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SelectIMU_3 (sbgcGeneral_t *gSBGC, sbgcIMU_Type_t IMU_Type, sbgcSelectIMU_Action_t action, ui16 timeMs,
 										sbgcConfirm_t *confirm
@@ -1382,7 +1482,7 @@ sbgcCommandStatus_t SBGC32_SelectIMU_3 (sbgcGeneral_t *gSBGC, sbgcIMU_Type_t IMU
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SELECT_IMU_3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1470,11 +1570,13 @@ static void PostControlQuatStatus (sbgcGeneral_t *gSBGC)
  *			sbgcControlQuatStatusReference_t structure
  *	@param	size - data structure size
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ControlQuatStatus (sbgcGeneral_t *gSBGC, sbgcControlQuatStatusFlag_t flags, void *data, ui8 size
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature2(BFE2_QUAT_CONTROL)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_QUAT_STATUS SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeByte(gSBGC, flags);
 	gSBGC->_api->finishWrite(gSBGC);
@@ -1483,7 +1585,7 @@ sbgcCommandStatus_t SBGC32_ControlQuatStatus (sbgcGeneral_t *gSBGC, sbgcControlQ
 	gSBGC->_api->assignEvent(gSBGC, PostControlQuatStatus, data, size);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 

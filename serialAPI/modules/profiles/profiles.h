@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		profiles.h
  *
@@ -1073,7 +1073,17 @@ typedef enum
 	PF2_LOW_ANGLE_PRIOR_ROLL		= BIT_1_SET,
 	PF2_LOW_ANGLE_PRIOR_PITCH		= BIT_2_SET,
 	PF2_LOW_ANGLE_PRIOR_YAW			= BIT_3_SET,
-	PF2_HEADING_TRIPOD_MODE			= BIT_4_SET
+	PF2_HEADING_TRIPOD_MODE			= BIT_4_SET,
+	PF2_MOT_ROLL_DISABLED			= BIT_5_SET,
+	PF2_MOT_PITCH_DISABLED			= BIT_6_SET,
+	PF2_MOT_YAW_DISABLED			= BIT_7_SET,
+	PF2_RC_OUT_DUTY1				= BIT_8_SET,
+	PF2_RC_OUT_DUTY2				= BIT_9_SET,
+	PF2_RC_OUT_DUTY3				= BIT_10_SET,
+	PF2_RC_OUT_DUTY4				= BIT_11_SET,
+	PF2_DISABLE_FOLLOW_STARTUP		= BIT_12_SET,
+	PF2_SERVO_MODE					= BIT_13_SET,
+	PF2_RC_EXPO_DEADBAND_SPLIT		= BIT_14_SET
 
 }	sbgcProfileFlag2_t;
 
@@ -1085,9 +1095,55 @@ typedef enum
 	GF3_ENC_LUT_EN_ROLL				= BIT_0_SET,
 	GF3_ENC_LUT_EN_PITCH			= BIT_1_SET,
 	GF3_ENC_LUT_EN_YAW				= BIT_2_SET,
-	GF3_MAVLINK_YAW_ABSOLUTE		= BIT_3_SET
+	GF3_MAVLINK_YAW_ABSOLUTE		= BIT_3_SET,
+	GF3_EXT_SENS_AS_REFERENCE		= BIT_4_SET,
+	GF3_DISABLE_BT					= BIT_5_SET,
+	GF3_ALLOW_SENSOR_RECOVERY		= BIT_6_SET,
+	GF3_UART2_ALT					= BIT_7_SET,
+	GF3_PASS_LIMIT_ROLL				= BIT_8_SET,
+	GF3_PASS_LIMIT_PITCH			= BIT_9_SET,
+	GF3_PASS_LIMIT_YAW				= BIT_10_SET,
+	GF3_DONT_PUSH_SOFT_LIMITS_ROLL	= BIT_11_SET,
+	GF3_DONT_PUSH_SOFT_LIMITS_PITCH	= BIT_12_SET,
+	GF3_DONT_PUSH_SOFT_LIMITS_YAW	= BIT_13_SET,
+	GF3_TRIPOD_MODE_AUTO			= BIT_14_SET,
+	GF3_TRIPOD_MODE_GYRO_ONLINE_CALIB
+									= BIT_15_SET,
+
+	GF3_RETRACTED_POSITION_MOTORS_OFF
+									= BIT_16_SET,
+	GF3_CAN_IMU_THERMOSTAT_ENABLE	= BIT_17_SET,
+	GF3_RETRACTED_POSITION_SHORTEST	= BIT_18_SET,
+	GF3_RETRACTED_POSITION_RC_CONTROL
+									= BIT_19_SET,
+	GF3_ACC_LIMIT_EXT_RANGE			= BIT_20_SET
 
 }	sbgcGeneralFlag3_t;
+
+
+/**	@note	sbgcMainParamsExt3_t.encoderCfgExt
+ *
+ *	@note	For example:
+			ECE_RESOLUTION_BIT_0 + ECE_RESOLUTION_BIT_2 == (12) + 1 + 4 = 17 bit
+			ECE_RESOLUTION_BIT_1 + ECE_RESOLUTION_BIT_4 == (12) + 2 + 16 = 30 bit
+			ECE_MULTI_TURN_BIT_0 + ECE_MULTI_TURN_BIT_1 == Multi-turn = 20
+			ECE_MULTI_TURN_BIT_2 == Multi-turn = 24
+ */
+typedef enum
+{
+	/* Resolution + 12 bit */
+	ECE_RESOLUTION_BIT_0			= BIT_0_SET,
+	ECE_RESOLUTION_BIT_1			= BIT_1_SET,
+	ECE_RESOLUTION_BIT_2			= BIT_2_SET,
+	ECE_RESOLUTION_BIT_3			= BIT_3_SET,
+	ECE_RESOLUTION_BIT_4			= BIT_4_SET,
+
+	/* No, 12, 16, 20, 24 */
+	ECE_MULTI_TURN_BIT_0			= BIT_5_SET,
+	ECE_MULTI_TURN_BIT_1			= BIT_6_SET,
+	ECE_MULTI_TURN_BIT_2			= BIT_7_SET
+
+}	sbgcEncoderCfgExt_t;
 /**	@}
  */
 
@@ -1112,7 +1168,7 @@ typedef struct PACKED__
 			profile4 [SBGC_MAX_PROF_NAME_LEN],		/*!<  Name of the fourth profile													*/
 			profile5 [SBGC_MAX_PROF_NAME_LEN];		/*!<  Name of the fifth profile														*/
 
-}			sbgcProfileNames_t;
+}	sbgcProfileNames_t;
 /**	@}
  */
 
@@ -1129,14 +1185,16 @@ typedef struct PACKED__
  */
 typedef struct PACKED__
 {
-	ui8		p,										/*!<  0 --> 255																		*/
-			i,										/*!<  0 --> 255. Divided by 100 when displayed in the GUI							*/
-			d,										/*!<  0 --> 255																		*/
+	ui8		p,										/*!<  ...																			*/
+			i,										/*!<  ...																			*/
+			d,										/*!<  ...0 --> 255. Starting from firmware 2.73.1, the scale
+														  (0..255) is used. The value displayed in GUI is:
+														  val_float = 5 * exp(val * ln(260 / 5) / 255) – 5								*/
 			power,									/*!<  0 --> 255																		*/
 			invert,									/*!<  0 --> 1																		*/
 			poles;									/*!<  0 --> 1																		*/
 
-}			sbgcAxisCMP3_t;
+}	sbgcAxisCMP3_t;
 
 /**	@brief	Part of sbgcMainParams3_t structure
  *
@@ -1151,7 +1209,7 @@ typedef struct PACKED__
 	ui8		RC_Speed;								/*!<  0 --> 255																		*/
 	i8		RC_Follow;								/*!<  -127 --> 127																	*/
 
-}			sbgcAxisRC_MP3_t;
+}	sbgcAxisRC_MP3_t;
 
 /**	@brief	Structure type for work with
  *			MainParams3 parameters
@@ -1247,7 +1305,7 @@ typedef struct PACKED__
 	ui8		curIMU;									/*!<  See @ref sbgcIMU_Type_t enumeration											*/
 	ui8		curProfileID;							/*!<  See @ref sbgcProfile_t enumeration											*/
 
-}			sbgcMainParams3_t;
+}	sbgcMainParams3_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -1277,7 +1335,7 @@ typedef struct PACKED__
 	ui8		notchFreq [3],							/*!<  0 --> 255																		*/
 			notchWidth [3];							/*!<  0 --> 255																		*/
 
-}			sbgcAxisMPE_t;
+}	sbgcAxisMPE_t;
 
 /**	@brief	Structure type for work with
  *			MainParamsExt parameters
@@ -1330,7 +1388,7 @@ typedef struct PACKED__
 	ui16	accLPF_Freq;							/*!<  0 --> 1000. Units: 0.01 Hz													*/
 	ui8		D_TermLPF_Freq [3];						/*!<  0 --> 60. Units: 10 Hz														*/
 
-}			sbgcMainParamsExt_t;
+}	sbgcMainParamsExt_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -1363,7 +1421,7 @@ typedef struct PACKED__
 			MAV_CfgFlags,							/*!<  See @ref sbgcMAV_CfgFlag_t enumeration										*/
 			MAV_Reserved [4];
 
-}			sbgcMAV_CMPE_Channel_t;
+}	sbgcMAV_CMPE_Channel_t;
 
 /**	@brief	Part of sbgcMainParamsExt2_t structure
  *
@@ -1374,7 +1432,7 @@ typedef struct PACKED__
 	ui8		stepSignalSrc,							/*!<  See @ref sbgcRC_MapSourceType_t and @ref sbgcRC_MapSource_t enumerations		*/
 			stepSignalCfg;							/*!<  See @ref sbgcStepSignalCfgNumber_t, @ref sbgcStepSignalCfgMode_t and
 														  @ref sbgcStepSignalCfgAdd_t enumerations										*/
-}			sbgcStepSignalN_t;
+}	sbgcStepSignalN_t;
 
 /**	@brief	Part of sbgcMainParamsExt2_t structure
  *
@@ -1390,7 +1448,8 @@ typedef struct PACKED__
 														  val = val + RC_CALIB_OFFSET*(RC_RANGE/2/128);\n
 														  if(val > 0) val = val * ( 80 + RC_CALIB_POS_SCALE) / 100;\n
 														  else val = val * ( 80 + RC_CALIB_NEG_SCALE) / 100;							*/
-}			sbgcRC_CalibN_t;
+
+}	sbgcRC_CalibN_t;
 
 /**	@brief	Structure type for work with
  *			MainParamsExt2 parameters
@@ -1406,7 +1465,9 @@ typedef struct PACKED__
 
 	ui16	motorMagLinkFine [3];					/*!<  0 --> 65000. Units: 0.01														*/
 	ui8		accLimiter [3];							/*!<  0 --> 200. Units: 5 degrees/sec²												*/
-	ui8		PID_Gain [3];							/*!<  0 --> 255																		*/
+	ui8		PID_Gain [3];							/*!<  0 --> 255. Prior to frw. ver. 2.73.1: val_float = 0.1 + val * 0.02. Starting
+														  from frw. ver. 2.73.1: val_float = 5 * exp(val * ln(260 / 5) / 255) – 5;
+														  val_int = ln(val_float * 50) * 127 / ln(50) + 1								*/
 	ui8		frameIMU_LPF_Freq;						/*!<  0 --> 200. Units: 1 Hz														*/
 	ui8		autoPID_Cfg;							/*!<  See @ref sbgcAutoPID_Cfg_t enumeration. Also pay attention to
 														  sbgcAutoPID_t.cfgFlags														*/
@@ -1458,7 +1519,7 @@ typedef struct PACKED__
 	ui16	currentLimit;							/*!<  0 --> 65535. Units: 10 mA														*/
 	i8		middleMotTiltAngle;						/*!<  -90 --> 90. Units: degrees. Frw. ver. 2.67+									*/
 
-}			sbgcMainParamsExt2_t;
+}	sbgcMainParamsExt2_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -1550,9 +1611,15 @@ typedef struct PACKED__
 	ui8		resonanceFreq;							/*!<  0 --> 255. resonance_freq_hz = 0.3 + RESONANCE_FREQ * 0.1						*/
 	i8		freqShift [3];							/*!<  -127 --> 127. Mapped to logarithmic scale 1/3 … 3								*/
 	ui8		reserved4 [5];
-	ui8		reserved5 [93];
 
-}			sbgcMainParamsExt3_t;
+	/* Other parameters */
+	ui8		extMotorDrvIDs [7];						/*!<  CAN_DRV IDs assigned to auxiliary motors #1..7								*/
+	ui16	encoderCfgExt [3];						/*!<  Extra configuration for the main encoders. bit0..4: resolution + 12. bit5..7:
+														  multi-turn (no, 12, 16, 20, 24). See @ref sbgcEncoderCfgExt_t enumeration		*/
+	ui8		extSensParams [16];						/*!<  Parameters for CAN_IMU external sensor. Structure depends on its type			*/
+	ui8		reserved5 [64];
+
+}	sbgcMainParamsExt3_t;
 
 
 #if (SBGC_USES_REF_INFO)

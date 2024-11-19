@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		serialAPI_ConfigTemplate.h
  *
@@ -71,16 +71,18 @@ extern		"C" {
  *					  Main Serial API Configurations
  */
 #define		SBGC_SYS_BIG_ENDIAN		sbgcOFF			/*!<  Memory organization of target-control device. LITTLE ENDIAN if set off		*/
-#define		SBGC_SEVERAL_DEVICES	sbgcOFF			/*!<  Using more than one controller with the library								*/
+#define		SBGC_SEVERAL_DEVICES	sbgcOFF			/*!<  @ref Note1. Using more than one controller with the library					*/
 #define		SBGC_PROTOCOL_VERSION	2				/*!<  V.1 or V.2 SerialAPI protocol version											*/
 
 #define		SBGC_NON_BLOCKING_MODE	sbgcOFF			/*!<  Provide the library with non-blocking communication							*/
 #if (SBGC_NON_BLOCKING_MODE)
 	#define	SBGC_NEED_TOKENS		sbgcOFF			/*!<  Add a special token to keep track current SBGC32_ request						*/
 	#define	SBGC_NEED_CALLBACKS		sbgcOFF			/*!<  Add the callbacks from the SBGC32_ functions to the user's custom events		*/
-	#define	SBGC_OPTIMIZE_COMMANDS	sbgcOFF			/*!<  Suppress the new commands if there is the same command in buffer				*/
-	#define	SBGC_SEND_IMMEDIATELY	sbgcOFF			/*!<  Send serial commands right away without calling processing functions			*/
-	#define	SBGC_MAX_COMMAND_NUM	2				/*!<  1 Min --> 255 Max. Maximum number of serial commands processed simultaneously	*/
+	#define	SBGC_OPTIMIZE_COMMANDS	sbgcOFF			/*!<  @ref Note2. Suppress the new commands if there is the same command in buffer 	*/
+	#define	SBGC_SEND_IMMEDIATELY	sbgcOFF			/*!<  @ref Note3. Send Tx commands directly without invoking processing functions	*/
+	#define	SBGC_CHAINED_TIMEOUT	sbgcOFF			/*!<  In this case, the assigned timeout for the commands is shared between them.
+														  If Tx command consumes the entire time limit, Rx command will be removed		*/
+	#define	SBGC_MAX_COMMAND_NUM	2				/*!<  1 Min --> 255 Max. @ref Note4. Maximum simultaneous serial commands processed	*/
 #endif
 
 #define		SBGC_TX_BUFFER_SIZE		1				/*!<  1 Min (256 bytes) --> 8 Max (32768 bytes). Buffer size for sent commands		*/
@@ -89,6 +91,7 @@ extern		"C" {
 														  In this case they should be taken manually by its corresponding functions		*/
 #define		SBGC_NEED_DEBUG			sbgcON			/*!<  The system will print debug messages using callback function in driver		*/
 #if (SBGC_NEED_DEBUG)
+	#define	SBGC_LOG_COMMAND_TIME	sbgcON			/*!<  Add serial command completion time to log										*/
 	#define	SBGC_LOG_COMMAND_NUMBER	sbgcON			/*!<  Add serial command number to log												*/
 	#define	SBGC_LOG_COMMAND_DIR	sbgcON			/*!<  Add serial command type (Tx/Rx) to log										*/
 	#define	SBGC_LOG_COMMAND_NAME	sbgcON			/*!<  Add serial command name to log												*/
@@ -117,7 +120,7 @@ extern		"C" {
 	#define	SBGC_ADJ_VARS_ADD_FLAG	sbgcOFF			/*!<  Extend adjustable variables structure by user-defined variables				*/
 #endif
 
-#if (defined (SBGC_ADJ_VARS_ADD_FLAG) && SBGC_ADJ_VARS_ADD_FLAG)
+#if (SBGC_ADJ_VARS_ADD_FLAG)
 
 	/**	@brief	User-defined additional parameters
 	 *			for adjustable variables.
@@ -133,18 +136,40 @@ extern		"C" {
 
 #endif
 
+#if (SBGC_NEED_DEBUG && SBGC_NEED_CONFIRM_CMD)
+	#define	SBGC_DETAILED_CONFIRM	sbgcOFF			/*!<  Print additional codes upon completion of confirmation command processing		*/
+#endif
+
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *						   OS Support Configurations
  */
-#define		SBGC_USE_AZURE_RTOS		sbgcOFF			/*!<  User's applications uses Azure RTOS. Enable support of Azure RTOS				*/
-#define		SBGC_USE_FREE_RTOS		sbgcOFF			/*!<  User's applications uses FreeRTOS. Enable support of FreeRTOS					*/
-#if (SBGC_USE_AZURE_RTOS || SBGC_USE_FREE_RTOS)
-	#define	SBGC_THREAD_STACK_SIZE	256				/*!<  SBGC32 handler thread stack usage volume										*/
-	#define	SBGC_THREAD_PRIOR		3				/*!<  SBGC32 handler thread priority												*/
-#endif
-
+#define		SBGC_USE_AZURE_RTOS		sbgcOFF			/*!<  User's application uses Azure RTOS. Enable support of Azure RTOS				*/
+#define		SBGC_USE_FREE_RTOS		sbgcOFF			/*!<  User's application uses FreeRTOS. Enable support of FreeRTOS					*/
 #define		SBGC_USE_LINUX_OS		sbgcOFF			/*!<  User's application uses Linux OS (POSIX). Enable support of POSIX Thread		*/
+
+#if (SBGC_USE_AZURE_RTOS || SBGC_USE_FREE_RTOS || SBGC_USE_LINUX_OS)
+	#if (SBGC_USE_LINUX_OS == sbgcOFF)
+		#define	SBGC_THREAD_STACK_SIZE		256		/*!<  @ref Note5. @ref SBGC32_HandlerThread stack usage volume 						*/
+		#define	SBGC_THREAD_PRIOR			3		/*!<  @ref SBGC32_HandlerThread priority											*/
+		#define	SBGC_THREAD_QUIET_PRIOR		1		/*!<  @ref SBGC32_HandlerThread priority for handling retained serial commands		*/
+	#endif
+
+	#define	SBGC_NEED_AUTO_PING		sbgcOFF			/*!<  Add an automatic ping command to check the connection status of SBGC32		*/
+
+	#if (SBGC_NEED_AUTO_PING)
+		#define	SBGC_AUTO_PING_PERIOD		1000	/*!<  Units: milliseconds. The periodicity of the ping command retry request		*/
+
+		#if (SBGC_NEED_DEBUG)
+			#define	SBGC_LOG_AUTO_PING		sbgcOFF	/*!<  Enable logging for the ping command											*/
+		#endif
+
+		#if (SBGC_NEED_CALLBACKS)
+			#define	SBGC_AUTO_PING_CALLBACK	sbgcOFF	/*!<  A customizable callback function triggered every @ref SBGC_AUTO_PING_PERIOD
+														  milliseconds. See @ref SBGC32_AutoPingCallback function						*/
+		#endif
+	#endif
+#endif
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -152,7 +177,7 @@ extern		"C" {
  */
 #define		SBGC_USE_ARDUINO_DRIVER	sbgcON			/*!<  Using an Arduino board as a master device										*/
 #define		SBGC_USE_LINUX_DRIVER	sbgcOFF			/*!<  Using a Linux machine as a master device										*/
-#define		SBGC_USE_STM32_DRIVER	sbgcOFF			/*!<  Using a STM32 controller as a master device									*/
+#define		SBGC_USE_STM32_DRIVER	sbgcOFF			/*!<  Using an STM32 controller as a master device									*/
 
 
 #if (SBGC_USE_ARDUINO_DRIVER && (SBGC_SEVERAL_DEVICES == sbgcOFF))

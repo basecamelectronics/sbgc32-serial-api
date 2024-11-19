@@ -2492,6 +2492,7 @@ PREDEFINED             = SBGC_ADJVAR_MODULE=1 \
                          SBGC_DRIVERS_NUMBER=1 \
                          SBGC_DRV_ERROR_HANDLE=1 \
                          SBGC_CUSTOM_SPRINTF=1 \
+                         SBGC_NEED_AUTO_PING=1 \
                          SBGC_USES_DOXYGEN=1
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this

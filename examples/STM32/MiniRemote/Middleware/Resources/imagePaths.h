@@ -22,8 +22,7 @@
 
 typedef enum
 {
-	IPR_ARROW_RETURN_UP				= 0,
-	IPR_ARROW_RETURN_LEFT,
+	IPR_EXIT						= 0,
 
 	IPR_ARROW_UP,
 	IPR_ARROW_DOWN,

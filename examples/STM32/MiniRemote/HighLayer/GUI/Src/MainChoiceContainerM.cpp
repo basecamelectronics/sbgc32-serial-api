@@ -72,7 +72,7 @@ void CMainChoiceContainerM::Init (void)
 	{
 		{ (gCoord)(A1x + Ah), (gCoord)(A12y + ((Aw - textH) / 2)) },
 		{ (gCoord)(DISPLAY_WIDTH / 2), (gCoord)(A12y + ((Aw - textH) / 2)) },
-		{ (gCoord)((DISPLAY_WIDTH - textW) / 2), (gCoord)(A3y + Ah + 1)},
+		{ (gCoord)((DISPLAY_WIDTH - textW) / 2), (gCoord)(A3y + Ah + 3)},
 		{ (gCoord)((DISPLAY_WIDTH - textW) / 2), (gCoord)(A4y - textH - 2) }
 	};
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		debug.c
  *
@@ -41,6 +41,16 @@
 
 #define		SBGC_DEBUG_BUFF_SIZE	64
 
+#define		SBGC_LOG_BUFF_SIZE		((SBGC_LOG_COMMAND_TIME * -12) +\
+									(SBGC_LOG_COMMAND_NUMBER * -12) +\
+									(SBGC_LOG_COMMAND_DIR * -4) +\
+									(SBGC_LOG_COMMAND_NAME * -32) +\
+									(SBGC_LOG_COMMAND_ID * -7) +\
+									(SBGC_LOG_COMMAND_STATUS * -11) +\
+									((SBGC_LOG_COMMAND_PARAM * -5) * 4) +\
+									(SBGC_LOG_COMMAND_DATA * -6) +\
+									3)
+
 
 #define		calculateEndRx_()		(((uintptr_t)gSBGC->_api->rxCommandBuff) + (SBGC_RX_BUFF_TOTAL_SIZE - 1))
 
@@ -69,13 +79,13 @@ void DebugSBGC32_PrintMessage (sbgcGeneral_t *gSBGC, const char *str)
  *	@param	*data - printable data
  *	@param	length - length of printable data
  */
-void DebugSBGC32_PrintBuffer (sbgcGeneral_t *gSBGC, char *data, ui16 lenght)
+void DebugSBGC32_PrintBuffer (sbgcGeneral_t *gSBGC, char *data, ui16 length)
 {
 	#if (SBGC_NEED_ASSERTS)
 		if (gSBGC->_ll->drvTxDebug == NULL) return;
 	#endif
 
-	gSBGC->_ll->drvTxDebug(data, lenght);
+	gSBGC->_ll->drvTxDebug(data, length);
 }
 
 
@@ -342,15 +352,29 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 	{
 		if (serialCommand->parameters & SCParam_NO_NEED_LOG) return;
 
-		char logBuffer [SBGC_DEBUG_BUFF_SIZE] = { 0 };
+		char logBuffer [SBGC_LOG_BUFF_SIZE] = { 0 };
 		ui8 pointer = 0;
+
+		#if (SBGC_LOG_COMMAND_TIME)
+
+			ui8 minutes, seconds;
+			ui16 milliseconds;
+			sbgcTicks_t timestamp = sbgcGetTick();
+
+			milliseconds = timestamp % 1000;
+			seconds = ((timestamp - milliseconds) / 1000) % 60;
+			minutes = (((timestamp - milliseconds) / 1000) / 60) % 100;
+
+			pointer += gSBGC->_ll->debugSprintf(logBuffer, "[%02u:%02u:%03u] ", minutes, seconds, milliseconds);
+
+		#endif
 
 		#if (SBGC_LOG_COMMAND_NUMBER)
 
 			#ifdef _L32__
-				pointer += gSBGC->_ll->debugSprintf(logBuffer, "%u. ", serialCommand->_id);
+				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "%u. ", serialCommand->_CID);
 			#else
-				pointer += gSBGC->_ll->debugSprintf(logBuffer, "%lu. ", serialCommand->_id);
+				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "%lu. ", serialCommand->_CID);
 			#endif
 
 		#endif
@@ -358,48 +382,56 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 		#if (SBGC_LOG_COMMAND_DIR)
 
 			pointer += (serialCommand->parameters & SCParam_RX) ?
-						gSBGC->_ll->debugSprintf(&logBuffer[pointer], "<-- ", serialCommand->_id) :
-						gSBGC->_ll->debugSprintf(&logBuffer[pointer], "--> ", serialCommand->_id);
+					gSBGC->_ll->debugSprintf(&logBuffer[pointer], "<-- ") : gSBGC->_ll->debugSprintf(&logBuffer[pointer], "--> ");
 
 		#endif
 
 		#if (SBGC_LOG_COMMAND_NAME)
-			pointer += ParserSBGC32_ConvertCommandID_ToString(serialCommand, &logBuffer[pointer], SBGC_DEBUG_BUFF_SIZE - pointer);
-			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " ");
+
+			pointer += ParserSBGC32_ConvertCommandID_ToString(serialCommand, &logBuffer[pointer], SBGC_LOG_BUFF_SIZE - pointer);
+			logBuffer[pointer] = ' ';
+			pointer++;
+
 		#endif
 
 		#if (SBGC_LOG_COMMAND_ID)
-			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(#%d): ", serialCommand->_commandID);
+			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(#%d) ", serialCommand->_commandID);
+		#endif
+
+		#if ((SBGC_LOG_COMMAND_STATUS | SBGC_LOG_COMMAND_PARAM | SBGC_LOG_COMMAND_DATA) && (SBGC_LOG_COMMAND_NAME | SBGC_LOG_COMMAND_ID))
+			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer - 1], ": ") - 1;
 		#endif
 
 		#if (SBGC_LOG_COMMAND_STATUS)
-			pointer += ParserSBGC32_ConvertCommandStatusToString(serialCommand, &logBuffer[pointer], SBGC_DEBUG_BUFF_SIZE - pointer);
-			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " ");
+
+			pointer += ParserSBGC32_ConvertCommandStatusToString(serialCommand, &logBuffer[pointer], SBGC_LOG_BUFF_SIZE - pointer);
+			logBuffer[pointer] = ' ';
+			pointer++;
+
 		#endif
 
 		#if (SBGC_LOG_COMMAND_PARAM && SBGC_NON_BLOCKING_MODE)
 
-			if (serialCommand->parameters & SCParam_TX_CALLBACK) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " (TC)");
-			if (serialCommand->parameters & SCParam_FORCE_CALLBACK) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " (FC)");
-
-			if (serialCommand->parameters & SCParam_RETAIN) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " (RT)");
+			if (serialCommand->parameters & SCParam_TX_CALLBACK) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(TC) ");
+			if (serialCommand->parameters & SCParam_FORCE_CALLBACK) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(FC) ");
+			if (serialCommand->parameters & SCParam_RETAIN) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(RT) ");
 
 			#if (SBGC_USES_OS_SUPPORT)
-				if (serialCommand->parameters & SCParam_FREEZE) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " (FT)");
+				if (serialCommand->parameters & SCParam_FREEZE) pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "(FT) ");
 			#endif
 
 		#endif
 
 		#if (SBGC_LOG_COMMAND_DATA)
 			if ((serialCommand->_state == SCState_PROCESSED) && serialCommand->_payloadSize)
-				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], " [%d]:", serialCommand->_payloadSize);
+				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "[%d]:", serialCommand->_payloadSize);
 
 			else
 		#endif
 
 				logBuffer[pointer] = '\n';
 
-		if (pointer >= SBGC_DEBUG_BUFF_SIZE)
+		if (pointer >= SBGC_LOG_BUFF_SIZE)
 			SerialAPI_FatalErrorHandler();
 
 		DebugSBGC32_PrintMessage(gSBGC, logBuffer);
@@ -410,7 +442,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 				return;
 
 			ui8 payloadSize = serialCommand->_payloadSize;
-			ui8 payloadPacketSize = ((payloadSize * 4) > SBGC_DEBUG_BUFF_SIZE) ? SBGC_DEBUG_BUFF_SIZE : (payloadSize * 4);
+			ui8 payloadPacketSize = ((payloadSize * 4) > SBGC_LOG_BUFF_SIZE) ? SBGC_LOG_BUFF_SIZE : (payloadSize * 4);
 			ui8 payloadOffset = 0;
 			ui8 *payloadPointer = serialCommand->_payload;
 
@@ -439,14 +471,14 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 
 				if (payloadSize)
 				{
-					payloadPacketSize = ((payloadSize * 4) > SBGC_DEBUG_BUFF_SIZE) ? SBGC_DEBUG_BUFF_SIZE : (payloadSize * 4);
-					DebugSBGC32_PrintBuffer(gSBGC, logBuffer, SBGC_DEBUG_BUFF_SIZE);
+					payloadPacketSize = ((payloadSize * 4) > SBGC_LOG_BUFF_SIZE) ? SBGC_LOG_BUFF_SIZE : (payloadSize * 4);
+					DebugSBGC32_PrintBuffer(gSBGC, logBuffer, SBGC_LOG_BUFF_SIZE - (SBGC_LOG_BUFF_SIZE % 4));
 				}
 
 				else
 				/* Finish */
 				{
-					if (pointer < (SBGC_DEBUG_BUFF_SIZE / 4))
+					if (pointer < ((SBGC_LOG_BUFF_SIZE - (SBGC_LOG_BUFF_SIZE % 4)) / 4))
 					{
 						logBuffer[pointer * 4] = '\n';
 						DebugSBGC32_PrintMessage(gSBGC, logBuffer);
@@ -454,14 +486,14 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 
 					else
 					{
-						DebugSBGC32_PrintBuffer(gSBGC, logBuffer, SBGC_DEBUG_BUFF_SIZE);
+						DebugSBGC32_PrintBuffer(gSBGC, logBuffer, SBGC_LOG_BUFF_SIZE - (SBGC_LOG_BUFF_SIZE % 4));
 						DebugSBGC32_PrintMessage(gSBGC, " \n");
 					}
 
 					break;
 				}
 
-				payloadOffset += (SBGC_DEBUG_BUFF_SIZE / 4);
+				payloadOffset += (SBGC_LOG_BUFF_SIZE / 4);
 			}
 
 		#endif
@@ -477,7 +509,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 	 */
 	void PrivateSerialAPI_LinkDebug (sbgcGeneral_t *gSBGC)
 	{
-		gSBGC->_api->writeLog = DebugSBGC32_WriteLog;
+		gSBGC->_api->log = DebugSBGC32_WriteLog;
 	}
 
 #endif

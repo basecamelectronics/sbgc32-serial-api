@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		eeprom.c
  *
@@ -83,7 +83,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  *	@param	*I2C_RegBuff - structure with prepared I2C data
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteRegBuffI2C (sbgcGeneral_t *gSBGC, const sbgcI2C_RegBuff_t *I2C_RegBuff, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -98,7 +98,7 @@ sbgcCommandStatus_t SBGC32_WriteRegBuffI2C (sbgcGeneral_t *gSBGC, const sbgcI2C_
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_I2C_WRITE_REG_BUF SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -141,7 +141,7 @@ sbgcCommandStatus_t SBGC32_WriteRegBuffI2C (sbgcGeneral_t *gSBGC, const sbgcI2C_
  *	@param	*I2C_RegBuff - structure with prepared service
  *			I2C data and also storing the received data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadRegBuffI2C (sbgcGeneral_t *gSBGC, sbgcI2C_RegBuff_t *I2C_RegBuff
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -156,7 +156,7 @@ sbgcCommandStatus_t SBGC32_ReadRegBuffI2C (sbgcGeneral_t *gSBGC, sbgcI2C_RegBuff
 	gSBGC->_api->assignEvent(gSBGC, NULL, I2C_RegBuff->data, SBGC_MAX_PAYLOAD_SIZE);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -198,7 +198,7 @@ sbgcCommandStatus_t SBGC32_ReadRegBuffI2C (sbgcGeneral_t *gSBGC, sbgcI2C_RegBuff
  *	@param	size - size of data
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, const i8 *data, ui16 size, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -213,7 +213,7 @@ sbgcCommandStatus_t SBGC32_WriteEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, const i
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EEPROM_WRITE SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -264,7 +264,7 @@ static void PostReadEEPROM (sbgcGeneral_t *gSBGC)
  *	@param	*data - prepared payload space
  *	@param	size - size of read data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, i8 *data, ui16 size
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -281,7 +281,7 @@ sbgcCommandStatus_t SBGC32_ReadEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, i8 *data
 	gSBGC->_api->assignEvent(gSBGC, PostReadEEPROM, data, size);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -316,7 +316,7 @@ sbgcCommandStatus_t SBGC32_ReadEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, i8 *data
  *	@param	*data - writable payload array
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteExternalData (sbgcGeneral_t *gSBGC, const i8 *data, sbgcConfirm_t *confirm
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -327,7 +327,7 @@ sbgcCommandStatus_t SBGC32_WriteExternalData (sbgcGeneral_t *gSBGC, const i8 *da
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_EXTERNAL_DATA SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -358,7 +358,7 @@ sbgcCommandStatus_t SBGC32_WriteExternalData (sbgcGeneral_t *gSBGC, const i8 *da
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*data - 128 bytes prepared payload space
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadExternalData (sbgcGeneral_t *gSBGC, i8 *data
 											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -370,7 +370,7 @@ sbgcCommandStatus_t SBGC32_ReadExternalData (sbgcGeneral_t *gSBGC, i8 *data
 	gSBGC->_api->assignEvent(gSBGC, NULL, data, SBGC_EEPROM_USER_DATA_LEN);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -415,7 +415,7 @@ sbgcCommandStatus_t SBGC32_ReadExternalData (sbgcGeneral_t *gSBGC, i8 *data
  *	@param	*writeReadFile - structure with written file
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteFile (sbgcGeneral_t *gSBGC, const sbgcWriteReadFile_t *writeReadFile, sbgcConfirm_t *confirm
 									  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -429,7 +429,7 @@ sbgcCommandStatus_t SBGC32_WriteFile (sbgcGeneral_t *gSBGC, const sbgcWriteReadF
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_FILE SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -486,7 +486,7 @@ static void PostReadFile (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*writeReadFile - structure for reading file
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadFile (sbgcGeneral_t *gSBGC, sbgcWriteReadFile_t *writeReadFile
 									 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -502,7 +502,7 @@ sbgcCommandStatus_t SBGC32_ReadFile (sbgcGeneral_t *gSBGC, sbgcWriteReadFile_t *
 	gSBGC->_api->assignEvent(gSBGC, PostReadFile, writeReadFile, sizeof(sbgcWriteReadFile_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -544,7 +544,7 @@ sbgcCommandStatus_t SBGC32_ReadFile (sbgcGeneral_t *gSBGC, sbgcWriteReadFile_t *
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ClearFileSystem (sbgcGeneral_t *gSBGC
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )

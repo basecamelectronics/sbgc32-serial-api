@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		lowLayer.c
  *
@@ -88,57 +88,65 @@
 /**	@addtogroup	Low_Layer
  *	@{
  */
-/**	@brief	Calculates the checksum for the first version
- *			of the SBGC32 communication protocol
- *
- *	@note	Private function
- *
- *	@param	*data - data buffer for calculate
- *	@param	length - size of data buffer
- *
- *	@return	Calculated checksum
- */
-static ui8 SerialAPI_Modulo256_Calculate (ui8 *data, ui16 length)
-{
-	i32 totalSum = 0;
+#if ((SBGC_PROTOCOL_VERSION == 1) || SBGC_USES_DOXYGEN)
 
-	while (--length)
-		totalSum += *(data++);
-
-	return totalSum % 256;
-}
-
-
-/**	@brief	Calculates the checksum for the second version
- *			of the SBGC32 communication protocol
- *
- *	@note	Private function
- *
- *	@param	*data - data buffer for calculate
- *	@param	length - size of data buffer
- *
- *	@return	Calculated checksum
- */
-static ui16 SerialAPI_CRC16_Calculate (ui8 const *data, ui16 length)
-{
-	ui16 CRC_Register = 0;
-	ui8 shiftRegister, dataBit, CRC_Bit;
-
-	for (ui16 i = 0; i < length; i++)
+	/**	@brief	Calculates the checksum for the first version
+	 *			of the SBGC32 communication protocol
+	 *
+	 *	@note	Private function
+	 *
+	 *	@param	*data - data buffer for calculate
+	 *	@param	length - size of data buffer
+	 *
+	 *	@return	Calculated checksum
+	 */
+	static ui8 SerialAPI_Modulo256_Calculate (ui8 *data, ui16 length)
 	{
-		for (shiftRegister = 1; shiftRegister > 0; shiftRegister <<= 1)
-		{
-			dataBit = (data[i] & shiftRegister) ? 1 : 0;
-			CRC_Bit = CRC_Register >> 15;
-			CRC_Register <<= 1;
+		i32 totalSum = 0;
 
-			if (dataBit != CRC_Bit)
-				CRC_Register ^= SBGC_CRC16_POLYNOM;
-		}
+		while (--length)
+			totalSum += *(data++);
+
+		return totalSum % 256;
 	}
 
-	return CRC_Register;
-}
+#endif
+
+
+#if ((SBGC_PROTOCOL_VERSION == 2) || SBGC_USES_DOXYGEN)
+
+	/**	@brief	Calculates the checksum for the second version
+	 *			of the SBGC32 communication protocol
+	 *
+	 *	@note	Private function
+	 *
+	 *	@param	*data - data buffer for calculate
+	 *	@param	length - size of data buffer
+	 *
+	 *	@return	Calculated checksum
+	 */
+	static ui16 SerialAPI_CRC16_Calculate (ui8 const *data, ui16 length)
+	{
+		ui16 CRC_Register = 0;
+		ui8 shiftRegister, dataBit, CRC_Bit;
+
+		for (ui16 i = 0; i < length; i++)
+		{
+			for (shiftRegister = 1; shiftRegister > 0; shiftRegister <<= 1)
+			{
+				dataBit = (data[i] & shiftRegister) ? 1 : 0;
+				CRC_Bit = CRC_Register >> 15;
+				CRC_Register <<= 1;
+
+				if (dataBit != CRC_Bit)
+					CRC_Register ^= SBGC_CRC16_POLYNOM;
+			}
+		}
+
+		return CRC_Register;
+	}
+
+#endif
 
 
 /**	@brief	Forms a serial command from the buffer
@@ -163,20 +171,15 @@ static void SBGC32_TX (sbgcGeneral_t *gSBGC)
 	/* ui8 size = real size current gSBGC->_api->currentSerialCommand */
 	ui8 size = gSBGC->_api->currentSerialCommand->_payloadSize + SBGC_SERVICE_BYTES_NUM;
 
-	if (SBGC_PROTOCOL_VERSION == 1)
+	#if (SBGC_PROTOCOL_VERSION == 1)
+
 		dataBuff[4 + gSBGC->_api->currentSerialCommand->_payloadSize] =
 				SerialAPI_Modulo256_Calculate(gSBGC->_api->currentSerialCommand->_payload, gSBGC->_api->currentSerialCommand->_payloadSize);
 
-	else  // V.2
-	{
+	#else  // V.2
+
 		ui16 CRC16_Res = SerialAPI_CRC16_Calculate(&dataBuff[1], (4 + gSBGC->_api->currentSerialCommand->_payloadSize) - 1);
 		memcpy(&dataBuff[4 + gSBGC->_api->currentSerialCommand->_payloadSize], &CRC16_Res, sizeof(CRC16_Res));
-	}
-
-	#if (SBGC_USES_BLOCKING_MODE)
-
-		/* Launch timer */
-		sbgcTicks_t launchTime = serialAPI_GetTick();
 
 	#endif
 
@@ -185,15 +188,24 @@ static void SBGC32_TX (sbgcGeneral_t *gSBGC)
 
 	#if (SBGC_NON_BLOCKING_MODE)
 
+		gSBGC->_api->currentSerialCommand->_timestamp = serialAPI_GetTick();
+
 		if (txStatus != SBGC_DRV_TX_OK_FLAG)
 		{
 
 	#else
 
-		while ((serialAPI_GetTick() - launchTime) < gSBGC->_api->currentSerialCommand->timeout &&
-			   (txStatus != SBGC_DRV_TX_OK_FLAG))
+		/* Launch timer */
+		sbgcTicks_t launchTime = serialAPI_GetTick();
+
+		while (((serialAPI_GetTick() - launchTime) < gSBGC->_api->currentSerialCommand->timeout) && (txStatus != SBGC_DRV_TX_OK_FLAG))
 		/* Try to transmit the command while its time isn't over */
+		{
 			txStatus = gSBGC->_ll->drvTx(gSBGC->_ll->drv, dataBuff, size);
+
+			/* Enter to user's waiting handler */
+			SerialAPI_CommandWaitingHandler(gSBGC);
+		}
 
 		if (txStatus != SBGC_DRV_TX_OK_FLAG)
 		{
@@ -201,6 +213,10 @@ static void SBGC32_TX (sbgcGeneral_t *gSBGC)
 	#endif
 
 			gSBGC->_lastSerialCommandStatus = serialAPI_TX_BUS_BUSY_ERROR;
+
+			/* Enter to user's waiting handler */
+			SerialAPI_CommandWaitingHandler(gSBGC);
+
 			return;
 		}
 
@@ -315,8 +331,8 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 			}
 
 			/* Checksum checking */
-			if (SBGC_PROTOCOL_VERSION == 1)  // V.1
-			{
+			#if (SBGC_PROTOCOL_VERSION == 1)  // V.1
+
 				if (complexBuff[3 + headBuff[1]] != SerialAPI_Modulo256_Calculate(&complexBuff[3], headBuff[1]))
 				/* The command came corrupted. Break it, look forward for a new command */
 				{
@@ -324,10 +340,9 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 					parserState = STATE_RESYNC;
 					break;
 				}
-			}
 
-			else  // V.2
-			{
+			#else  // V.2
+
 				memcpy(complexBuff, headBuff, 3);
 				ui16 CRC_Res = SerialAPI_CRC16_Calculate(complexBuff, headBuff[1] + 3);
 
@@ -339,7 +354,8 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 					parserState = STATE_RESYNC;
 					break;
 				}
-			}
+
+			#endif
 
 			#if (SBGC_NEED_CONFIRM_CMD == sbgcOFF)
 

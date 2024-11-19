@@ -219,6 +219,8 @@ class MiniRemoteGeneral
 		MiniRemoteState_t	currentState;
 
 		/* Other */
+		volatile ui8		chosenMixChannel;
+
 		ui16				currentBrightness,
 							tempBrightness;
 
@@ -293,6 +295,9 @@ class MiniRemoteGeneral
 		font_t				GetSmallFont (void) { return GUI.smallFont; }
 		font_t				GetMediumFont (void) { return GUI.mediumFont; }
 		font_t				GetLargeFont (void) { return GUI.largeFont; }
+
+		void				SetCurrentMixerChannel (ui8 newChannel) { chosenMixChannel = newChannel; }
+		ui8					GetCurrentMixerChannel (void) { return chosenMixChannel; }
 
 		void				SetTempBrightness (ui16 value) { tempBrightness = value; }
 		ui16				*GetAddressBrightness (void) { return &currentBrightness; }

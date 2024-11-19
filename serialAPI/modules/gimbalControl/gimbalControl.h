@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		gimbalControl.h
  *
@@ -44,6 +44,8 @@
  *				### CMD_CONTROL
  *				### CMD_CONTROL_EXT
  *				### CMD_CONTROL_QUAT
+ *				### CMD_EXT_MOTORS_ACTION
+ *				### CMD_EXT_MOTORS_CONTROL
  *
  *	@defgroup	Control_Config Control Configuration
  *	@ingroup	Gimbal_Control
@@ -53,6 +55,7 @@
  *
  *				### CMD_CONTROL_CONFIG
  *				### CMD_CONTROL_QUAT_CONFIG
+ *				### CMD_EXT_MOTORS_CONTROL_CONFIG
  *
  *	@defgroup	Virt_Channels Virtual Channels
  *	@ingroup	Gimbal_Control
@@ -103,7 +106,7 @@ typedef enum
 														  16bit parameter range															*/
 	CtrlMODE_SPEED_ANGLE			= 3,			/*!<  Gimbal travels with the given SPEED parameter. Additionally, controller keeps
 														  the given angle and fixes the accumulated error by adjusting the actual speed
-														  in a direction of error minimization, defined by the “Outer P” GUI parameter.
+														  in a direction of error minimization, defined by the "Outer P" GUI parameter.
 														  This error may appear because the estimated target angle (integral of SPEED
 														  by dt) may differ from the actual target angle, because the actual target
 														  speed is internally filtered by LPF and acceleration limit, if they are
@@ -201,6 +204,18 @@ typedef enum
 }	sbgcControlExtDataSet_t;
 
 
+/**	@note	sbgcAxisCE_t.modeFlags
+ */
+typedef enum
+{
+	CEF_DISABLE_ANGLE_ERR_CORR		= BIT_0_SET		/*!<  Disable the setpoint angle error correction. If disabled, the actual angle
+														  may not precisely match the commanded angle when controlling gimbal in
+														  ANGLE-related modes (including follow-mix and servo mode). The effect
+														  is equal to setting 'OuterP' parameter to 0									*/
+
+}	sbgcControlExtFlag_t;
+
+
 /**	@note	@ref SBGC32_ExtMotorsAction, 3 arg
  */
 typedef enum
@@ -216,10 +231,11 @@ typedef enum
 }	sbgcExtMotorAction_t;
 
 
-/**	@note	@ref SBGC32_ExtMotorsAction, 3 arg
+/**	@note	@ref SBGC32_ControlExtMotors, 4 arg
  */
 typedef enum
 {
+	EMP_16BIT_SETPOINT				= 0,
 	EMP_32BIT_SETPOINT				= BIT_0_SET,
 	EMP_PARAM1_IS_16BIT				= BIT_1_SET,
 	EMP_PARAM1_IS_32BIT				= BIT_2_SET
@@ -310,7 +326,7 @@ typedef enum
 /**	@addtogroup	Control
  *	@{
  */
-/**	@brief	Part of Control_t structure
+/**	@brief	Part of sbgcControl_t structure
  *
  *	@note	sbgcControl_t.AxisC
  */
@@ -324,7 +340,7 @@ typedef struct PACKED__
 			angle;									/*!<  Units: 0.02197265625 degree. Use the @ref sbgcAngleToDegree macro
 														  to comfortable work with this field											*/
 
-}			sbgcAxisC_t;
+}	sbgcAxisC_t;
 
 /**	@brief	Structure type for real-time gimbal
  *			position control operation
@@ -357,7 +373,7 @@ typedef struct PACKED__
 typedef struct PACKED__
 {
 	ui8		mode;									/*!<  See @ref sbgcControlMode_t and @ref sbgcControlFlag_t enumerations			*/
-	ui8		modeFlags;								/*!<  Reserved																		*/
+	ui8		modeFlags;								/*!<  See @ref sbgcControlExtFlag_t enumeration										*/
 	i32		speed;									/*!<  Units: 0.1220740379 degrees/sec or
 														  Units: 0.001 degrees/sec, if CtrlFLAG_HIGH_RES_SPEED is set.
 														  See @ref sbgcControlFlag_t enumeration and sbgcAxisCE_t.mode field.
@@ -369,7 +385,7 @@ typedef struct PACKED__
 	i32		angle;									/*!<  Units: 0.02197265625 degree. Use the @ref sbgcAngleToDegree macro
 														  to comfortable work with this field											*/
 
-}			sbgcAxisCE_t;
+}	sbgcAxisCE_t;
 
 /**	@brief	Structure type for real-time gimbal position
  *			control operation in extended format
@@ -421,9 +437,10 @@ typedef struct PACKED__
 #endif
 
 
-/**	@brief	Part of sbgcControlExtMotors_t structure
+/**	@brief	Structure type for control
+ *			extra motors
  *
- *	@note	sbgcControlExtMotors_t.CE_Motor
+ *	@ref	SBGC32_ControlExtMotors function
  */
 typedef struct PACKED__
 {
@@ -447,32 +464,7 @@ typedef struct PACKED__
 														  EMP_PARAM1_IS_16BIT, EMP_PARAM1_IS_32BIT of
 														  sbgcControlExtMotors_t.dataSet is set											*/
 
-}	sbgcCE_Motor_t;
-
-/**	@brief	Structure type for control
- *			extra motors
- *
- *	@ref	SBGC32_ControlExtMotors function
- */
-typedef struct PACKED__
-{
-	ui8		forMotors;								/*!<  See @ref sbgcExtMotorID_t enumeration											*/
-	ui8		dataSet;								/*!<  See @ref sbgcExtMotorParam_t enumeration										*/
-
-	sbgcCE_Motor_t
-			CE_Motor [SBGC_EXTRA_MOTORS_NUM];		/*!<  0 : 1 : 2 : 3 : 4 : 5 : 6														*/
-
 }	sbgcControlExtMotors_t;
-
-
-#if (SBGC_USES_REF_INFO)
-	/**	@cond
-	 */
-	extern const sbgcParameterReferenceInfo_t extMotorsControlReferenceInfoArray [];
-	extern const ui8 extMotorsControlReferenceInfoArrayElCnt;
-	/**	@endcond
-	 */
-#endif
 /**	@}
  */
 
@@ -509,7 +501,7 @@ typedef struct PACKED__
 														  1 – disable jerk slope function. Frw. ver. 2.70b8+							*/
 	ui8		reserved1;
 
-}			sbgcAxisCCtrl_t;
+}	sbgcAxisCCtrl_t;
 
 /**	@brief	Structure type for real-time gimbal
  *			position control configuration
@@ -536,7 +528,7 @@ typedef struct PACKED__
 	ui8		EulerOrder;								/*!<  See @ref sbgcEulerOrder_t enumeration. Frw. ver. 2.72b0+						*/
 	ui8		reserved2 [9];
 
-}			sbgcControlConfig_t;
+}	sbgcControlConfig_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -631,12 +623,11 @@ typedef struct PACKED__
 sbgcCommandStatus_t SBGC32_Control (sbgcGeneral_t *gSBGC, const sbgcControl_t *control SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ControlExt (sbgcGeneral_t *gSBGC, const sbgcControlExt_t *controlExt SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ControlQuat (sbgcGeneral_t *gSBGC, const sbgcControlQuat_t *controlQuat SBGC_ADVANCED_PARAMS__);
-#if (SBGC_COMING_SOON || SBGC_USES_DOXYGEN)
-	sbgcCommandStatus_t SBGC32_ExtMotorsAction (sbgcGeneral_t *gSBGC, sbgcExtMotorID_t id, sbgcExtMotorAction_t action, sbgcConfirm_t *confirm
-												SBGC_ADVANCED_PARAMS__);
-	sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlExtMotors_t *controlExtMotors, sbgcConfirm_t *confirm
-												 SBGC_ADVANCED_PARAMS__);
-#endif
+sbgcCommandStatus_t SBGC32_ExtMotorsAction (sbgcGeneral_t *gSBGC, sbgcExtMotorID_t id, sbgcExtMotorAction_t action, sbgcConfirm_t *confirm
+											SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlExtMotors_t *controlExtMotors, sbgcExtMotorID_t id,
+											 sbgcExtMotorParam_t dataSet, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ );
 /**	@}
  */
 
@@ -648,10 +639,8 @@ sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcContro
 										  SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ControlQuatConfig (sbgcGeneral_t *gSBGC, const sbgcControlQuatConfig_t *controlQuatConfig, sbgcConfirm_t *confirm
 											  SBGC_ADVANCED_PARAMS__);
-#if (SBGC_COMING_SOON || SBGC_USES_DOXYGEN)
-	sbgcCommandStatus_t SBGC32_ExtMotorsControlConfig (sbgcGeneral_t *gSBGC, const sbgcExtMotorsControlConfig_t *extMotorsControlConfig,
-													   sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
-#endif
+sbgcCommandStatus_t SBGC32_ExtMotorsControlConfig (sbgcGeneral_t *gSBGC, const sbgcExtMotorsControlConfig_t *extMotorsControlConfig,
+												   sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
 /**	@}
  */
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		parser.h
  *
@@ -47,6 +47,11 @@ extern		"C" {
 #include	"../../sbgc32.h"
 
 
+#define		SBGC_DEVICE_TYPE_MAX_LEN		18
+#define		SBGC_BOARD_VERSION_MAX_LEN		5
+#define		SBGC_FIRMWARE_VERSION_MAX_LEN	8
+
+
 /**	@addtogroup	Data_Parse
  *	@{
  */
@@ -81,6 +86,10 @@ ui8 ParserSBGC32_ConvertSerialStatusToString (serialAPI_CommandStatus_t serialSt
 ui8 ParserSBGC32_ConvertCommunicationStatusToString (sbgcCommandStatus_t communicationStatus, char *str, ui8 size);
 ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *cmd, char *str, ui8 size);
 ui8 ParserSBGC32_ConvertCommandStatusToString (serialAPI_Command_t *cmd, char *str, ui8 size);
+#if (SBGC_DETAILED_CONFIRM)
+	ui8 ParserSBGC32_ConvertErrorCodeToString (sbgcConfirm_t *confirm, char *str, ui8 size);
+#endif
+void ParserSBGC32_FormatDeviceType (sbgcGeneral_t *gSBGC, ui8 boardVer, char *pBuff, ui8 size);
 void ParserSBGC32_FormatBoardVersion (sbgcGeneral_t *gSBGC, ui8 boardVer, char *pBuff, ui8 size);
 void ParserSBGC32_FormatFirmwareVersion (sbgcGeneral_t *gSBGC, ui16 firmwareVer, char *pBuff, ui8 size);
 /**	@}

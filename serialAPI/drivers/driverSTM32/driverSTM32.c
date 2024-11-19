@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		driverSTM32.c
  *
@@ -669,6 +669,16 @@
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													Executable Functions
  */
+#if (SBGC_STM32_CUSTOM_DRV == sbgcOFF)
+
+	WEAK__ void DriverSBGC32_MX_Init (void)
+	{
+		;
+	}
+
+#endif
+
+
 /**	@brief	Initializes the driver object of sbgcGeneral_t
  *
  *	@param	**driver - main hardware driver object
@@ -789,6 +799,21 @@ void DriverSBGC32_Deinit (void **driver)
 		DISABLE_UART_CR1_RXNEIE(drv->uart);
 		DISABLE_UART_CR1_IDLEIE(drv->uart);
 
+	#elif (SBGC_DRV_HAL_DMA_UART)
+
+		HAL_UART_DMAStop(drv->uart);
+		HAL_UART_DeInit(drv->uart);
+
+		if (drv->uart->hdmatx != NULL)
+			HAL_DMA_DeInit(drv->uart->hdmatx);
+
+		if (drv->uart->hdmarx != NULL)
+			HAL_DMA_DeInit(drv->uart->hdmarx);
+
+	#endif
+
+	#if (SBGC_DRV_USE_UART_DEBUG)
+		HAL_UART_DeInit(SBGC_DEBUG_SERIAL_PORT);
 	#endif
 
 	#if (SBGC_DRV_HAL_TIMER || SBGC_DRV_LL_TIMER)
@@ -798,6 +823,9 @@ void DriverSBGC32_Deinit (void **driver)
 	memset(*driver, 0, sizeof(sbgcDriver_t));
 
 	sbgcFree(*driver);
+
+	/* Return to the initial point */
+	DriverSBGC32_MX_Init();
 }
 
 

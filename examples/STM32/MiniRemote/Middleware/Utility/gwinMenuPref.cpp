@@ -245,6 +245,16 @@ void CGWIN_Menu::Enter (GWidgetObject *gw)
 
 					break;
 
+				case FUNC_EDIT_MIXER_INVERSION :
+					if (MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()].inversion == MIX_CHANNEL_DIRECT)
+						MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()].inversion = MIX_CHANNEL_INVERTED;
+
+					else
+						MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()].inversion = MIX_CHANNEL_DIRECT;
+
+					SettingsLoader.SaveRemoteParameter(&MiniRemote.Presets.mixChannel[MiniRemote.GetCurrentMixerChannel()].inversion);
+					break;
+
 				case FUNC_EDIT_CONTROL_INVERSION :
 					Gimbal.GetChosenControlHandler()->invert = (sbgcBoolean_t)!Gimbal.GetChosenControlHandler()->invert;
 					SettingsLoader.SaveGimbalParameter(&Gimbal.GetChosenControlHandler()->invert);
@@ -303,14 +313,17 @@ void CGWIN_Menu::Enter (GWidgetObject *gw)
 					break;
 			}
 
+			if (psCurrentItem->FuncID != FUNC_EDIT_MIXER_INVERSION)
 			/* Toggling */
-			if (psCurrentItem->param <= 0xFF)
-				psCurrentItem->param = !psCurrentItem->param;
-
-			else
 			{
-				ui8 paramTemp = *(ui8*)psCurrentItem->param;
-				*(ui8*)psCurrentItem->param = !paramTemp;
+				if (psCurrentItem->param <= 0xFF)
+					psCurrentItem->param = !psCurrentItem->param;
+
+				else
+				{
+					ui8 paramTemp = *(ui8*)psCurrentItem->param;
+					*(ui8*)psCurrentItem->param = !paramTemp;
+				}
 			}
 
 			break;
@@ -657,9 +670,6 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 
 	iheight = GetTotalIheight(gw);
 
-	/* The scroll area */
-	DrawScrollBar(gw, GFX_DARK_GRAY);
-
 	static sMenuItem *selectedItemTemp = NULL;
 
 	coord_t _y;  // The start position
@@ -677,55 +687,68 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 	static i16 scrollingMarginTemp = 0;
 	static ui16 selectedItemScroll = 0;
 
-	if (selectedItemTemp != psSelectedItem)
-	{
-		scrollFinishDelayFlag = sbgcFALSE;
-		scrollDelayTimer = osGetTickCount();
-		scrollApplyFlag = sbgcFALSE;
-
-		selectedItemScroll = 0;
-	}
-
-	selectedItemTemp = psSelectedItem;
-
-
-	if (scrollFinishDelayFlag == sbgcFALSE)
+	if ((psSelectedItem->ItemType == ITEM_TYPE_VALUE) || (psSelectedItem->ItemType == ITEM_TYPE_ADJVAR))
 	{
 		scrollingMarginTemp = DISPLAY_WIDTH - gdispGetStringWidth(psSelectedItem->value, MiniRemote.GetMediumFont()) -
-							  MENU_ITEM_VALUE_MIN_SPACING - 16 - gdispGetStringWidth(psSelectedItem->pTitle, MiniRemote.GetMediumFont());
-
-		if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_DELAY)
-			scrollApplyFlag = sbgcTRUE;
+				MENU_ITEM_VALUE_MIN_SPACING - 16 - gdispGetStringWidth(psSelectedItem->pTitle, MiniRemote.GetMediumFont());
 
 		if (scrollingMarginTemp < 0)
-			scrollingMargin = abs(scrollingMarginTemp);
-
-		else
-			scrollingMargin = 0;
-
-		if ((selectedItemScroll < scrollingMargin) && (scrollApplyFlag == sbgcTRUE))
-			selectedItemScroll += STRING_SCROLLING_SPEED;
-
-		if (selectedItemScroll >= scrollingMargin)
+		/* We need to calculate the shifting */
 		{
-			scrollFinishDelayFlag = sbgcTRUE;
-			scrollDelayTimer = osGetTickCount();
-		}
-	}
+			if (selectedItemTemp != psSelectedItem)
+			{
+				scrollFinishDelayFlag = sbgcFALSE;
+				scrollDelayTimer = osGetTickCount();
+				scrollApplyFlag = sbgcFALSE;
 
-	else
-	{
-		if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_DELAY)
-		{
-			scrollFinishDelayFlag = sbgcFALSE;
-			selectedItemScroll = 0;
-			scrollApplyFlag = sbgcFALSE;
-			scrollDelayTimer = osGetTickCount();
+				selectedItemScroll = 0;
+			}
+
+			scrollingMargin = -scrollingMarginTemp;
+
+			if (scrollFinishDelayFlag == sbgcFALSE)
+			{
+				if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_START_DELAY)
+					scrollApplyFlag = sbgcTRUE;
+
+				else
+					scrollingMargin = 0;
+
+				if ((selectedItemScroll < scrollingMargin) && (scrollApplyFlag == sbgcTRUE))
+					selectedItemScroll += STRING_SCROLLING_SPEED;
+
+				if ((selectedItemScroll >= scrollingMargin) && (scrollingMargin != 0))
+				{
+					scrollFinishDelayFlag = sbgcTRUE;
+					scrollDelayTimer = osGetTickCount();
+				}
+			}
+
+			else if ((osGetTickCount() - scrollDelayTimer) > STRING_SCROLLING_FINISH_DELAY)
+			{
+				scrollFinishDelayFlag = sbgcFALSE;
+				selectedItemScroll = 0;
+				scrollDelayTimer = osGetTickCount();
+			}
+
+			selectedItemTemp = psSelectedItem;
 		}
 	}
 
 	if ((!scrollApplyFlag) && (!MiniRemote.GetRedrawMenuFlag()))
 		return;
+
+	else if (MiniRemote.GetRedrawMenuFlag())
+	/* The scroll area */
+	{
+		DrawScrollBar(gw, GFX_DARK_GRAY);
+
+		selectedItemScroll = 0;
+		selectedItemTemp = NULL;
+	}
+
+	if (scrollApplyFlag && (selectedItemScroll == 0))
+		scrollApplyFlag = sbgcFALSE;
 
 	/* Processing */
 	for (ui8 i = 0; i < sMenuCount; i++)
@@ -771,9 +794,9 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 				else
 				{
 					gdispGFillStringBoxCustom(gw->g.display, _x, _y, item_width, item_height, (const char*)psItem->pTitle, gw->g.font,
-						(psItem == psSelectedItem) ? gw->pstyle->background : ps->text,
-						(psItem == psSelectedItem) ? ps->text : gw->pstyle->background,
-						justify);
+							(psItem == psSelectedItem) ? gw->pstyle->background : ps->text,
+							(psItem == psSelectedItem) ? ps->text : gw->pstyle->background,
+							justify);
 
 					justify = justifyRight;
 				}
@@ -781,37 +804,55 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 				switch (psItem->ItemType)
 				{
 					case ITEM_TYPE_CHECKBOX :
-						gdispGFillStringBoxCustom(gw->g.display, _x, _y, item_width - 21, item_height, (const char*)psItem->pTitle, gw->g.font,
-							(psItem == psSelectedItem) ? gw->pstyle->background : ps->text,
-							(psItem == psSelectedItem) ? ps->text : gw->pstyle->background,
-							justifyLeft);
+					{
+						ui16 rightSideMargin = item_width - MEDIUM_FONT_HEIGHT - 6;
+
+						gdispGFillStringBoxCustom(gw->g.display, _x, _y, rightSideMargin, item_height, (const char*)psItem->pTitle, gw->g.font,
+								(psItem == psSelectedItem) ? gw->pstyle->background : ps->text,
+								(psItem == psSelectedItem) ? ps->text : gw->pstyle->background,
+								justifyLeft);
 
 						if (MiniRemote.GetRedrawPrimitiveObjectsFlag())
 						{
-							gdispGFillArea(gw->g.display, item_width - 19, _y, 22, 16, gw->pstyle->background);
-							gdispGDrawCircle(gw->g.display, item_width - 7, _y + 8, 6, ps->text);
-							gdispGFillCircle(gw->g.display, item_width - 7, _y + 8, 5, gw->pstyle->background);
+							/* Clear space */
+							gdispGFillArea(gw->g.display, rightSideMargin, _y,
+									DISPLAY_WIDTH - rightSideMargin - MENU_SCROLL_HOR_LPAD - MENU_SCROLL_WIDTH,
+									item_height, gw->pstyle->background);
 
-							gdispGDrawCircle(gw->g.display, item_width - 7, _y + 8, 6, ps->text);
-							gdispGFillCircle(gw->g.display, item_width - 7, _y + 8, 5, gw->pstyle->background);
+							/* Draw circle */
+							gdispGDrawCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+									_y + (MEDIUM_FONT_HEIGHT / 2), 8, ps->text);
+							gdispGFillCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+									_y + (MEDIUM_FONT_HEIGHT / 2), 4, gw->pstyle->background);
 
-							if (psItem->param > 0xFF)  // check that is pointer
+							gdispGDrawCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+									_y + (MEDIUM_FONT_HEIGHT / 2), 8, ps->text);
+							gdispGFillCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+									_y + (MEDIUM_FONT_HEIGHT / 2), 4, gw->pstyle->background);
+
+							if (psItem->param > 0xFF)  // check that is a pointer
 							{
 								if (*(ui8*)psItem->param != 0)
-									gdispGFillCircle(gw->g.display, item_width - 7, _y + 8, 3, ps->text);
+									gdispGFillCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+											_y + (MEDIUM_FONT_HEIGHT / 2), 4, ps->text);
 							}
 
 							else
 							{
 								if (psItem->param != 0)
-									gdispGFillCircle(gw->g.display, item_width - 7, _y + 8, 3, ps->text);
+									gdispGFillCircle(gw->g.display, item_width - (MEDIUM_FONT_HEIGHT / 2),
+											_y + (MEDIUM_FONT_HEIGHT / 2), 4, ps->text);
 							}
 						}
 
 						break;
+					}
 
 					case ITEM_TYPE_VALUE :
 					case ITEM_TYPE_ADJVAR :
+						if ((psItem != selectedItemTemp) && (!MiniRemote.GetRedrawMenuFlag()))
+							break;
+
 						gdispGFillStringBoxWithValueCustom(gw->g.display, _x, _y, item_width, item_height,
 								(const char*)psItem->pTitle, (const char*)psItem->value, gw->g.font,
 								(psItem == psSelectedItem) ? gw->pstyle->background : ps->text,

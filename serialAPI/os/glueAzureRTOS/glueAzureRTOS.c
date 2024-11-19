@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		glueAzureRTOS.c
  *
@@ -43,12 +43,6 @@ extern NORETURN__ sbgcThreadRetval_t SBGC32_HandlerThread (sbgcThreadArg_t threa
 /**	@addtogroup	AzureRTOS_Glue
  *	@{
  */
-#if (SBGC_NEED_CONFIRM_CMD)
-	#define	SBGC_AZURE_TX_CONFIRM_PARAMS_POOL_SIZE	(sizeof(sbgcConfirmParams_t) * SBGC_MAX_COMMAND_NUM)
-#else
-	#define	SBGC_AZURE_TX_CONFIRM_PARAMS_POOL_SIZE	0
-#endif
-
 /** Defines stack size for SerialAPI's purposes */
 #define		SBGC_AZURE_TX_MEM_POOL_SIZE		(	sizeof(sbgcLowLayer_t) +\
 												sizeof(sbgcDriver_t) +\
@@ -56,7 +50,6 @@ extern NORETURN__ sbgcThreadRetval_t SBGC32_HandlerThread (sbgcThreadArg_t threa
 												sizeof(serialAPI_General_t) +\
 												(sizeof(serialAPI_Command_t) * SBGC_MAX_COMMAND_NUM) +\
 												SBGC_TX_BUFF_TOTAL_SIZE + SBGC_RX_BUFF_TOTAL_SIZE +\
-												SBGC_AZURE_TX_CONFIRM_PARAMS_POOL_SIZE +\
 												SBGC_INIT_THREAD_STACK + SBGC_THREAD_STACK_SIZE + 256)
 												/* May be expanded by user */
 
@@ -81,7 +74,7 @@ static TX_THREAD SystemSBGC32_InitThread;
  *
  *	@note	Private function
  *
- *	@param	threadArg - pointer to GeneralSBGC_t object
+ *	@param	threadArg - pointer to sbgcGeneral_t object
  *
  *  @return Initialization finish status
  */
@@ -239,6 +232,17 @@ void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex)
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex)
 {
 	sbgcGiveMutex(mutex);
+}
+
+
+/**	@brief	Changes the priority of a thread
+ *
+ *	@param	*threadHandle - pointer to thread handle
+ *	@param	newPrior - new thread priority
+ */
+void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior)
+{
+	sbgcSetPrior(threadHandle, newPrior, &threadHandle->tx_thread_user_priority);
 }
 /**	@}
  */

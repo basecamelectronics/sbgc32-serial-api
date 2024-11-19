@@ -158,30 +158,31 @@ void CParameterEditContainerM::Init (void)
 	wi.g.parent = ghContainer;
 
 	/* Return image */
-	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT]);
-	wi.g.x = 0;
-	wi.g.y = 0;
+	Utils::imageOpenFile(gdispImageReturn, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = gdispImageReturn->height;
 	wi.g.width = gdispImageReturn->width;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_LEFT];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageReturn);
 
-	/* Label title */
-	wi.g.width = DISPLAY_WIDTH - (WIDGET_IMAGE_SIZE * 2);
+	/* Title label */
+	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE) * 2);
 	wi.g.height = LARGE_FONT_HEIGHT;
-	wi.g.x = WIDGET_IMAGE_SIZE;
+	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
 	wi.g.y = ((EDIT_TITLE_TOTAL_HEIGHT - MEDIUM_FONT_HEIGHT) / 2) - 1;
-	wi.text = "Parameter Edit";
+	wi.text = "Setting Edit";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
 	wi.customParam = (void*)justifyCenter;
 	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
 	ghLabelTitle = gwinLabelCreate(0, &wi);
+	gwinSetFont(ghLabelTitle, MiniRemote.GetLargeFont());
 
-	/* Label value */
+	/* Value label */
 	wi.g.width = DISPLAY_WIDTH;
 	wi.g.height = MEDIUM_FONT_HEIGHT;
 	wi.g.x = 0;
@@ -192,7 +193,7 @@ void CParameterEditContainerM::Init (void)
 	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
 	ghLabelValue = gwinLabelCreate(0, &wi);
 
-	/* Label name */
+	/* Name label */
 	wi.g.width = DISPLAY_WIDTH;
 	wi.g.height = SMALL_FONT_HEIGHT + EDIT_TOP_BOTTOM_LABELS_RAISE;
 	wi.g.x = 0;
@@ -285,7 +286,7 @@ void CParameterEditContainerM::vTask (void *pvParameters)
 
 		if ((nav == ND_LEFT) || (exitButton == BS_PRESSED))
 		{
-			gwinSetText(ghLabelTitle, "Parameter Edit", FALSE);
+			gwinSetText(ghLabelTitle, "Setting Edit", FALSE);
 			osFree(parameterHandle);
 			osDelay(50);  // Necessary delay
 			CStateManager::SetState({ PREVIOUS_STATE, 0 });
@@ -306,11 +307,11 @@ void CParameterEditContainerM::vTask (void *pvParameters)
 				if (parameterHandle->initValue != parameterHandle->tempValue)
 				{
 					if ((parameterHandle->initValue != 0xFFFF) && (parameterHandle->tempValue != ENERGY_ECONOMIC_TIMER_MAX))
-						gwinSetText(ghLabelTitle, "Parameter Edit*", FALSE);
+						gwinSetText(ghLabelTitle, "Setting Edit*", FALSE);
 				}
 
 				else
-					gwinSetText(ghLabelTitle, "Parameter Edit", FALSE);
+					gwinSetText(ghLabelTitle, "Setting Edit", FALSE);
 			}
 
 			else
@@ -320,10 +321,10 @@ void CParameterEditContainerM::vTask (void *pvParameters)
 				gwinSetText(ghLabelValue, (const char*)valueTempBuff, FALSE);
 
 				if (parameterHandle->initValue != parameterHandle->tempValue)
-					gwinSetText(ghLabelTitle, "Parameter Edit*", FALSE);
+					gwinSetText(ghLabelTitle, "Setting Edit*", FALSE);
 
 				else
-					gwinSetText(ghLabelTitle, "Parameter Edit", FALSE);
+					gwinSetText(ghLabelTitle, "Setting Edit", FALSE);
 			}
 
 			needDisplayUpdate = sbgcFALSE;

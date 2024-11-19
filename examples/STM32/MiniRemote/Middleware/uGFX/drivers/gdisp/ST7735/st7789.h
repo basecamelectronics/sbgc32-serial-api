@@ -68,7 +68,7 @@ extern uint16_t ST7789_Y_Start;
 	
 
 void ST7789_Init (void);
-void ST7789_Blit (ui16 x, ui16 y, ui16 w, ui16 h, ui8* data);
+void ST7789_Blit (ui16 x, ui16 y, ui16 w, ui16 h, ui8 *data);
 void ST7789_HardReset (void);
 void ST7789_FillRect (i16 x, i16 y, i16 w, i16 h, ui16 color);
 void ST7789_DrawPixel (i16 x, i16 y, ui16 color);

@@ -35,7 +35,7 @@ typedef struct GWindowObject GWindowObject, *GHandle;
 typedef struct sContainerDraw
 {
 	const char*	textTop;
-	const char*	textBotom;
+	const char*	textBottom;
 
 }	sContainerDraw;
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		gimbalControl.c
  *
@@ -91,32 +91,6 @@
 	};
 
 	const ui8 controlQuatReferenceInfoArrayElCnt = countof_(controlQuatReferenceInfoArray);
-
-
-	/**	@brief	Sample for big endian mapping and reference info
-	 */
-	const sbgcParameterReferenceInfo_t extMotorsControlReferenceInfoArray [] =
-	{
-		PARAM_BLOCK_(	"For Motors",				sbgcUCHAR						),  // 0
-		PARAM_BLOCK_(	"Data Set",					sbgcUCHAR						),  // 1
-		PARAM_BLOCK_(	"Setpoint [M1]",			sbgcINT							),  // 2
-		PARAM_BLOCK_(	"Parameter 1 [M1]",			sbgcINT							),  // 3
-		PARAM_BLOCK_(	"Setpoint [M2]",			sbgcINT							),  // 4
-		PARAM_BLOCK_(	"Parameter 1 [M2]",			sbgcINT							),  // 5
-		PARAM_BLOCK_(	"Setpoint [M3]",			sbgcINT							),  // 6
-		PARAM_BLOCK_(	"Parameter 1 [M3]",			sbgcINT							),  // 7
-		PARAM_BLOCK_(	"Setpoint [M4]",			sbgcINT							),  // 8
-		PARAM_BLOCK_(	"Parameter 1 [M4]",			sbgcINT							),  // 9
-		PARAM_BLOCK_(	"Setpoint [M5]",			sbgcINT							),  // 10
-		PARAM_BLOCK_(	"Parameter 1 [M5]",			sbgcINT							),  // 11
-		PARAM_BLOCK_(	"Setpoint [M6]",			sbgcINT							),  // 12
-		PARAM_BLOCK_(	"Parameter 1 [M6]",			sbgcINT							),  // 13
-		PARAM_BLOCK_(	"Setpoint [M7]",			sbgcINT							),  // 14
-		PARAM_BLOCK_(	"Parameter 1 [M7]",			sbgcINT							),  // 15
-
-	};
-
-	const ui8 extMotorsControlReferenceInfoArrayElCnt = countof_(extMotorsControlReferenceInfoArray);
 	/**	@}
 	 */
 
@@ -225,11 +199,15 @@
  *	@code
 
 			sbgcControl_t Control = { 0 };
-			sbgcControlConfig_t ControlConfig = { 0 };
 
-			ControlConfig.flags = CtrlCONFIG_FLAG_NO_CONFIRM;
+			#if (SBGC_NEED_CONFIRM_CMD)
 
-			SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
+				sbgcControlConfig_t ControlConfig = { 0 };
+
+				ControlConfig.flags = CtrlCONFIG_FLAG_NO_CONFIRM;
+				SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
+
+			#endif
 
 			// Angle control
 			Control.mode[ROLL] = CtrlMODE_NO_CONTROL;
@@ -237,20 +215,15 @@
 			Control.mode[YAW] = CtrlMODE_ANGLE;
 
 			Control.AxisC[PITCH].speed = sbgcSpeedToValue(15);
-			Control.AxisC[YAW].speed = sbgcSpeedToValue(45);
-
 			Control.AxisC[PITCH].angle = sbgcAngleToDegree(30);
+			Control.AxisC[YAW].speed = sbgcSpeedToValue(45);
 			Control.AxisC[YAW].angle = sbgcAngleToDegree(90);
-
 			SBGC32_Control(&SBGC32_Device, &Control);
-
 			sbgcDelay(3000);
 
 			Control.AxisC[YAW].speed = sbgcSpeedToValue(90);
 			Control.AxisC[YAW].angle = sbgcAngleToDegree(-90);
-
 			SBGC32_Control(&SBGC32_Device, &Control);
-
 			sbgcDelay(3000);
 
 			// Switch to speed mode
@@ -259,19 +232,30 @@
 
 			Control.AxisC[PITCH].speed = sbgcSpeedToValue(-15);
 			Control.AxisC[YAW].speed = sbgcSpeedToValue(45);
-
 			SBGC32_Control(&SBGC32_Device, &Control);
-
 			sbgcDelay(2000);
+
+			#if (SBGC_NEED_CONFIRM_CMD)
+
+				ControlConfig.flags = CtrlCONFIG_FLAG_NEED_CONFIRM;
+				SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
+				// From this point on the gimbal will send a confirmation command to each control operation
+
+			#endif
 
 			// Stop at the center
 			Control.AxisC[PITCH].speed = sbgcSpeedToValue(0);
 			Control.AxisC[YAW].speed = sbgcSpeedToValue(0);
+			SBGC32_Control(&SBGC32_Device, &Control);
 
-			ControlConfig.flags = CtrlCONFIG_FLAG_NEED_CONFIRM;
+			#if (SBGC_NEED_CONFIRM_CMD)
+				SBGC32_CheckConfirmation(&SBGC32_Device, SBGC_NO_CONFIRM, CMD_CONTROL);
+			#endif
 
-			SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
-			// From this point on the gimbal will send a confirmation command to each control operation
+			// Unlock gimbal for another control signals
+			Control.mode[ROLL] = CtrlMODE_NO_CONTROL;
+			Control.mode[PITCH] = CtrlMODE_NO_CONTROL;
+			Control.mode[YAW] = CtrlMODE_NO_CONTROL;
 
 			SBGC32_Control(&SBGC32_Device, &Control);
 
@@ -284,7 +268,7 @@
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*control - structure containing gimbal control data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_Control (sbgcGeneral_t *gSBGC, const sbgcControl_t *control
 									/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -314,34 +298,143 @@ sbgcCommandStatus_t SBGC32_Control (sbgcGeneral_t *gSBGC, const sbgcControl_t *c
  *
  *	@attention	Firmware: 2.68+
  *
- *	@note	This function is similar to
- *			@ref SBGC32_Control. Refer to its
- *			documentation for code example details
+ *	@code
+
+			sbgcControlExt_t ControlExt = { 0 };
+
+			#if (SBGC_NEED_CONFIRM_CMD)
+
+				sbgcControlConfig_t ControlConfig = { 0 };
+
+				ControlConfig.flags = CtrlCONFIG_FLAG_NEED_CONFIRM;
+				SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
+
+			#endif
+
+			// Setting the ROLL axis to rotate by angle
+			ControlExt.dataSet = CEDS_ROLL_SPEED | CEDS_ROLL_ANGLE;
+
+			ControlExt.AxisCE[ROLL].mode = CtrlMODE_ANGLE;
+
+			ControlExt.AxisCE[ROLL].speed = sbgcSpeedToValue(15);
+			ControlExt.AxisCE[ROLL].angle = sbgcAngleToDegree(30);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(3000);
+
+			ControlExt.AxisCE[ROLL].speed = sbgcSpeedToValue(30);
+			ControlExt.AxisCE[ROLL].angle = sbgcAngleToDegree(-30);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(3000);
+
+			ControlExt.AxisCE[ROLL].speed = sbgcSpeedToValue(15);
+			ControlExt.AxisCE[ROLL].angle = sbgcAngleToDegree(0);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(3000);
+
+			// Setting the PITCH and YAW axes to control by angle
+			ControlExt.dataSet = CEDS_PITCH_SPEED | CEDS_PITCH_ANGLE | CEDS_YAW_SPEED | CEDS_YAW_ANGLE;
+
+			ControlExt.AxisCE[PITCH].mode = CtrlMODE_ANGLE;
+			ControlExt.AxisCE[PITCH].speed = sbgcSpeedToValue(60);
+
+			ControlExt.AxisCE[YAW].mode = CtrlMODE_ANGLE;
+			ControlExt.AxisCE[YAW].speed = sbgcSpeedToValue(60);
+
+			// Do a little demo
+			ControlExt.AxisCE[YAW].angle = sbgcAngleToDegree(60);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(1000);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(15);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(250);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(-15);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(500);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(0);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(250);
+
+			ControlExt.AxisCE[YAW].angle = sbgcAngleToDegree(-60);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(2000);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(15);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(250);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(-15);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(500);
+
+			ControlExt.AxisCE[PITCH].angle = sbgcAngleToDegree(0);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(250);
+
+			#if (SBGC_NEED_CONFIRM_CMD)
+
+				ControlConfig.flags = CtrlCONFIG_FLAG_NEED_CONFIRM;
+				SBGC32_ControlConfig(&SBGC32_Device, &ControlConfig, SBGC_NO_CONFIRM);
+				// From this point on the gimbal will send a confirmation command to each control operation
+
+			#endif
+
+			// Stop at the center
+			ControlExt.AxisCE[YAW].angle = sbgcAngleToDegree(0);
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+			sbgcDelay(1000);
+
+			#if (SBGC_NEED_CONFIRM_CMD)
+				SBGC32_CheckConfirmation(&SBGC32_Device, SBGC_NO_CONFIRM, CMD_CONTROL_EXT);
+			#endif
+
+			// Unlock gimbal for another control signals
+			ControlExt.AxisCE[ROLL].mode = CtrlMODE_NO_CONTROL;
+			ControlExt.AxisCE[PITCH].mode = CtrlMODE_NO_CONTROL;
+			ControlExt.AxisCE[YAW].mode = CtrlMODE_NO_CONTROL;
+			SBGC32_ControlExt(&SBGC32_Device, &ControlExt);
+
+ *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*controlExt - structure containing
  *			gimbal control data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ControlExt (sbgcGeneral_t *gSBGC, const sbgcControlExt_t *controlExt
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2680)
+	sbgcAssertParam(controlExt->dataSet, 1, 0xFFFF)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_EXT SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeWord(gSBGC, controlExt->dataSet);
 
 	for (ui8 i = 0; i < 3; i++)
 	{
-		gSBGC->_api->writeWord(gSBGC, controlExt->AxisCE->mode);
-		gSBGC->_api->writeWord(gSBGC, controlExt->AxisCE->speed);
+		if (controlExt->dataSet & (0x001F << (i * 5)))
+		/* If this axis is enabled */
+		{
+			gSBGC->_api->writeByte(gSBGC, controlExt->AxisCE[i].mode);
+			gSBGC->_api->writeByte(gSBGC, controlExt->AxisCE[i].modeFlags);
 
-		if (controlExt->dataSet & ((1 << 2) << (i * 5)))
-			gSBGC->_api->writeLong(gSBGC, controlExt->AxisCE->angle);
+			/* Write speed */
+			if (controlExt->dataSet & (0x01 << (i * 5)))
+				gSBGC->_api->writeWord(gSBGC, controlExt->AxisCE[i].speed);
 
-		else
-			gSBGC->_api->writeWord(gSBGC, (i16)controlExt->AxisCE->angle);
+			else if (controlExt->dataSet & (0x08 << (i * 5)))
+				gSBGC->_api->writeLong(gSBGC, controlExt->AxisCE[i].speed);
+
+			/* Write angle */
+			if (controlExt->dataSet & (0x02 << (i * 5)))
+				gSBGC->_api->writeWord(gSBGC, controlExt->AxisCE[i].angle);
+
+			else if (controlExt->dataSet & (0x04 << (i * 5)))
+				gSBGC->_api->writeLong(gSBGC, controlExt->AxisCE[i].angle);
+		}
 	}
 
 	gSBGC->_api->finishWrite(gSBGC);
@@ -415,12 +508,13 @@ sbgcCommandStatus_t SBGC32_ControlExt (sbgcGeneral_t *gSBGC, const sbgcControlEx
  *	@param	*controlQuat - structure containing
  *			gimbal control data in quaternions
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ControlQuat (sbgcGeneral_t *gSBGC, const sbgcControlQuat_t *controlQuat
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2730)
+	sbgcAssertFeature2(BFE2_QUAT_CONTROL)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_QUAT SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeByte(gSBGC, controlQuat->mode);
@@ -440,104 +534,126 @@ sbgcCommandStatus_t SBGC32_ControlQuat (sbgcGeneral_t *gSBGC, const sbgcControlQ
 	return gSBGC->_api->exit(gSBGC);
 }
 
-#if (SBGC_COMING_SOON || SBGC_USES_DOXYGEN)
 
-	/**	@brief	Execute an action on the motor(s)
-	 *
-	 *	@post	If id is set to EXT_MOTOR_NEED_CONFIRM
-	 *			SBGC32 will send confirmation command
-	 *			after each successful transfer
-	 *
-	 *	@attention	Firmware: 2.73+
-	 *
-	 *	@param	*gSBGC - serial connection descriptor
-	 *	@param	id - motor identifiers. Can be combined
-	 *			with each other
-	 *	@param	action - actions for motor execution
-	 *	@param	*confirm - confirmation result storage structure
-	 *
-	 *	@return	Communication status
-	 */
-	sbgcCommandStatus_t SBGC32_ExtMotorsAction (sbgcGeneral_t *gSBGC, sbgcExtMotorID_t id, sbgcExtMotorAction_t action, sbgcConfirm_t *confirm
-												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+/**	@brief	Execute an action on the motor(s)
+ *
+ *	@post	If id is set to EXT_MOTOR_NEED_CONFIRM
+ *			SBGC32 will send confirmation command
+ *			after each successful transfer
+ *
+ *	@attention	Firmware: 2.73+
+ *
+ *	@code
+
+			// Return 3 motors to the home position
+			SBGC32_ExtMotorsAction(&SBGC32_Device, EXT_MOTOR_ID_1 | EXT_MOTOR_ID_2 | EXT_MOTOR_ID_3, EXT_HOME_POSITION, SBGC_NO_CONFIRM);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	id - motor identifiers. Can be combined
+ *			with each other
+ *	@param	action - actions for motor execution
+ *	@param	*confirm - confirmation result storage structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_ExtMotorsAction (sbgcGeneral_t *gSBGC, sbgcExtMotorID_t id, sbgcExtMotorAction_t action, sbgcConfirm_t *confirm
+											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2730)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_EXT_MOTORS_ACTION SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, id);
+	gSBGC->_api->writeByte(gSBGC, action);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	if (id & EXT_MOTOR_NEED_CONFIRM)
+	/* Handle incoming confirmation command */
 	{
-		sbgcAssertFrwVer(2730)
+		gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXT_MOTORS_ACTION SBGC_ADVANCED_ARGS__);
 
-		gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_QUAT SBGC_ADVANCED_ARGS__);
-		gSBGC->_api->writeByte(gSBGC, id);
-		gSBGC->_api->writeByte(gSBGC, action);
-		gSBGC->_api->finishWrite(gSBGC);
-
-		if (id & EXT_MOTOR_NEED_CONFIRM)
-		/* Handle incoming confirmation command */
-		{
-			gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CONTROL_QUAT SBGC_ADVANCED_ARGS__);
-
-			gSBGC->_api->bound(gSBGC);
-		}
-
-		serialAPI_GiveToken()
-
-		return gSBGC->_api->exit(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
+	serialAPI_GiveToken()
 
-	/**	@brief	Controls selected gimbal motor(s)
-	 *
-	 *	@post	If sbgcControlExtMotors_t.forMotors is set to
-	 *			EXT_MOTOR_NEED_CONFIRM, SBGC32
-	 *			will send confirmation command
-	 *			after each successful transfer
-	 *
-	 *	@attention	Firmware: 2.73+
-	 *
-	 *	@param	*gSBGC - serial connection descriptor
-	 *	@param	*controlExtMotors - structure containing
-	 *			gimbal control data
-	 *	@param	*confirm - confirmation result storage structure
-	 *
-	 *	@return	Communication status
-	 */
-	sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlExtMotors_t *controlExtMotors, sbgcConfirm_t *confirm
-												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/**	@brief	Controls selected gimbal motor(s)
+ *
+ *	@post	If sbgcControlExtMotors_t.forMotors is set to
+ *			EXT_MOTOR_NEED_CONFIRM, SBGC32
+ *			will send confirmation command
+ *			after each successful transfer
+ *
+ *	@attention	Firmware: 2.73+
+ *
+ *	@code
+
+			sbgcControlExtMotors_t controlExtMotors [3] = { 0 };
+
+			// Move motors to various position
+			controlExtMotors[0].setpoint = sbgcAngleToDegree(15);
+			controlExtMotors[1].setpoint = sbgcAngleToDegree(30);
+			controlExtMotors[2].setpoint = sbgcAngleToDegree(45);
+
+			SBGC32_ControlExtMotors(&SBGC32_Device, controlExtMotors, EXT_MOTOR_ID_1 | EXT_MOTOR_ID_2 | EXT_MOTOR_ID_3,
+									EMP_16BIT_SETPOINT, SBGC_NO_CONFIRM);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*controlExtMotors - structure containing
+ *			gimbal control data
+ *	@param	id - motor identifiers. Can be combined
+ *			with each other
+ *	@param	dataSet -
+ *	@param	*confirm - confirmation result storage structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlExtMotors_t *controlExtMotors, sbgcExtMotorID_t id,
+											 sbgcExtMotorParam_t dataSet, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2730)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_EXT_MOTORS_CONTROL SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, id);
+	gSBGC->_api->writeByte(gSBGC, dataSet);
+
+	for (ui8 i = 0; i < SBGC_EXTRA_MOTORS_NUM; i++)
 	{
-		sbgcAssertFrwVer(2730)
+		if (dataSet & EMP_32BIT_SETPOINT)
+			gSBGC->_api->writeLong(gSBGC, controlExtMotors->setpoint);
 
-		gSBGC->_api->startWrite(gSBGC, CMD_EXT_MOTORS_CONTROL SBGC_ADVANCED_ARGS__);
-		gSBGC->_api->writeByte(gSBGC, controlExtMotors->forMotors);
-		gSBGC->_api->writeByte(gSBGC, controlExtMotors->dataSet);
+		else
+			gSBGC->_api->writeWord(gSBGC, (i16)controlExtMotors->setpoint);
 
-		for (ui8 i = 0; i < SBGC_EXTRA_MOTORS_NUM; i++)
-		{
-			if (controlExtMotors->dataSet & EMP_32BIT_SETPOINT)
-				gSBGC->_api->writeLong(gSBGC, controlExtMotors->CE_Motor[i].setpoint);
+		if (dataSet & EMP_PARAM1_IS_16BIT)
+			gSBGC->_api->writeWord(gSBGC, (i16)controlExtMotors->param1);
 
-			else
-				gSBGC->_api->writeWord(gSBGC, controlExtMotors->CE_Motor[i].setpoint);
-
-			if (controlExtMotors->dataSet & EMP_PARAM1_IS_16BIT)
-				gSBGC->_api->writeWord(gSBGC, controlExtMotors->CE_Motor[i].param1);
-
-			else if (controlExtMotors->dataSet & EMP_PARAM1_IS_32BIT)
-				gSBGC->_api->writeLong(gSBGC, controlExtMotors->CE_Motor[i].param1);
-		}
-
-		gSBGC->_api->finishWrite(gSBGC);
-
-		if (controlExtMotors->forMotors & EXT_MOTOR_NEED_CONFIRM)
-		/* Handle incoming confirmation command */
-		{
-			gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXT_MOTORS_CONTROL SBGC_ADVANCED_ARGS__);
-
-			gSBGC->_api->bound(gSBGC);
-		}
-
-		serialAPI_GiveToken()
-
-		return gSBGC->_api->exit(gSBGC);
+		else if (dataSet & EMP_PARAM1_IS_32BIT)
+			gSBGC->_api->writeLong(gSBGC, controlExtMotors->param1);
 	}
 
-#endif
+	gSBGC->_api->finishWrite(gSBGC);
+
+	if (id & EXT_MOTOR_NEED_CONFIRM)
+	/* Handle incoming confirmation command */
+	{
+		gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXT_MOTORS_CONTROL SBGC_ADVANCED_ARGS__);
+
+		gSBGC->_api->link(gSBGC);
+	}
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
 /**	@}
  */
 
@@ -577,7 +693,7 @@ sbgcCommandStatus_t SBGC32_ControlQuat (sbgcGeneral_t *gSBGC, const sbgcControlQ
  *			control configuration data
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcControlConfig_t *controlConfig, sbgcConfirm_t *confirm
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -590,7 +706,7 @@ sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcContro
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -624,12 +740,13 @@ sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcContro
  *			quaternions control configuration data
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ControlQuatConfig (sbgcGeneral_t *gSBGC, const sbgcControlQuatConfig_t *controlQuatConfig, sbgcConfirm_t *confirm
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2730)
+	sbgcAssertFeature2(BFE2_QUAT_CONTROL)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_QUAT_CONFIG SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeWord(gSBGC, controlQuatConfig->dataSet);
@@ -656,7 +773,7 @@ sbgcCommandStatus_t SBGC32_ControlQuatConfig (sbgcGeneral_t *gSBGC, const sbgcCo
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_CONTROL_QUAT_CONFIG SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -664,62 +781,70 @@ sbgcCommandStatus_t SBGC32_ControlQuatConfig (sbgcGeneral_t *gSBGC, const sbgcCo
 }
 
 
-#if (SBGC_COMING_SOON || SBGC_USES_DOXYGEN)
+/**	@brief	Configures run-time parameters
+ *			for the selected motor(s)
+ *
+ *	@attention	Firmware: 2.73+
+ *
+ *	@code
 
-	/**	@brief	Configures run-time parameters
-	 *			for the selected motor(s)
-	 *
-	 *	@attention	Firmware: 2.73+
-	 *
-	 *	@param	*gSBGC - serial connection descriptor
-	 *	@param	*extMotorsControlConfig - structure containing
-	 *			motors control configuration data
-	 *	@param	*confirm - confirmation result storage structure
-	 *
-	 *	@return	Communication status
-	 */
-	sbgcCommandStatus_t SBGC32_ExtMotorsControlConfig (sbgcGeneral_t *gSBGC, const sbgcExtMotorsControlConfig_t *extMotorsControlConfig,
-													   sbgcConfirm_t *confirm
-													   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+			sbgcExtMotorsControlConfig_t ExtMotorsControlConfig = { 0 };
+
+			ExtMotorsControlConfig.forMotors = EXT_MOTOR_ID_1 | EXT_MOTOR_ID_2 | EXT_MOTOR_ID_3;
+			ExtMotorsControlConfig.dataSet = EMCC_PARAM_MAX_SPEED | EMCC_PARAM_MAX_ACCELERATION;
+			ExtMotorsControlConfig.maxSpeed = 200 / 2;
+			ExtMotorsControlConfig.maxAcceleration = 60 / 2;
+
+			SBGC32_ExtMotorsControlConfig(&SBGC32_Device, &ExtMotorsControlConfig, SBGC_NO_CONFIRM);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*extMotorsControlConfig - structure containing
+ *			motors control configuration data
+ *	@param	*confirm - confirmation result storage structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_ExtMotorsControlConfig (sbgcGeneral_t *gSBGC, const sbgcExtMotorsControlConfig_t *extMotorsControlConfig,
+												   sbgcConfirm_t *confirm
+												   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2730)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_EXT_MOTORS_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, extMotorsControlConfig->forMotors);
+	gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->dataSet);
+
+	if (extMotorsControlConfig->dataSet & EMCC_PARAM_MODE)
+		gSBGC->_api->writeByte(gSBGC, extMotorsControlConfig->mode);
+
+	if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_SPEED)
+		gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxSpeed);
+
+	if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_ACCELERATION)
+		gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxAcceleration);
+
+	if (extMotorsControlConfig->dataSet & EMCC_PARAM_JERK_SLOPE)
+		gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->jerkSlope);
+
+	if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_TORQUE)
+		gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxTorque);
+
+	gSBGC->_api->finishWrite(gSBGC);
+
+	if (extMotorsControlConfig->forMotors & EXT_MOTOR_NEED_CONFIRM)
+	/* Handle incoming confirmation command */
 	{
-		sbgcAssertFrwVer(2730)
+		gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXT_MOTORS_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);
 
-		gSBGC->_api->startWrite(gSBGC, CMD_EXT_MOTORS_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);
-		gSBGC->_api->writeByte(gSBGC, extMotorsControlConfig->forMotors);
-		gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->dataSet);
-
-		if (extMotorsControlConfig->dataSet & EMCC_PARAM_MODE)
-			gSBGC->_api->writeByte(gSBGC, extMotorsControlConfig->mode);
-
-		if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_SPEED)
-			gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxSpeed);
-
-		if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_ACCELERATION)
-			gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxAcceleration);
-
-		if (extMotorsControlConfig->dataSet & EMCC_PARAM_JERK_SLOPE)
-			gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->jerkSlope);
-
-		if (extMotorsControlConfig->dataSet & EMCC_PARAM_MAX_TORQUE)
-			gSBGC->_api->writeWord(gSBGC, extMotorsControlConfig->maxTorque);
-
-		gSBGC->_api->finishWrite(gSBGC);
-
-		if (extMotorsControlConfig->forMotors & EXT_MOTOR_NEED_CONFIRM)
-		/* Handle incoming confirmation command */
-		{
-			gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXT_MOTORS_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);
-
-			gSBGC->_api->bound(gSBGC);
-		}
-
-		serialAPI_GiveToken()
-
-		return gSBGC->_api->exit(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
-#endif
+	serialAPI_GiveToken()
 
+	return gSBGC->_api->exit(gSBGC);
+}
 /**	@}
  */
 
@@ -770,7 +895,7 @@ sbgcCommandStatus_t SBGC32_ControlQuatConfig (sbgcGeneral_t *gSBGC, const sbgcCo
  *	@param	chQuan - number of virtual channels
  *			starting with API_VIRT_CH_1
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetAPI_VirtChControl (sbgcGeneral_t *gSBGC, const i16 *API_VirtCh, ui8 chQuan
 												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -830,7 +955,7 @@ sbgcCommandStatus_t SBGC32_SetAPI_VirtChControl (sbgcGeneral_t *gSBGC, const i16
  *	@param	chQuan - number of virtual channels
  *			starting with API_VIRT_CH_1
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetAPI_VirtChHR_Control (sbgcGeneral_t *gSBGC, const i16 *API_VirtCh, ui8 chQuan
 													/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )

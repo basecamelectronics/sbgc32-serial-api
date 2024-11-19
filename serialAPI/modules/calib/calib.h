@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		calib.h
  *
@@ -274,7 +274,7 @@ typedef struct PACKED__
 														  estimated and referenced heading vectors										*/
 	ui8		reserved [7];
 
-}			sbgcCalibInfo_t;
+}	sbgcCalibInfo_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -309,7 +309,7 @@ typedef struct
 														  calibration. If omitted, default is 100. Frw. ver. 2.71b1+					*/
 	ui16	calibFlags;								/*!<  See @ref sbgcCalibFlag_t enumeration. Frw. ver. 2.70b8+						*/
 
-}			sbgcCalibEncodersOffset_t;
+}	sbgcCalibEncodersOffset_t;
 /**	@}
  */
 
@@ -333,7 +333,7 @@ typedef struct
 
 	ui8		reserved [9];
 
-}			sbgcAxisCCog_t;
+}	sbgcAxisCCog_t;
 
 
 /**	@brief	Structure type for work

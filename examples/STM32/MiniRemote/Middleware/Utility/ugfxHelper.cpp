@@ -284,20 +284,20 @@ void ContainerDrawMono (GWidgetObject *gw, void *param)
 	/* Top label */
 	gdispGFillArea(pPixmap, 0, 0, gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, gw->pstyle->background);
 	gdispGDrawStringBox(pPixmap, 0, 0, gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT,
-						((sContainerDraw*)param)->textTop, gw->g.font, pcol->text, gJustifyCenter);
-	gdispGBlitArea(gw->g.display, gw->g.x, 0,
-				   gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, 0, 0, gw->g.width, gdispPixmapGetBits(pPixmap));
+			((sContainerDraw*)param)->textTop, MiniRemote.GetLargeFont(), GFX_GRAY, gJustifyCenter);
+	gdispGBlitArea(gw->g.display, gw->g.x, WIDGET_VERT_MARGIN,
+			gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, 0, 0, gw->g.width, gdispPixmapGetBits(pPixmap));
 
 	/* Top line */
-	gdispGDrawLine(gw->g.display,gw->g.x, gw->g.y + EDIT_TITLE_TOTAL_HEIGHT,
-				   gw->g.x + gw->g.width, gw->g.y + EDIT_TITLE_TOTAL_HEIGHT, pcol->text);
+	gdispGDrawLine(gw->g.display, gw->g.x, gw->g.y + EDIT_TITLE_TOTAL_HEIGHT,
+			gw->g.x + gw->g.width, gw->g.y + EDIT_TITLE_TOTAL_HEIGHT, pcol->text);
 
 	/* Bottom label */
 	gdispGFillArea(pPixmap, 0, 0, gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, gw->pstyle->background);
 	gdispGDrawStringBox(pPixmap, 0, 0, gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT,
-						((sContainerDraw*)param)->textBotom, gw->g.font, pcol->text, gJustifyCenter);
-	gdispGBlitArea(gw->g.display, gw->g.x, DISPLAY_HEIGHT - (CONTAINER_TOP_BOTTOM_HEIGHT),
-				   gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, 0, 0, gw->g.width, gdispPixmapGetBits(pPixmap));
+			((sContainerDraw*)param)->textBottom, MiniRemote.GetSmallFont(), GFX_GRAY, gJustifyCenter);
+	gdispGBlitArea(gw->g.display, gw->g.x, DISPLAY_HEIGHT - SMALL_FONT_HEIGHT - WIDGET_VERT_MARGIN - 2,
+			gw->g.width, CONTAINER_TOP_BOTTOM_HEIGHT, 0, 0, gw->g.width, gdispPixmapGetBits(pPixmap));
 }
 
 

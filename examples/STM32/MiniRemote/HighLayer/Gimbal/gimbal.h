@@ -315,6 +315,8 @@ class SBGC32_System
 
 		sbgcBoolean_t		GetRealTimeDataCustomStreamStatus (void);
 
+		sbgcCommandStatus_t	RequestRealTimeDataCustom (void *realTimeDataCustom, ui8 size, SBGC_ADVANCED_PARAMS_);
+
 		void				TurnOnAdjVar (sbgcAdjVarID_t ID);
 		void				TurnOffAdjVar (sbgcAdjVarID_t ID);
 		ui8					CountActiveAdjVars (void);

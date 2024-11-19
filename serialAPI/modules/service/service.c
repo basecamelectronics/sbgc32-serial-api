@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		service.c
  *
@@ -305,7 +305,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  *			period (in ms) between 20-bytes packets for BLE mode.
  *			For USB – not used
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t *boardInfo, ui16 cfg
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -318,7 +318,7 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t 
 	gSBGC->_api->assignEvent(gSBGC, NULL, boardInfo, sizeof(sbgcBoardInfo_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -342,7 +342,7 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t 
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*boardInfo3 - structure storing additional board information
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_t *boardInfo3
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -354,7 +354,7 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_
 	gSBGC->_api->assignEvent(gSBGC, NULL, boardInfo3, sizeof(sbgcBoardInfo3_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -386,7 +386,12 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_
  *			this command with zero values in autoPID structure or
  *			use the @ref SBGC32_BreakAutoPID_Tuning function
  *
+ *	@attention	Firmware: prior to 2.73
+ *
  *	@code
+
+			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2730)
+				(void)(1);  // Use the SBGC32_TuneAutoPID2 function
 
 			#define	SBGC_AUTO_PID_PROFILE 0
 			#define	SBGC_AUTO_PID_GAIN_STAB 127
@@ -421,18 +426,28 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_
  *	@param	*autoPID - structure with written auto-PID configurations
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_TuneAutoPID (sbgcGeneral_t *gSBGC, const sbgcAutoPID_t *autoPID, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	#if (SBGC_NEED_ASSERTS)
+
+		if (gSBGC->_api->baseFirmwareVersion >= 2730)
+		{
+			gSBGC->_lastCommandStatus = sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+		}
+
+	#endif
+
 	gSBGC->_api->startWrite(gSBGC, CMD_AUTO_PID SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeBuff(gSBGC, autoPID, sizeof(sbgcAutoPID_t));
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_AUTO_PID SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -453,7 +468,7 @@ sbgcCommandStatus_t SBGC32_TuneAutoPID (sbgcGeneral_t *gSBGC, const sbgcAutoPID_
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -466,7 +481,7 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_AUTO_PID SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -479,8 +494,9 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
  *	####	TX —> CMD_AUTO_PID2 :	11/73 bytes
  *	####	RX <— CMD_CONFIRM :		1-6 bytes
  *
- *	@pre	If sbgcAutoPID2_t.action field is APID2A_ACTION_START or
- *			APID2A_ACTION_START_SAVE, the next fields must be set:\n
+ *	@pre	If sbgcAutoPID2_t.action field is APID2_ACTION_START or
+ *			APID2_ACTION_START or APID2_ACTION_START_SAVE,
+ *			the next fields must be set:\n
  *			sbgcAutoPID2_t.cfgVersion \n
  *			sbgcAutoPID2_t.AxisAPID2 \n
  *			sbgcAutoPID2_t.generalFlags \n
@@ -493,9 +509,12 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
  *			@ref Profile_Params_Ext_2 and\n
  *			@ref Profile_Params_Ext_3 modules
  *
- *	@attention	Firmware: 2.73.1+
+ *	@attention	Firmware: 2.73+
  *
  *	@code
+
+			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) < 2730)
+				(void)(1);  // Use the SBGC32_TuneAutoPID function
 
 			#define	SBGC_AUTO_PID_GAIN_STAB 127
 			#define SBGC_AUTO_PID_STIM_GAIN 1000
@@ -508,7 +527,7 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
 			sbgcAutoPID2_t AutoPID2 = { 0 };
 
 			// Do demo tune
-			AutoPID2.action = APID2A_ACTION_START;
+			AutoPID2.action = APID2_ACTION_START;
 			AutoPID2.cfgVersion = 1;
 
 			for (ui8 i = 0; i < 3; i++)
@@ -535,16 +554,17 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
  *	@param	*autoPID2 - structure with written auto-PID configurations
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_TuneAutoPID2 (sbgcGeneral_t *gSBGC, const sbgcAutoPID2_t *autoPID2, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
-	sbgcAssertFrwVer(2731)
+	sbgcAssertFrwVer(2730)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_AUTO_PID2 SBGC_ADVANCED_ARGS__);
 
-	if ((autoPID2->action == APID2A_ACTION_START) || (autoPID2->action == APID2A_ACTION_START_SAVE))
+	if ((autoPID2->action == APID2_ACTION_START) || (autoPID2->action == APID2_ACTION_SAVE) ||
+		(autoPID2->action == APID2_ACTION_START_SAVE))
 		gSBGC->_api->writeBuff(gSBGC, autoPID2, sizeof(sbgcAutoPID2_t));
 
 	else
@@ -557,7 +577,7 @@ sbgcCommandStatus_t SBGC32_TuneAutoPID2 (sbgcGeneral_t *gSBGC, const sbgcAutoPID
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_AUTO_PID2 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -578,7 +598,7 @@ sbgcCommandStatus_t SBGC32_TuneAutoPID2 (sbgcGeneral_t *gSBGC, const sbgcAutoPID
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*autoPID_State - structure storing progress of PID
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadAutoPID_StateCmd (sbgcGeneral_t *gSBGC, sbgcAutoPID_State_t *autoPID_State
 												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -616,7 +636,7 @@ sbgcCommandStatus_t SBGC32_ReadAutoPID_StateCmd (sbgcGeneral_t *gSBGC, sbgcAutoP
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetMotorsON (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -626,7 +646,7 @@ sbgcCommandStatus_t SBGC32_SetMotorsON (sbgcGeneral_t *gSBGC, sbgcConfirm_t *con
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_MOTORS_ON SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -653,7 +673,7 @@ sbgcCommandStatus_t SBGC32_SetMotorsON (sbgcGeneral_t *gSBGC, sbgcConfirm_t *con
  *	@param	mode - possible way for turn off motors
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetMotorsOFF (sbgcGeneral_t *gSBGC, sbgcMotorsMode_t mode, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -664,7 +684,7 @@ sbgcCommandStatus_t SBGC32_SetMotorsOFF (sbgcGeneral_t *gSBGC, sbgcMotorsMode_t 
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_MOTORS_OFF SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -682,20 +702,17 @@ sbgcCommandStatus_t SBGC32_SetMotorsOFF (sbgcGeneral_t *gSBGC, sbgcMotorsMode_t 
  *
  *	@code
 
-			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2709)
-			{
-				#define SBGC_SYNC_MOTORS_POWER 50
-				#define SBGC_SYNC_MOTORS_TIME 5000
+			#define SBGC_SYNC_MOTORS_POWER 50
+			#define SBGC_SYNC_MOTORS_TIME 5000
 
-				sbgcSyncMotors_t SyncMotors = { 0 };
+			sbgcSyncMotors_t SyncMotors = { 0 };
 
-				// Synchronize motors by the pitch axis
-				SyncMotors.axis = SYNC_MOTOR_AXIS_PITCH;
-				SyncMotors.power = SBGC_SYNC_MOTORS_POWER;
-				SyncMotors.timeMs = SBGC_SYNC_MOTORS_TIME;
+			// Synchronize motors by the pitch axis
+			SyncMotors.axis = SYNC_MOTOR_AXIS_PITCH;
+			SyncMotors.power = SBGC_SYNC_MOTORS_POWER;
+			SyncMotors.timeMs = SBGC_SYNC_MOTORS_TIME;
 
-				SBGC32_SynchronizeMotors(&SBGC32_Device, &SyncMotors, SBGC_NO_CONFIRM);
-			}
+			SBGC32_SynchronizeMotors(&SBGC32_Device, &SyncMotors, SBGC_NO_CONFIRM);
 
  *	@endcode
  *
@@ -703,7 +720,7 @@ sbgcCommandStatus_t SBGC32_SetMotorsOFF (sbgcGeneral_t *gSBGC, sbgcMotorsMode_t 
  *	@param	*syncMotors - structure with synchronization parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SynchronizeMotors (sbgcGeneral_t *gSBGC, sbgcSyncMotors_t *syncMotors, sbgcConfirm_t *confirm
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -716,7 +733,7 @@ sbgcCommandStatus_t SBGC32_SynchronizeMotors (sbgcGeneral_t *gSBGC, sbgcSyncMoto
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SYNC_MOTORS SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -857,7 +874,7 @@ static void PostRequestMotorState (sbgcGeneral_t *gSBGC)
  *			sbgcExtMotorsStateReference_t structure
  *	@param	size - data buffer size
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestMotorState (sbgcGeneral_t *gSBGC, sbgcExtMotorID_t motorID, void *extMotorsState, ui16 size
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -878,7 +895,7 @@ sbgcCommandStatus_t SBGC32_RequestMotorState (sbgcGeneral_t *gSBGC, sbgcExtMotor
 		gSBGC->_api->assignEvent(gSBGC, PostRequestMotorState, extMotorsState, size);
 		gSBGC->_api->finishRead(gSBGC);
 
-		gSBGC->_api->bound(gSBGC);
+		gSBGC->_api->link(gSBGC);
 	}
 
 	serialAPI_GiveToken()
@@ -904,7 +921,7 @@ sbgcCommandStatus_t SBGC32_RequestMotorState (sbgcGeneral_t *gSBGC, sbgcExtMotor
  *	@param	*data - user-defined receiving data array
  *	@param	size - data buffer size
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadMotorState (sbgcGeneral_t *gSBGC, void *data, ui16 size
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -933,6 +950,11 @@ sbgcCommandStatus_t SBGC32_ReadMotorState (sbgcGeneral_t *gSBGC, void *data, ui1
  *
  *	####	TX —> CMD_BOOT_MODE_3	with no payload
  *
+ *	@attention	Don't send any Serial API messages to the port after
+ *				this command is issued, as it can confuse the
+ *				bootloader and it’s ability to communicate
+ *				further using the STM32 boot protocol
+ *
  *	@code
 
 			// Enter the controller into bootloader mode
@@ -942,7 +964,7 @@ sbgcCommandStatus_t SBGC32_ReadMotorState (sbgcGeneral_t *gSBGC, void *data, ui1
  *
  *	@param	*gSBGC - serial connection descriptor
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetBootMode (sbgcGeneral_t *gSBGC
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -960,6 +982,11 @@ sbgcCommandStatus_t SBGC32_SetBootMode (sbgcGeneral_t *gSBGC
  *			after controller reset.
  *			Call the @ref SBGC32_CheckConfirmation function
  *			passing it the CMD_BOOT_MODE_3 argument
+ *
+ *	@attention	Don't send any Serial API messages to the port after
+ *				this command is issued, as it can confuse the
+ *				bootloader and it’s ability to communicate
+ *				further using the STM32 boot protocol
  *
  *	@code
 
@@ -980,7 +1007,7 @@ sbgcCommandStatus_t SBGC32_SetBootMode (sbgcGeneral_t *gSBGC
  *	@param	needConfirm - yes/no confirmation after reset
  *	@param	delayMs - waiting for a given time before reset
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetBootModeExt (sbgcGeneral_t *gSBGC, sbgcBoolean_t needConfirm, ui16 delayMs
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1045,11 +1072,13 @@ sbgcCommandStatus_t SBGC32_SetBootModeExt (sbgcGeneral_t *gSBGC, sbgcBoolean_t n
  *	@param	mode - script's action
  *	@param	slot - script's slot
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RunScript (sbgcGeneral_t *gSBGC, sbgcScriptMode_t mode, sbgcScriptSlotNum_t slot
 									  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_SCRIPTING)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_RUN_SCRIPT SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeByte(gSBGC, mode);
 	gSBGC->_api->writeByte(gSBGC, slot);
@@ -1088,11 +1117,13 @@ static void PostReadScriptDebugInfo (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*scriptDebugInfo - structure storing debug information
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadScriptDebugInfo (sbgcGeneral_t *gSBGC, sbgcScriptDebugInfo_t *scriptDebugInfo
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_SCRIPTING)
+
 	/* It's necessary to lock SerialAPI before Rx operation */
 	serialAPI_LockRead()
 
@@ -1124,17 +1155,14 @@ sbgcCommandStatus_t SBGC32_ReadScriptDebugInfo (sbgcGeneral_t *gSBGC, sbgcScript
  *
  *	@code
 
-			if ((SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2687) && (SerialAPI_GetBoardVersion(&SBGC32_Device) >= 36))
-			{
-				sbgcStateVars_t StateVars;
+			sbgcStateVars_t StateVars;
 
-				SBGC32_ReadStateVars(&SBGC32_Device, &StateVars);
+			SBGC32_ReadStateVars(&SBGC32_Device, &StateVars);
 
-				// Edit required parameters
-				// ...
+			// Edit required parameters
+			// ...
 
-				SBGC32_WriteStateVars(&SBGC32_Device, &StateVars, SBGC_NO_CONFIRM);
-			}
+			SBGC32_WriteStateVars(&SBGC32_Device, &StateVars, SBGC_NO_CONFIRM);
 
  *	@endcode
  *
@@ -1142,13 +1170,14 @@ sbgcCommandStatus_t SBGC32_ReadScriptDebugInfo (sbgcGeneral_t *gSBGC, sbgcScript
  *	@param	*stateVars - structure with written var state parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteStateVars (sbgcGeneral_t *gSBGC, const sbgcStateVars_t *stateVars, sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertBoardVer(36)
 	sbgcAssertFrwVer(2687)
+	sbgcAssertFeature(BF_STATE_VARS)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_WRITE_STATE_VARS SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeBuff(gSBGC, stateVars, sizeof(sbgcStateVars_t));
@@ -1156,7 +1185,7 @@ sbgcCommandStatus_t SBGC32_WriteStateVars (sbgcGeneral_t *gSBGC, const sbgcState
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_STATE_VARS SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1178,13 +1207,14 @@ sbgcCommandStatus_t SBGC32_WriteStateVars (sbgcGeneral_t *gSBGC, const sbgcState
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*stateVars - structure for storing var state parameters
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t *stateVars
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertBoardVer(36)
 	sbgcAssertFrwVer(2687)
+	sbgcAssertFeature(BF_STATE_VARS)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_READ_STATE_VARS SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->finishWrite(gSBGC);
@@ -1193,7 +1223,7 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
 	gSBGC->_api->assignEvent(gSBGC, NULL, stateVars, sizeof(sbgcStateVars_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1219,8 +1249,7 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
 			DebugPortData.payload = debugPortPayload;
 
 			// Start debugging with filter for CMD_REALTIME_DATA_CUSTOM and CMD_CONTROL commands
-			SBGC32_SetDebugPort(&SBGC32_Device, &DebugPortData, DPA_START_USING_DEBUG_PORT,
-								DPF_CMD_REALTIME_DATA_CUSTOM | DPF_CMD_CONTROL, SBGC_NO_CONFIRM);
+			SBGC32_SetDebugPort(&SBGC32_Device, DPA_START_USING_DEBUG_PORT, DPF_CMD_REALTIME_DATA_CUSTOM | DPF_CMD_CONTROL, SBGC_NO_CONFIRM);
 
 			// ...
 			// Retrieve the next data from the debug port
@@ -1228,12 +1257,11 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
 
 			// ...
 			// Stop debugging
-			SBGC32_SetDebugPort(&SBGC32_Device, &DebugPortData, DPA_STOP_USING_DEBUG_PORT, 0, SBGC_NO_CONFIRM);
+			SBGC32_SetDebugPort(&SBGC32_Device, DPA_STOP_USING_DEBUG_PORT, 0, SBGC_NO_CONFIRM);
 
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
- *	@param	*debugPortSettings - structure to set debug port
  *	@param	action - stop or start debug
  *	@param	filter - prevent sending heavy-duty
  *			commands to the debug port. See
@@ -1241,12 +1269,18 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
  *			(for "plus" version only)
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
-sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortData_t *debugPortSettings, sbgcDebugPortAction_t action,
-										 ui32 filter, sbgcConfirm_t *confirm
+sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortAction_t action, ui32 filter, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	#if (SBGC_NEED_ASSERTS)
+
+		if (filter)
+			sbgcAssertFeature2(BFE2_PLUS_VER)
+
+	#endif
+
 	gSBGC->_api->startWrite(gSBGC, CMD_SET_DEBUG_PORT SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeByte(gSBGC, action);
 	gSBGC->_api->writeLong(gSBGC, filter);
@@ -1255,7 +1289,7 @@ sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortData
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SET_DEBUG_PORT SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1294,7 +1328,7 @@ static void PostReadDebugPort (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*debugPortSettings - structure to receive port data
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortData_t *debugPortSettings
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1327,7 +1361,7 @@ sbgcCommandStatus_t SBGC32_ReadDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortDat
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*cmd - pointer to prepared serial command
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SendTransparentCommand (sbgcGeneral_t *gSBGC, const sbgcTransparentCommand_t *cmd
 												   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1358,7 +1392,7 @@ static void PostReadTransparentCommand (sbgcGeneral_t *gSBGC)
 {
 	sbgcTransparentCommand_t *cmd = (sbgcTransparentCommand_t*)serialAPI_CurCmdDest_;
 
-	if (serialAPI_CurCmd_->_destinationSize < serialAPI_CurCmd_->_payloadSize - 1)
+	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
 		SerialAPI_FatalErrorHandler();
 
 	cmd->target = gSBGC->_api->readByte(gSBGC);
@@ -1379,7 +1413,7 @@ static void PostReadTransparentCommand (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*cmd - pointer to serial command to store
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadTransparentCommand (sbgcGeneral_t *gSBGC, sbgcTransparentCommand_t *cmd
 												   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1393,6 +1427,118 @@ sbgcCommandStatus_t SBGC32_ReadTransparentCommand (sbgcGeneral_t *gSBGC, sbgcTra
 	gSBGC->_api->startRead(gSBGC, CMD_TRANSPARENT_SAPI SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->assignEvent(gSBGC, PostReadTransparentCommand, cmd, cmd->payloadSize);
 	gSBGC->_api->finishRead(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+/**	@}
+ */
+
+
+/**	@addtogroup	Servo_Out
+ *	@{
+ */
+/**	@brief	Sets output PWM signal on the specified pins
+ *
+ *	####	TX —> CMD_SERVO_OUT :	8 bytes
+ *
+ *	@note	Although command takes 4 values, the real
+ *			number of hardware outputs depends on
+ *			board version and may be less
+ *
+ *	@note	Firmware 2.70b8+: in a special PWM duty cycle output
+ *			mode, value 1000  corresponds to 0% duty cycle,
+ *			value 2000 to 100% duty cycle
+ *
+ *	@note	Servo mode is available on the ports:\n
+ *			Servo1 - EXT_FC_ROLL\n
+ *			Servo2 - EXT_FC_PITCH\n
+ * 			Servo3 - RC_PITCH 3\n
+ *			Servo4 - AUX1
+ *
+ *	@code
+
+			i16 servoTime [] = { 10000, SBGC_SERVO_OUT_DISABLED, 1000, SBGC_SERVO_OUT_LIMIT_VALUE };
+
+			SBGC32_SetServoOut(&SBGC32_Device, servoTime);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*servoTime - an array contained @ref SBGC_SERVO_OUTS_NUM
+ *			(4) elements with PWM duty cycle values
+ *			for each output in microseconds.
+ *			Use the @ref SBGC_SERVO_OUT_DISABLED (-1) value to
+ *			disable selected output
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_SetServoOut (sbgcGeneral_t *gSBGC, const i16 *servoTime
+										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	for (ui8 i = 0; i < SBGC_SERVO_OUTS_NUM; i++)
+		sbgcAssertParam(servoTime[i], SBGC_SERVO_OUT_DISABLED, SBGC_SERVO_OUT_LIMIT_VALUE)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_SERVO_OUT SBGC_ADVANCED_ARGS__);
+	for (ui8 i = 0; i < SBGC_SERVO_OUTS_NUM; i++) gSBGC->_api->writeWord(gSBGC, servoTime[i]);
+	gSBGC->_api->writeEmptyBuff(gSBGC, 8);
+	gSBGC->_api->finishWrite(gSBGC);
+	/* No need confirmation */
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/**	@brief	Sets output PWM signal on the specified
+ *			pins in extended format
+ *
+ *	####	TX —> CMD_SERVO_OUT_EXT :		4 + (2 * nBits) bytes
+ *
+ *	@attention	Firmware 2.73.2+
+ *
+ *	@note	Although command takes 4 values, the real
+ *			number of hardware outputs depends on
+ *			board version and may be less
+ *
+ *	@note	Even if the actual PWM value for the servo motor is set to
+ *			@ref SBGC_SERVO_OUT_MAX_VALUE (2500), the function is not
+ *			limited by this value and can output up to a 100% duty
+ *			cycle. See @ref SBGC_SERVO_OUT_LIMIT_VALUE (20000)
+ *
+ *	@code
+
+			i16 servoTime [] = { SBGC_SERVO_OUT_MIN_VALUE, SBGC_SERVO_OUT_MIDDLE_VALUE, SBGC_SERVO_OUT_MAX_VALUE };
+
+			SBGC32_SetServoOutExt(&SBGC32_Device, SOI_PIN_FC_ROLL | SOI_PIN_RC_PITCH | SOI_PIN_AUX_1, servoTime);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	bits - defining the servo output pins for which
+ *			this command takes effect. See
+ *			@ref sbgcServoOutput_t enumeration
+ *	@param	*servoTime - an array contained chosen in the 'bits'
+ *			parameter number of elements with PWM duty cycle
+ *			values for each output in microseconds.
+ *			Use the @ref SBGC_SERVO_OUT_DISABLED (-1) value to
+ *			disable selected output
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_SetServoOutExt (sbgcGeneral_t *gSBGC, ui32 bits, i16 *servoTime
+										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	gSBGC->_api->startWrite(gSBGC, CMD_SERVO_OUT_EXT SBGC_ADVANCED_ARGS__);
+
+	for (ui8 i = 0; i < 18; i ++)
+		if (bits & (1 << i))
+			gSBGC->_api->writeWord(gSBGC, *(servoTime++));
+
+	gSBGC->_api->finishWrite(gSBGC);
+	/* No need confirmation */
 
 	serialAPI_GiveToken()
 
@@ -1434,7 +1580,7 @@ sbgcCommandStatus_t SBGC32_ReadTransparentCommand (sbgcGeneral_t *gSBGC, sbgcTra
  *	@param	flag - reset action. See @ref sbgcResetFlag_t enumeration
  *	@param	delayMs - waiting for a given time before reset
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs
 								  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1474,7 +1620,7 @@ sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs
  *	@param	state - the physical state of the pin
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID_t pinID, sbgcPinState_t state, sbgcConfirm_t *confirm
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1493,7 +1639,7 @@ sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_TRIGGER_PIN SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1523,72 +1669,36 @@ sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
- *	@param	menuCommandID - menu command identifier
+ *	@param	menuCmdID - menu command identifier
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
-sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCommandID, sbgcConfirm_t *confirm
+sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCmdID, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
-	sbgcAssertParam(menuCommandID, MENU_CMD_NO, MENU_CMD_SET_RC_TRIM)
+	sbgcAssertParam(menuCmdID, MENU_CMD_NO, MENU_CMD_SHAKE_GENERATOR_ON)
+
+	#if (SBGC_NEED_ASSERTS)
+
+		if (((menuCmdID >= MENU_CMD_RUN_SCRIPT1) && (menuCmdID <= MENU_CMD_RUN_SCRIPT5)) || (menuCmdID == MENU_CMD_STOP_SCRIPT))
+			sbgcAssertFeature(BF_SCRIPTING)
+
+		if (menuCmdID == MENU_CMD_CALIB_MAG)
+			sbgcAssertFeature(BF_MAG_SENSOR)
+
+		if ((menuCmdID >= MENU_CMD_RETRACTED_POSITION) && (menuCmdID <= MENU_CMD_SHAKE_GENERATOR_ON))
+			sbgcAssertFeature2(BFE2_SHAKE_GENERATOR)
+
+	#endif
 
 	gSBGC->_api->startWrite(gSBGC, CMD_EXECUTE_MENU SBGC_ADVANCED_ARGS__);
-	gSBGC->_api->writeByte(gSBGC, menuCommandID);
+	gSBGC->_api->writeByte(gSBGC, menuCmdID);
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXECUTE_MENU SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
-
-	serialAPI_GiveToken()
-
-	return gSBGC->_api->exit(gSBGC);
-}
-
-
-/**	@brief	Sets output PWM signal on the specified pins
- *
- *	####	TX —> CMD_SERVO_OUT :	8 bytes
- *
- *	@note	Although command takes 4 values, the real
- *			number of hardware outputs depends on
- *			board version and may be less
- *
- *	@note	Firmware 2.70b8+: in a special PWM duty cycle output
- *			mode, value 1000  corresponds to 0% duty cycle,
- *			value 2000 to 100% duty cycle
- *
- *	@note	Servo mode is available on the ports:\n
- *			Servo1 - EXT_FC_ROLL\n
- *			Servo2 - EXT_FC_PITCH\n
- * 			Servo3 - RC_PITCH 3\n
- *			Servo4 - AUX1
- *
- *	@code
-
-			i16 servoTime [] = { 500, SBGC_SERVO_OUT_DISABLED, 2000, 2500 };
-
-			SBGC32_SetServoOut(&SBGC32_Device, servoTime);
-
- *	@endcode
- *
- *	@param	*gSBGC - serial connection descriptor
- *	@param	*servoTime - array contained SBGC_SERVO_OUTS_NUM
- *			(4) elements with PWM duty cycle values
- *			for each output in microseconds.
- *			Use SBGC_SERVO_OUT_DISABLED (-1) value to
- *			disable selected output
- *
- *	@return	Communication status
- */
-sbgcCommandStatus_t SBGC32_SetServoOut (sbgcGeneral_t *gSBGC, const i16 *servoTime
-										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
-{
-	gSBGC->_api->startWrite(gSBGC, CMD_SERVO_OUT SBGC_ADVANCED_ARGS__);
-	for (ui8 i = 0; i < 4; i++) gSBGC->_api->writeWord(gSBGC, servoTime[i]);
-	gSBGC->_api->finishWrite(gSBGC);
-	/* No need confirmation */
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1615,7 +1725,7 @@ sbgcCommandStatus_t SBGC32_SetServoOut (sbgcGeneral_t *gSBGC, const i16 *servoTi
  *	@param	*beeperSettings - structure with prescribed
  *			beeper playback settings
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSettings_t *beeperSettings
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1644,8 +1754,8 @@ sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSet
  *	####	TX —> CMD_SIGN_MESSAGE :		33 bytes
  *	####	RX <— CMD_SIGN_MESSAGE :		32 bytes
  *
- *	@note	size of txMessage[] and rxMessage[] must
- *			be == SBGC_MAX_MESSAGE_LENGTH bytes (32)
+ *	@note	size of txMessage[] and rxMessage[] must be ==
+ *			@ref SBGC_MAX_MESSAGE_LENGTH bytes (32)
  *
  *	@code
 
@@ -1669,7 +1779,7 @@ sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSet
  *	@param	*txMessage - the user's input message
  *	@param	*rxMessage - signed message
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, const char *txMessage, char *rxMessage
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1683,7 +1793,7 @@ sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, cons
 	gSBGC->_api->assignEvent(gSBGC, NULL, rxMessage, SBGC_MAX_MESSAGE_LENGTH);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1715,11 +1825,13 @@ sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, cons
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*CAN_DeviceScan - structure to save scanning results
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceScan_t *CAN_DeviceScan
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_CAN_PORT)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_CAN_DEVICE_SCAN SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->finishWrite(gSBGC);
 
@@ -1727,7 +1839,78 @@ sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceS
 	gSBGC->_api->assignEvent(gSBGC, NULL, CAN_DeviceScan, sizeof(sbgcCAN_DeviceScan_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/**	@brief	SerialAPI event
+ *
+ *	@note	Private function.
+ *			See @ref SBGC32_RequestModuleList function
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ */
+static void PostRequestModuleList (sbgcGeneral_t *gSBGC)
+{
+	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
+		SerialAPI_FatalErrorHandler();
+
+	gSBGC->_api->skipBytes(gSBGC, 1);
+	gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize - 1);
+
+	ui8 freeSpaceSize = serialAPI_CurCmd_->_destinationSize - (serialAPI_CurCmd_->_payloadSize - 1);
+
+	if (freeSpaceSize)
+	/* Fill the remaining space with zeros */
+		memset(((ui8*)serialAPI_CurCmd_->_pDestination) + (serialAPI_CurCmd_->_payloadSize - 1), 0, freeSpaceSize);
+}
+
+
+/**	@brief	Requests version information for connected CAN devices
+ *
+ *	####	TX —> CMD_MODULE_LIST	with no payload
+ *	####	RX <— CMD_MODULE_LIST :	1 + (13 * ?) bytes
+ *
+ *	@post	The number of structures can be allocated with a margin.
+ *			Any extra space will be filled with zeros. This way,
+ *			it will be possible to determine the actual number
+ *			of devices on the CAN bus line
+ *
+ *	@code
+
+			#define CAN_DEVICE_NUM 4
+
+			sbgcCAN_ModuleInfo_t CAN_ModuleInfo [CAN_DEVICE_NUM];
+
+			SBGC32_RequestModuleList(&SBGC32_Device, CAN_ModuleInfo, CAN_DEVICE_NUM, SBGC_DEFAULT_ARGS_);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*CAN_ModuleInfo - structure to save device information
+ *	@param	deviceNumMax - size of CAN_ModuleInfo buffer.
+ *			Maximum number of structures to fill
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_RequestModuleList (sbgcGeneral_t *gSBGC, sbgcCAN_ModuleInfo_t *CAN_ModuleInfo, ui8 deviceNumMax
+											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFeature(BF_CAN_PORT)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_MODULE_LIST SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->startRead(gSBGC, CMD_MODULE_LIST SBGC_ADVANCED_ARGS__);
+	/* Ignore Rx 'deviceNum' variable */
+	gSBGC->_api->assignEvent(gSBGC, PostRequestModuleList, CAN_ModuleInfo, sizeof(sbgcCAN_ModuleInfo_t) * deviceNumMax);
+	gSBGC->_api->finishRead(gSBGC);
+
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 

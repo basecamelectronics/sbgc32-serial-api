@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		eeprom.h
  *
@@ -195,7 +195,7 @@ typedef struct PACKED__
 
 	i8		data [SBGC_MAX_PAYLOAD_SIZE];			/*!<  Data length depends on the dataLen parameter in the request					*/
 
-}			sbgcI2C_RegBuff_t;
+}	sbgcI2C_RegBuff_t;
 /**	@}
  */
 
@@ -220,7 +220,7 @@ typedef struct PACKED__
 	/* In case of errors */
 	ui8		errCode;								/*!<  See @ref sbgcErrorCode_t enumeration											*/
 
-}			sbgcWriteReadFile_t;
+}	sbgcWriteReadFile_t;
 /**	@}
  */
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		core.h
  *
@@ -98,7 +98,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	SBGC_USES_CALLBACKS		sbgcOFF
 #endif
 
-#if (SBGC_NEED_DEBUG && (SBGC_LOG_COMMAND_NUMBER || SBGC_LOG_COMMAND_DIR || SBGC_LOG_COMMAND_NAME ||\
+#if (SBGC_NEED_DEBUG && (SBGC_LOG_COMMAND_TIME || SBGC_LOG_COMMAND_NUMBER || SBGC_LOG_COMMAND_DIR || SBGC_LOG_COMMAND_NAME ||\
 						 SBGC_LOG_COMMAND_ID || SBGC_LOG_COMMAND_STATUS || SBGC_LOG_COMMAND_PARAM))
 	#define	SBGC_USES_LOGS			sbgcON
 #else
@@ -137,12 +137,17 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	serialAPI_TakeMutex()	{ SystemSBGC32_TakeMutex(&gSBGC->_api->mutexSerialAPI); }
 	#define	serialAPI_GiveMutex()	{ SystemSBGC32_GiveMutex(&gSBGC->_api->mutexSerialAPI); }
 
+	#define	serialAPI_DemoteThreadPrior()	{ SystemSBGC32_SetThreadPriority(&gSBGC->_api->threadHandle, SBGC_THREAD_QUIET_PRIOR); }
+	#define	serialAPI_RestoreThreadPrior()	{ SystemSBGC32_SetThreadPriority(&gSBGC->_api->threadHandle, SBGC_THREAD_PRIOR); }
+
 #else
+	#define	serialAPI_Yield()
 	#define	serialAPI_Suspend()
 	#define	serialAPI_Resume()
-
 	#define	serialAPI_TakeMutex()
 	#define	serialAPI_GiveMutex()
+	#define	serialAPI_DemoteThreadPrior()
+	#define	serialAPI_RestoreThreadPrior()
 #endif
 
 #if (SBGC_SEND_IMMEDIATELY)
@@ -229,17 +234,22 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 #endif
 
 #if (SBGC_NEED_ASSERTS)
-	#define	sbgcAssertParam(val, min, max)	{ if (((val) < (min)) || ((val) > (max))) { gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
-																						return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
-	#define	sbgcAssertFrwVer(frw)			{ if (gSBGC->_api->baseFirmwareVersion < frw) { gSBGC->_lastCommandStatus =\
+	#define	sbgcAssertBoardVer(board)		{ if (gSBGC->_api->boardVersion < (board)) { gSBGC->_lastCommandStatus =\
+											  sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; return sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; } }
+	#define	sbgcAssertFrwVer(frw)			{ if (gSBGC->_api->baseFirmwareVersion < (frw)) { gSBGC->_lastCommandStatus =\
 											  sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; } }
-	#define	sbgcAssertBoardVer(board)		{ if (gSBGC->_api->boardVersion < board) { gSBGC->_lastCommandStatus =\
-											  sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; } }
+	#define	sbgcAssertFeature(ftr)			{ if (!(gSBGC->_api->boardFeatures & (ftr))) return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; }
+	#define	sbgcAssertFeature2(ftr)			{ if (!(gSBGC->_api->boardFeatures2 & (ftr))) return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; }
+	#define	sbgcAssertParam(val, min, max)	{ if (((val) < (min)) || ((val) > (max))) {\
+											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
+											  return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
 
 #else
-	#define	sbgcAssertParam(val, min, max)
-	#define	sbgcAssertFrwVer(frw)
 	#define	sbgcAssertBoardVer(board)
+	#define	sbgcAssertFrwVer(frw)
+	#define	sbgcAssertFeature(ftr)
+	#define	sbgcAssertFeature2(ftr)
+	#define	sbgcAssertParam(val, min, max)
 #endif
 
 #define		serialAPI_Assert()		{ if (gSBGC->_api->serialAPI_Status != serialAPI_FORMING) return; }
@@ -267,8 +277,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 #define		serialAPI_Unlock()		{ gSBGC->_api->serialAPI_Status = serialAPI_OK;\
 									  serialAPI_GiveMutex(); }
 
-#define		serialAPI_Abort()		{ gSBGC->_api->serialAPI_Status = serialAPI_ERROR;\
-									  gSBGC->_api->currentSerialCommand->_state = SCState_ABORTED; return; }
+#define		serialAPI_Abort()		{ gSBGC->_api->abortLast(gSBGC); return; }
 
 #define		serialAPI_Error()		{ gSBGC->_api->serialAPI_Status = serialAPI_ERROR; return; }
 
@@ -304,11 +313,12 @@ typedef enum
 	CMD_WRITE_PROFILE_NAMES			= 29,			/*!<  Writes profile names to EEPROM												*/
 	CMD_QUEUE_PARAMS_INFO_3			= 30,
 	CMD_SET_ADJ_VARS_VAL			= 31,			/*!<  Update the value of selected parameter(-s)									*/
-	CMD_SAVE_PARAMS_3				= 32,			/*!<  Saves current values of parameters linked to adjustable variables to EEPROM	*/
+	CMD_SAVE_PARAMS_3				= 32,			/*!<  Saves current values of parameters linked to adjustable variables in EEPROM	*/
 	CMD_READ_PARAMS_EXT				= 33,			/*!<  Request extended parameters part 1											*/
 	CMD_WRITE_PARAMS_EXT			= 34,			/*!<  Write extended parameters part 2												*/
 	CMD_AUTO_PID					= 35,			/*!<  Starts automatic PID calibration												*/
 	CMD_SERVO_OUT					= 36,			/*!<  Output PWM signal on the servo1..4 pins										*/
+	CMD_BODE_TEST_START_STOP		= 37,
 	CMD_I2C_WRITE_REG_BUF			= 39,			/*!<  Writes data to any device connected to I2C line								*/
 	CMD_I2C_READ_REG_BUF			= 40,			/*!<  Requests reading from any device connected to I2C line						*/
 	CMD_WRITE_EXTERNAL_DATA			= 41,			/*!<  Stores any user data to the dedicated area in the EEPROM						*/
@@ -346,12 +356,13 @@ typedef enum
 	CMD_GET_ANGLES					= 73,			/*!<  Request information related to IMU angles and RC control state				*/
 	CMD_CALIB_MOTOR_MAG_LINK		= 74,
 	CMD_GYRO_CORRECTION				= 75,			/*!<  Correct the gyroscope sensor's zero bias manually								*/
+	CMD_MODULE_LIST					= 76,			/*!<  Version information for the connected CAN devices								*/
 	CMD_MOTORS_ON					= 77,			/*!<  Switch motors ON																*/
 	CMD_CALIB_OFFSET				= 79,			/*!<  Calibrate follow offset														*/
 	CMD_CALIB_POLES					= 80,			/*!<  Calibrate poles and direction													*/
 	CMD_READ_PARAMS					= 82,			/*!<  Request parameters from the board												*/
 	CMD_TRIGGER_PIN					= 84,			/*!<  Trigger output pin															*/
-	CMD_DATA_STREAM_INTERVAL		= 85,			/*!<  Register or update data stream – a commands sent by the controller			*/
+	CMD_DATA_STREAM_INTERVAL		= 85,			/*!<  Register or update data stream - a commands sent by the controller			*/
 	CMD_BOARD_INFO					= 86,			/*!<  Request board and firmware information										*/
 	CMD_WRITE_PARAMS				= 87,			/*!<  Writes parameters from the board												*/
 	CMD_REALTIME_DATA_CUSTOM		= 88,			/*!<  Request configurable realtime data											*/
@@ -395,6 +406,7 @@ typedef enum
 	CMD_EXT_MOTORS_CONTROL_CONFIG	= 130,			/*!<  Configure run-time parameters for the selected motor(s)						*/
 	CMD_EXT_MOTORS_STATE			= 131,			/*!<  Request real-time data related to auxiliary motors							*/
 	CMD_ADJ_VARS_INFO				= 132,			/*!<  Query the list of all available variables										*/
+	CMD_SERVO_OUT_EXT				= 133,			/*!<  Output PWM signal on the servo pins (internal and external)					*/
 	CMD_CONTROL_QUAT				= 140,			/*!<  Control gimbal position in quaternions										*/
 	CMD_CONTROL_QUAT_STATUS			= 141,			/*!<  Request real-time data related to gimbal control in quaternions				*/
 	CMD_CONTROL_QUAT_CONFIG			= 142,			/*!<  Configure the quaternion-based control mode									*/
@@ -438,7 +450,7 @@ typedef enum
 	serialAPI_TX_RX_OK				= 0,			/*!<  Serial command transmitted or received successful								*/
 
 	#if (SBGC_NEED_CONFIRM_CMD == sbgcOFF)
-		serialAPI_RX_REJECTED_CONFIRM_CMD,			/*!<  The command parser has rejected a confirmation serial command					*/
+		serialAPI_RX_REJECTED_CONFIRM_CMD,			/*!<  The command parser rejected a confirmation serial command						*/
 	#endif
 
 	/* Error cases */
@@ -474,6 +486,8 @@ typedef enum
 
 	/* User-layer errors */
 	sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE,			/*!<  The current firmware of the SBGC32 device is old for requested command		*/
+	sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE,			/*!<  The feature isn't supported by this board										*/
+	sbgcCOMMAND_NOT_SUPPORTED_FEATURE,				/*!<  Function isn't supported by the board due to firmware or hardware limitations	*/
 	sbgcCOMMAND_PARAM_ASSERT_ERROR,					/*!<  Command was tried to run with wrong argument(-s). Check the sent values		*/
 	sbgcCOMMAND_NOTHING_TO_CHANGE,					/*!<  The SBGC32 device currently stores such data									*/
 	sbgcCOMMAND_DESTINATION_IS_NULL,				/*!<  There is no place to write requested data. Check the destination pointer		*/
@@ -492,7 +506,7 @@ typedef enum
 
 
 #if (SBGC_USES_TOKENS)
-	/** Stores the bounded commands in the next format: 0-7 bits - Tx lowest 8-bit ID | 8-15 bits - Rx lowest 8-bit ID */
+	/** Stores the chained commands in the next format: 0-7 bits - Tx lowest 8-bit ID | 8-15 bits - Rx lowest 8-bit ID */
 	typedef	ui16					sbgcCommandToken_t;
 #endif
 
@@ -526,23 +540,24 @@ typedef enum
  */
 typedef enum
 {
-	SCParam_NO					= 0x00,			/*!<  Serial command has no additional parameters									*/
+	SCParam_NO					= 0x00,			/*!<  Serial command has no additional parameters										*/
 
 	SCParam_TX_CALLBACK			= 0x01,			/*!<  If SBGC32 command consists of	Tx and Rx serial commands, user callback will
-													  be launched after successful transmission	without waiting for receiving		*/
+													  be launched after successful transmission	without waiting for receiving			*/
 
-	SCParam_FORCE_CALLBACK		= 0x02,			/*!<  The command's callback will be called on any result of the command completion	*/
+	SCParam_FORCE_CALLBACK		= 0x02,			/*!<  The command's callback will be called on any result of the command completion		*/
 
-	SCParam_RETAIN				= 0x04,			/*!<  Serial command won't be deleted until the same SBGC32_ command
-													  is called without this parameter												*/
+	SCParam_RETAIN				= 0x04,			/*!<  Serial command won't be deleted until the same SBGC32_ command is called
+													  without this parameter. Note that serial command timeout becomes period
+													  of this command in the OS-mode 													*/
 
 	#if (SBGC_USES_LOGS)
-		SCParam_NO_NEED_LOG		= 0x08,			/*!<  No need to log this serial command											*/
+		SCParam_NO_NEED_LOG		= 0x08,			/*!<  No need to log this serial command												*/
 	#endif
 
 	#if (SBGC_USES_OS_SUPPORT)
 		SCParam_FREEZE			= 0x10			/*!<  Freeze a code (thread) until the serial command completes. Be careful!
-													  A frozen thread must have a priority of at least SBGC_THREAD_PRIORITY			*/
+													  A frozen thread must have a priority of at least SBGC_THREAD_PRIORITY				*/
 	#endif
 
 }	serialAPI_CommandParam_t;
@@ -563,6 +578,20 @@ typedef enum
 		SCPrior_SUPREME				= 4				/*!< Serial command has supreme priority											*/
 
 	}	serialAPI_CommandPriority_t;
+
+#endif
+
+#if (SBGC_USES_OS_SUPPORT)
+
+	/**	@note	serialAPI_General_t.threadState
+	 */
+	typedef enum
+	{
+		SATS_NORMAL					= 0,			/*!<  The handler thread is normal processing or suspended							*/
+		SATS_LOW_PRIOR				= 1,			/*!<  The handler thread priority is reduced due to retained commands handle		*/
+		SATS_FREEZE_HANDLE			= 2				/*!<  The handler thread handles a freeze command									*/
+
+	}	serialAPI_ThreadState_t;
 
 #endif
 
@@ -615,7 +644,6 @@ typedef enum
 	PM_CONTROL,										/*!<  See @ref controlReferenceInfoArray											*/
 	PM_CONTROL_EXT,									/*!<  See @ref controlExtReferenceInfoArray											*/
 	PM_CONTROL_QUAT,								/*!<  See @ref controlQuatReferenceInfoArray										*/
-	PM_EXT_MOTORS_CONTROL,							/*!<  See @ref extMotorsControlReferenceInfoArray									*/
 	PM_CONTROL_CONFIG,								/*!<  See @ref controlConfigReferenceInfoArray										*/
 	PM_CONTROL_QUAT_CONFIG,							/*!<  See @ref controlQuatConfigReferenceInfoArray									*/
 	PM_EXT_MOTORS_CONTROL_CONFIG,					/*!<  See @ref extMotorsControlConfigReferenceInfoArray								*/
@@ -631,6 +659,7 @@ typedef enum
 	PM_DATA_STREAM_INTERVAL,						/*!<  See @ref dataStreamIntervalReferenceInfoArray									*/
 	PM_SYSTEM_POWER_STATE,							/*!<  See @ref systemPowerStateReferenceInfoArray*									*/
 	PM_COMMUNICATION_ERRORS,						/*!<  See @ref communicationErrorsReferenceInfoArray*								*/
+	PM_SYSTEM_STATE,								/*!<  See @ref systemStateReferenceInfoArray*										*/
 	PM_REALTIME_DATA_3,								/*!<  See @ref realTimeDataReferenceInfoArray										*/
 	PM_REALTIME_DATA_4,								/*!<  See @ref realTimeDataReferenceInfoArray										*/
 	PM_GET_ANGLES,									/*!<  See @ref getAnglesReferenceInfoArray											*/
@@ -759,9 +788,9 @@ typedef struct
 	#endif
 
 	/* High-layer service variables */				// The next fields aren't available to edit!
-	ui32					_id;					/*!<  Sequence number of the serial command. Every command has unique serial number
+	ui32					_CID;					/*!<  Sequence number of the serial command. Every command has unique serial number
 														  for program session. It starts with 1											*/
-	ui32					_relatedCommandID;		/*!<  Identifier of related by SBGC32 command serial command						*/
+	ui32					_chainedCommandID;		/*!<  Identifier of related by SBGC32 command serial command						*/
 
 	void					*_serialAPI_Event;		/*!<  Pointer to system event that will be executed after successful finish			*/
 	void					*_pDestination;			/*!<  Pointer to handled data storage												*/
@@ -848,6 +877,9 @@ typedef struct
 		sbgcMutex_t			mutexSerialAPI;			/*!<  Mutex protecting internal processes											*/
 		sbgcThread_t		threadHandle;			/*!<  Handle of SBGC32_HandlerThread task (thread)									*/
 		sbgcBoolean_t		busyFlag;				/*!<  The SBGC32 Handler is at runtime												*/
+
+		serialAPI_ThreadState_t
+							threadState;			/*!<  Current handler thread state													*/
 	#endif
 
 	ui8						boardVersion;			/*!<  PCB version of this SBGC32 device												*/
@@ -869,6 +901,11 @@ typedef struct
 
 	serialAPI_Command_t		*commandBuff;			/*!<  Serial commands buffer														*/
 	ui8						commandNumber;			/*!<  Number of the existing serial commands in runtime								*/
+
+	#if (SBGC_NON_BLOCKING_MODE)
+		ui8					retainedCommandNumber;	/*!<  Number of the active retained serial commands									*/
+	#endif
+
 	ui32					commandTotalCount;		/*!<  Quantity of the all serial commands were open in one session					*/
 
 	serialAPI_Command_t		*currentSerialCommand;	/*!<  Pointer to current handled serial command										*/
@@ -918,7 +955,7 @@ typedef struct
 	#if (SBGC_USES_LOGS)
 		/** Pointer to private @ref DebugSBGC32_WriteLog function for internal use */
 		void
-			(*writeLog)		(struct sbgcGeneral_t*, serialAPI_Command_t*);
+			(*log)			(struct sbgcGeneral_t*, serialAPI_Command_t*);
 	#endif
 
 	/* Command-build functions */
@@ -978,8 +1015,8 @@ typedef struct
 			(*definePayload)
 							(struct sbgcGeneral_t*, ui8),
 
-	/** Pointer to private @ref SerialAPI_BoundCommands function for internal use */
-			(*bound)		(struct sbgcGeneral_t*);
+	/** Pointer to private @ref SerialAPI_LinkCommands function for internal use */
+			(*link)			(struct sbgcGeneral_t*);
 
 	/** Pointer to private @ref SerialAPI_Exit function for internal use */
 	sbgcCommandStatus_t
@@ -989,7 +1026,7 @@ typedef struct
 	/** Pointer to private @ref SerialAPI_SaveReceivedCommand function for internal use */
 	void	(*saveCmd)		(struct sbgcGeneral_t*, serialAPI_CommandID_t, ui8, ui8 const*);
 
-	/** Pointer to private @ref SerialAPI_FindCommandByID function for internal use */
+	/** Pointer to private @ref SerialAPI_FindCommandByCID function for internal use */
 	serialAPI_Command_t*
 			(*findCmd)		(struct sbgcGeneral_t*, ui32);
 

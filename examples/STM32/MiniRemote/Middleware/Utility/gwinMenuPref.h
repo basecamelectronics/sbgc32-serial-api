@@ -15,7 +15,7 @@
 
 #include	"menuStructure.h"
 
-#define		MENU_VERT_PAD			2
+#define		MENU_VERT_PAD			0
 #define		MENU_SCROLL_WIDTH		3
 
 #define		MENU_SCROLL_VERT_PAD	0
@@ -26,14 +26,8 @@
 #define		MENU_ITEM_HOR_PAD		2
 #define		MENU_ITEM_VERT_PAD		2
 
-#define		MENU_ITEM_BUTTON_HOR_PAD		2
-#define		MENU_ITEM_BUTTON_VERT_PAD		2
-
 #define		MENU_IMAGE_MARGIN		5
 
-#define		MOUSE_MOVE_DETECTION_THRESHOLD	10
-
-#define		MENU_ITEM_VALUE_MAX_X_POS		148
 #define		MENU_ITEM_VALUE_MIN_SPACING		4
 
 

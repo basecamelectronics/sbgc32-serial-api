@@ -1,7 +1,7 @@
 #include "st7789.h"
 #include <stdbool.h>
 
-SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef ST7789_SPI_HAL;
 TIM_HandleTypeDef htim1;
 static DMA_HandleTypeDef hdma2_tx_spi1;
 
@@ -12,6 +12,7 @@ ui16 ST7789_Width = 0;
 ui16 ST7789_Height = 0;
 
 volatile bool LCD_SPI_TxDMA_TC_Flag = true;
+static bool LCD_SPI_TxDMA_Mode = false;  // MINC: 0 = disable : 1 = enable
 
 
 static void ST7789_Unselect(void);
@@ -38,16 +39,10 @@ static void LCD_SPI_Transmit_DMA (SPI_HandleTypeDef *hspi, ui8 *pData, ui16 Size
 {
 	ST7789_Select();
 
-	/* Required condition for some controllers */
-	ATOMIC_SET_BIT(hspi->Instance->CR1, SPI_CR1_DFF);
-
 	LCD_SPI_TxDMA_TC_Flag = false;
 	HAL_SPI_Transmit_DMA(hspi, pData, Size);
 
 	while (!LCD_SPI_TxDMA_TC_Flag);
-
-	/* Return to 8-bit */
-	ATOMIC_CLEAR_BIT(hspi->Instance->CR1, SPI_CR1_DFF);
 
 	ST7789_Unselect();
 }
@@ -56,7 +51,7 @@ static void LCD_SPI_Transmit_DMA (SPI_HandleTypeDef *hspi, ui8 *pData, ui16 Size
 
 static void ST7789_ExecuteCommandList (const ui8 *addr);
 static void ST7789_SendCmd (ui8 Cmd);
-static void ST7789_SendData (ui8 Data );
+static void ST7789_SendData (ui8 Data);
 static void ST7789_SendDataMASS (ui8* buff, size_t buff_size);
 static void ST7789_SetWindow (ui16 x0, ui16 y0, ui16 x1, ui16 y1);
 static void ST7789_ColumnSet (ui16 ColumnStart, ui16 ColumnEnd);
@@ -141,7 +136,7 @@ static void ST7789_ExecuteCommandList (const ui8 *addr)
         ms = numArgs & DELAY;
         numArgs &= ~DELAY;
         if(numArgs) {
-            ST7789_SendDataMASS((ui8*)addr, numArgs);
+        	HAL_SPI_Transmit(&ST7789_SPI_HAL, (ui8*)addr, numArgs, 100);
             addr += numArgs;
         }
 
@@ -158,7 +153,7 @@ void ST7789_Blit (ui16 x, ui16 y, ui16 w, ui16 h, ui8 *data)
 {
     ST7789_SetWindow(x, y, x + w - 1, y + h - 1);
 
-    ui16* data16 = (ui16*)data;
+    ui16 *data16 = (ui16*)data;
 
     for (ui16 i = 0; i < w * h; ++i)
     {
@@ -196,17 +191,20 @@ __inline static void ST7789_SendData (ui8 data)
 
 __inline static void ST7789_SendDataMASS (ui8 *buff, size_t buff_size)
 {
-	/* DMA memory incremental enable */
-//	hdma2_tx_spi1.Init.MemInc = DMA_MINC_ENABLE;
-//	if (HAL_DMA_Init(&hdma2_tx_spi1) != HAL_OK)
-//		HardwareErrorHandler();
+	if (LCD_SPI_TxDMA_Mode == false)
+	{
+		__HAL_SPI_DISABLE(&ST7789_SPI_HAL);
+		__HAL_DMA_DISABLE(&hdma2_tx_spi1);
+		hdma2_tx_spi1.Init.MemInc = DMA_MINC_ENABLE;
+		hdma2_tx_spi1.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+		hdma2_tx_spi1.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+		HAL_DMA_Init(&hdma2_tx_spi1);
+		__HAL_SPI_ENABLE(&ST7789_SPI_HAL);
 
-	HAL_SPI_Transmit(&ST7789_SPI_HAL, buff, buff_size, HAL_MAX_DELAY);
+		LCD_SPI_TxDMA_Mode = true;
+	}
 
-	/* DMA memory incremental disable */
-//	hdma2_tx_spi1.Init.MemInc = DMA_MINC_DISABLE;
-//	if (HAL_DMA_Init(&hdma2_tx_spi1) != HAL_OK)
-//		HardwareErrorHandler();
+	LCD_SPI_Transmit_DMA(&ST7789_SPI_HAL, buff, buff_size);
 }
 
 
@@ -214,8 +212,28 @@ void ST7789_FillRect (i16 x, i16 y, i16 w, i16 h, ui16 color)
 {
 	ST7789_SetWindow(x, y, x + w - 1, y + h - 1);
 
+	if (LCD_SPI_TxDMA_Mode == true)
+	{
+		__HAL_SPI_DISABLE(&ST7789_SPI_HAL);
+		__HAL_DMA_DISABLE(&hdma2_tx_spi1);
+		hdma2_tx_spi1.Init.MemInc = DMA_MINC_DISABLE;
+		hdma2_tx_spi1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+		hdma2_tx_spi1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+		HAL_DMA_Init(&hdma2_tx_spi1);
+		__HAL_SPI_ENABLE(&ST7789_SPI_HAL);
+
+		LCD_SPI_TxDMA_Mode = false;
+	}
+
 	ui8 DMA_Buff [] = { (ui8)(color & 0x00FF), color >> 8 };
-	LCD_SPI_Transmit_DMA(&hspi1, DMA_Buff, w * h * 2);
+
+	/* To 16-bit */
+	ATOMIC_SET_BIT(ST7789_SPI_HAL.Instance->CR1, SPI_CR1_DFF);
+
+	LCD_SPI_Transmit_DMA(&ST7789_SPI_HAL, DMA_Buff, w * h * 2);
+
+	/* Back to 8-bit */
+	ATOMIC_CLEAR_BIT(ST7789_SPI_HAL.Instance->CR1, SPI_CR1_DFF);
 }
 
 
@@ -367,26 +385,26 @@ void init_board (void)
 	LCD_SPI_CLOCK_ENABLE();
 
 	/* SPI parameter configuration */
-	hspi1.Instance = LCD_SPI_INSTANCE;
+	ST7789_SPI_HAL.Instance = LCD_SPI_INSTANCE;
 
-	hspi1.Init.Mode					= SPI_MODE_MASTER;
-	hspi1.Init.Direction			= SPI_DIRECTION_1LINE;
-	hspi1.Init.DataSize				= SPI_DATASIZE_8BIT;
-	hspi1.Init.CLKPolarity			= SPI_POLARITY_HIGH;
-	hspi1.Init.CLKPhase				= SPI_PHASE_2EDGE;
-	hspi1.Init.NSS					= SPI_NSS_SOFT;
-	hspi1.Init.BaudRatePrescaler	= SPI_BAUDRATEPRESCALER_2;
-	hspi1.Init.FirstBit				= SPI_FIRSTBIT_MSB;
-	hspi1.Init.TIMode				= SPI_TIMODE_DISABLE;
-	hspi1.Init.CRCCalculation		= SPI_CRCCALCULATION_DISABLE;
+	ST7789_SPI_HAL.Init.Mode					= SPI_MODE_MASTER;
+	ST7789_SPI_HAL.Init.Direction			= SPI_DIRECTION_1LINE;
+	ST7789_SPI_HAL.Init.DataSize				= SPI_DATASIZE_8BIT;
+	ST7789_SPI_HAL.Init.CLKPolarity			= SPI_POLARITY_HIGH;
+	ST7789_SPI_HAL.Init.CLKPhase				= SPI_PHASE_2EDGE;
+	ST7789_SPI_HAL.Init.NSS					= SPI_NSS_SOFT;
+	ST7789_SPI_HAL.Init.BaudRatePrescaler	= SPI_BAUDRATEPRESCALER_2;
+	ST7789_SPI_HAL.Init.FirstBit				= SPI_FIRSTBIT_MSB;
+	ST7789_SPI_HAL.Init.TIMode				= SPI_TIMODE_DISABLE;
+	ST7789_SPI_HAL.Init.CRCCalculation		= SPI_CRCCALCULATION_DISABLE;
 
-	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	if (HAL_SPI_Init(&ST7789_SPI_HAL) != HAL_OK)
 	{
 		HardwareErrorHandler();
 	}
 
-	SPI_1LINE_TX(&hspi1);
-	__HAL_SPI_ENABLE(&hspi1);
+	SPI_1LINE_TX(&ST7789_SPI_HAL);
+	__HAL_SPI_ENABLE(&ST7789_SPI_HAL);
 
 	/* Enable DMAx clock */
 	LCD_SPI_DMA_CLOCK_ENABLE();
@@ -397,8 +415,8 @@ void init_board (void)
 	hdma2_tx_spi1.Init.Direction			= DMA_MEMORY_TO_PERIPH;
 	hdma2_tx_spi1.Init.PeriphInc			= DMA_PINC_DISABLE;
 	hdma2_tx_spi1.Init.MemInc				= DMA_MINC_DISABLE;
-	hdma2_tx_spi1.Init.PeriphDataAlignment	= DMA_PDATAALIGN_HALFWORD;
-	hdma2_tx_spi1.Init.MemDataAlignment		= DMA_MDATAALIGN_HALFWORD;
+	hdma2_tx_spi1.Init.PeriphDataAlignment	= DMA_PDATAALIGN_BYTE;
+	hdma2_tx_spi1.Init.MemDataAlignment		= DMA_MDATAALIGN_BYTE;
 	hdma2_tx_spi1.Init.Mode					= DMA_NORMAL;
 	hdma2_tx_spi1.Init.Priority				= DMA_PRIORITY_HIGH;
 	hdma2_tx_spi1.Init.FIFOMode				= DMA_FIFOMODE_DISABLE;
@@ -406,15 +424,13 @@ void init_board (void)
 	if (HAL_DMA_Init(&hdma2_tx_spi1) != HAL_OK)
 		HardwareErrorHandler();
 
-	__HAL_LINKDMA(&hspi1, hdmatx, hdma2_tx_spi1);
+	__HAL_LINKDMA(&ST7789_SPI_HAL, hdmatx, hdma2_tx_spi1);
 
 	/* NVIC configuration for DMA transfer complete interrupt */
 	HAL_NVIC_SetPriority(LCD_SPI_TX_DMA_CH_IRQN, 2, 0);
 	HAL_NVIC_EnableIRQ(LCD_SPI_TX_DMA_CH_IRQN);
 
 	ST7789_Init();
-
-	ST7789_FillRect(0, 0, ST7789_Width, ST7789_Height, ST7789_BLACK);
 }
 
 

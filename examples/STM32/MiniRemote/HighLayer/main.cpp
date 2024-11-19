@@ -80,7 +80,7 @@ void TaskStartup (void *pvParameters)
 
 	#if (LOADER_NEED_CHANGE_SETTINGS == SET_OFF)
 
-		if (SettingsLoader.Boot() == sbgcTRUE)
+		if (SettingsLoader.Boot())
 			needRefreshGUI_Flag = sbgcTRUE;
 
 		if (SettingsLoader.GetCurrentState() == LS_READ_ERROR)
@@ -97,7 +97,7 @@ void TaskStartup (void *pvParameters)
 
 	/* Current version */
 	FormatMiniRemoteFirmwareVersion(MiniRemote.GetFirmwareVersion(), miniRemoteVersionBuff);
-	gdispFillStringBoxSimple(0, DISPLAY_HEIGHT - SMALL_FONT_HEIGHT - 1, DISPLAY_WIDTH - 1, SMALL_FONT_HEIGHT,
+	gdispFillStringBoxSimple(4, DISPLAY_HEIGHT - SMALL_FONT_HEIGHT - 2, DISPLAY_WIDTH - 1, SMALL_FONT_HEIGHT,
 							 miniRemoteVersionBuff, MiniRemote.GetSmallFont(),
 							 GFX_DARK_GRAY, GFX_BLACK, justifyLeft);
 

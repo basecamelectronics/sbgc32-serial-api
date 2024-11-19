@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		adjvar.c
  *
@@ -38,13 +38,13 @@
  *						 Static Macros and Constants
  */
 #if (SBGC_NEED_ASSERTS)
-	#define	sbgcAssertAdjVar(av)			if (!SerialAPI_AssertAdjVar(gSBGC, av)) { gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
-																					  return sbgcCOMMAND_PARAM_ASSERT_ERROR; }
-	#define	sbgcAssertAdjVars(av, num)		for (ui8 i = 0; i < num; i++) if (!SerialAPI_AssertAdjVar(gSBGC, &av[i]))\
-																		  {\
-																			  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
-																			  return sbgcCOMMAND_PARAM_ASSERT_ERROR;\
-																		  }
+	#define	sbgcAssertAdjVar(av)			{ sbgcCommandStatus_t assertStatus = SerialAPI_AssertAdjVar(gSBGC, av);\
+											  if (assertStatus != sbgcCOMMAND_OK) { gSBGC->_lastCommandStatus = assertStatus;\
+											  return assertStatus; } }
+
+	#define	sbgcAssertAdjVars(av, num)		{ sbgcCommandStatus_t assertStatus; for (ui8 i = 0; i < num; i++) {\
+											  assertStatus = SerialAPI_AssertAdjVar(gSBGC, &av[i]); if (assertStatus != sbgcCOMMAND_OK)\
+											  { gSBGC->_lastCommandStatus = assertStatus; return assertStatus; } } }
 #else
 	#define	sbgcAssertAdjVar(av)
 	#define	sbgcAssertAdjVars(av, num)
@@ -107,9 +107,9 @@
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_TRUST),					0,			255
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_FRAME_HEADING_ANGLE),		-1800,		1800			// Note: Has a special value - 0x7FFF
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_GYRO_HEADING_CORR),			-20000,		20000
-	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_ROLL),			0,			1275
-	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_PITCH),			0,			1275
-	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_YAW),			0,			1275
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_ROLL),			0,			10000
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_PITCH),			0,			10000
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_ACC_LIMITER_YAW),			0,			10000
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_ROLL),				0,			255
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_PITCH),				0,			255
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_PID_GAIN_YAW),				0,			255
@@ -347,22 +347,30 @@
 	 *	@param	*gSBGC - serial connection descriptor
 	 *	@param	*adjVarGeneral - general adjustable variables structure
 	 *
-	 *	@return	True or false
+	 *	@return	Assert status
 	 */
-	static sbgcBoolean_t SerialAPI_AssertAdjVar (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral)
+	static sbgcCommandStatus_t SerialAPI_AssertAdjVar (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral)
 	{
-		/* Maximal number for the latest firmware */
-		if ((gSBGC->_api->baseFirmwareVersion >= 2730) || (adjVarGeneral->ID < ADJ_VAR_MAV_CTRL_MODE)) return sbgcTRUE;
+		/* Fast checking */
+		if ((gSBGC->_api->baseFirmwareVersion >= 2730) || (adjVarGeneral->ID < ADJ_VAR_MAV_CTRL_MODE))
+			return sbgcCOMMAND_OK;
 
-		if ((gSBGC->_api->baseFirmwareVersion < 2687) && (adjVarGeneral->ID >= ADJ_VAR_MAV_CTRL_MODE)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2688) && (adjVarGeneral->ID >= ADJ_VAR_SW_LIM_MIN_ROLL)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2689) && (adjVarGeneral->ID >= ADJ_VAR_FOLLOW_RANGE_ROLL)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2693) && (adjVarGeneral->ID >= ADJ_VAR_RC_MODE_ROLL)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2704) && (adjVarGeneral->ID >= ADJ_VAR_FOLLOW_IN_DBAND)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2720) && (adjVarGeneral->ID >= ADJ_VAR_RC_LIMIT_MIN_ROLL)) return sbgcFALSE;
-		if ((gSBGC->_api->baseFirmwareVersion < 2730) && (adjVarGeneral->ID >= ADJ_VAR_SHAKE_AMP_ROLL)) return sbgcFALSE;
+		/* Check the firmware limitations */
+		if (((gSBGC->_api->baseFirmwareVersion < 2687) && (adjVarGeneral->ID >= ADJ_VAR_MAV_CTRL_MODE)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2688) && (adjVarGeneral->ID >= ADJ_VAR_SW_LIM_MIN_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2689) && (adjVarGeneral->ID >= ADJ_VAR_FOLLOW_RANGE_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2693) && (adjVarGeneral->ID >= ADJ_VAR_RC_MODE_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2704) && (adjVarGeneral->ID >= ADJ_VAR_FOLLOW_IN_DBAND)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2720) && (adjVarGeneral->ID >= ADJ_VAR_RC_LIMIT_MIN_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2730) && (adjVarGeneral->ID >= ADJ_VAR_SHAKE_AMP_ROLL)))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
 
-		return sbgcTRUE;
+		/* Check that this board supports the shake generator option */
+		if ((adjVarGeneral->ID >= ADJ_VAR_SHAKE_AMP_ROLL && adjVarGeneral->ID <= ADJ_VAR_SHAKE_MASTER_GAIN) &&
+			(!(gSBGC->_api->boardFeatures2 & BFE2_SHAKE_GENERATOR)))
+			return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
+
+		return sbgcCOMMAND_OK;
 	}
 
 #endif
@@ -523,6 +531,7 @@ static void PostSetAdjVarValue (sbgcGeneral_t *gSBGC)
 	adjVarGeneral->saveFlag = AV_NOT_SAVED;
 }
 
+
 /**	@brief	Sets a new value for the adjustable variable
  *
  *	####	TX —> CMD_SET_ADJ_VARS_VAL :	6 bytes
@@ -565,7 +574,7 @@ static void PostSetAdjVarValue (sbgcGeneral_t *gSBGC)
  *	@param	*adjVarGeneral - general adjustable variables structure
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -585,7 +594,7 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGener
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SET_ADJ_VARS_VAL SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -676,7 +685,7 @@ static void PostSetAdjVarValues (sbgcGeneral_t *gSBGC)
  *	@param	adjVarQuan - number of adjustable variables
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -709,7 +718,7 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SET_ADJ_VARS_VAL SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -765,7 +774,7 @@ static void PostGetAdjVarValue (sbgcGeneral_t *gSBGC)
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*adjVarGeneral - general adjustable variables structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_GetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -781,7 +790,7 @@ sbgcCommandStatus_t SBGC32_GetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGener
 	gSBGC->_api->assignEvent(gSBGC, PostGetAdjVarValue, adjVarGeneral, sizeof(sbgcAdjVarGeneral_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -858,7 +867,7 @@ static void PostGetAdjVarValues (sbgcGeneral_t *gSBGC)
  *	@param	*adjVarGeneral - general adjustable variables structure
  *	@param	adjVarQuan - number of adjustable variables
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_GetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -879,7 +888,7 @@ sbgcCommandStatus_t SBGC32_GetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
 	gSBGC->_api->definePayload(gSBGC, (adjVarQuan * (4 + 1)) + 1);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -901,7 +910,7 @@ static void PostSaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC)
 	adjVarGeneral->saveFlag = AV_SAVED;
 }
 
-/**	@brief	Saves current value of adjustable variable to EEPROM
+/**	@brief	Saves the current value of adjustable variable in EEPROM
  *
  *	####	TX —> CMD_SAVE_PARAMS_3 :		1 byte
  *	####	RX <— CMD_CONFIRM :				1-6 bytes
@@ -917,7 +926,7 @@ static void PostSaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC)
  *	@param	*adjVarGeneral - general adjustable variables structure
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
 											   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -931,7 +940,7 @@ sbgcCommandStatus_t SBGC32_SaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarG
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SAVE_PARAMS_3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -988,7 +997,7 @@ static void PostSaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC)
  *	@param	adjVarQuan - number of adjustable variables
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1020,7 +1029,7 @@ sbgcCommandStatus_t SBGC32_SaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVar
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SAVE_PARAMS_3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1042,7 +1051,7 @@ sbgcCommandStatus_t SBGC32_SaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVar
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_SaveAllActiveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm
 														 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1052,7 +1061,7 @@ sbgcCommandStatus_t SBGC32_SaveAllActiveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, s
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SAVE_PARAMS_3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1103,7 +1112,7 @@ sbgcCommandStatus_t SBGC32_SaveAllActiveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, s
  *			variable configuration parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteAdjVarsCfg (sbgcGeneral_t *gSBGC, const sbgcAdjVarsCfg_t *adjVarsCfg, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1114,7 +1123,7 @@ sbgcCommandStatus_t SBGC32_WriteAdjVarsCfg (sbgcGeneral_t *gSBGC, const sbgcAdjV
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_ADJ_VARS_CFG SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1148,7 +1157,7 @@ sbgcCommandStatus_t SBGC32_WriteAdjVarsCfg (sbgcGeneral_t *gSBGC, const sbgcAdjV
  *	@param	*adjVarsCfg - structure for storing adjustable
  *			variable configuration parameters
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadAdjVarsCfg (sbgcGeneral_t *gSBGC, sbgcAdjVarsCfg_t *adjVarsCfg
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1160,7 +1169,7 @@ sbgcCommandStatus_t SBGC32_ReadAdjVarsCfg (sbgcGeneral_t *gSBGC, sbgcAdjVarsCfg_
 	gSBGC->_api->assignEvent(gSBGC, NULL, adjVarsCfg, sizeof(sbgcAdjVarsCfg_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1168,8 +1177,6 @@ sbgcCommandStatus_t SBGC32_ReadAdjVarsCfg (sbgcGeneral_t *gSBGC, sbgcAdjVarsCfg_
 }
 /**	@}
  */
-
-
 
 
 /**	@addtogroup	Adjvar_State
@@ -1272,11 +1279,13 @@ static void PostRequestAdjVarsState (sbgcGeneral_t *gSBGC)
  *	@param	*adjVarsState - structure for writing and storing
  *			adjustable variable configuration parameters
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestAdjVarsState (sbgcGeneral_t *gSBGC, sbgcAdjVarsState_t *adjVarsState
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertFeature(BF_STATE_VARS)
+
 	gSBGC->_api->startWrite(gSBGC, CMD_ADJ_VARS_STATE SBGC_ADVANCED_ARGS__);
 
 	if (gSBGC->_api->baseFirmwareVersion < 2625)
@@ -1299,7 +1308,7 @@ sbgcCommandStatus_t SBGC32_RequestAdjVarsState (sbgcGeneral_t *gSBGC, sbgcAdjVar
 
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -1417,7 +1426,7 @@ static void PostRequestAdjVarsInfo (sbgcGeneral_t *gSBGC)
  *	@param	*adjVarGeneral - general adjustable variables structure
  *	@param	ID - adjustable variable ID to start from
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_RequestAdjVarsInfo (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcAdjVarID_t ID
 											   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )

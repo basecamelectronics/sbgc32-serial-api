@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		profiles.c
  *
@@ -386,21 +386,18 @@
  *
  *	@code
 
-			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) > 2650)
-			{
-				// Load the first profile set
-				SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_1, PSA_PROFILE_SET_ACTION_LOAD, SBGC_NO_CONFIRM);
+			// Load the first profile set
+			SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_1, PSA_PROFILE_SET_ACTION_LOAD, SBGC_NO_CONFIRM);
 
-				// ...
+			// ...
 
-				// Save the backup profile set
-				SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_BACKUP, PSA_PROFILE_SET_ACTION_SAVE, SBGC_NO_CONFIRM);
+			// Save the backup profile set
+			SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_BACKUP, PSA_PROFILE_SET_ACTION_SAVE, SBGC_NO_CONFIRM);
 
-				// ...
+			// ...
 
-				// Clear the fifth profile set
-				SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_5, PSA_PROFILE_SET_ACTION_CLEAR, SBGC_NO_CONFIRM);
-			}
+			// Clear the fifth profile set
+			SBGC32_ManageProfileSet(&SBGC32_Device, sbgcPROFILE_SET_5, PSA_PROFILE_SET_ACTION_CLEAR, SBGC_NO_CONFIRM);
 
  *	@endcode
  *
@@ -409,7 +406,7 @@
  *	@param	action - action on the slot
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ManageProfileSet (sbgcGeneral_t *gSBGC, sbgcProfileSet_t slot, sbgcProfileSetAction_t action, sbgcConfirm_t *confirm
 											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -424,7 +421,7 @@ sbgcCommandStatus_t SBGC32_ManageProfileSet (sbgcGeneral_t *gSBGC, sbgcProfileSe
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_PROFILE_SET SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -444,33 +441,30 @@ sbgcCommandStatus_t SBGC32_ManageProfileSet (sbgcGeneral_t *gSBGC, sbgcProfileSe
  *
  *	@code
 
-			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2704)
-			{
-				sbgcMainParams3_t MainParams3;
-				sbgcMainParamsExt_t MainParamsExt;
-				sbgcMainParamsExt2_t MainParamsExt2;
-				sbgcMainParamsExt3_t MainParamsExt3;
+			sbgcMainParams3_t MainParams3;
+			sbgcMainParamsExt_t MainParamsExt;
+			sbgcMainParamsExt2_t MainParamsExt2;
+			sbgcMainParamsExt3_t MainParamsExt3;
 
-				// Read all current profile data
-				SBGC32_ReadParams3(&SBGC32_Device, &MainParams3, sbgcCURRENT_PROFILE);
-				SBGC32_ReadParamsExt(&SBGC32_Device, &MainParamsExt, sbgcCURRENT_PROFILE);
-				SBGC32_ReadParamsExt2(&SBGC32_Device, &MainParamsExt2, sbgcCURRENT_PROFILE);
-				SBGC32_ReadParamsExt3(&SBGC32_Device, &MainParamsExt3, sbgcCURRENT_PROFILE);
+			// Read all current profile data
+			SBGC32_ReadParams3(&SBGC32_Device, &MainParams3, sbgcCURRENT_PROFILE);
+			SBGC32_ReadParamsExt(&SBGC32_Device, &MainParamsExt, sbgcCURRENT_PROFILE);
+			SBGC32_ReadParamsExt2(&SBGC32_Device, &MainParamsExt2, sbgcCURRENT_PROFILE);
+			SBGC32_ReadParamsExt3(&SBGC32_Device, &MainParamsExt3, sbgcCURRENT_PROFILE);
 
-				// Edit required parameters in MainParamsX
-				// ...
+			// Edit required parameters in MainParamsX
+			// ...
 
-				// Prepare for writing
-				SBGC32_WriteParamsSet(&SBGC32_Device, PWF_START_WRITING, SBGC_NO_CONFIRM);
+			// Prepare for writing
+			SBGC32_WriteParamsSet(&SBGC32_Device, PWF_START_WRITING, SBGC_NO_CONFIRM);
 
-				SBGC32_WriteParams3(&SBGC32_Device, &MainParams3, SBGC_NO_CONFIRM);
-				SBGC32_WriteParamsExt(&SBGC32_Device, &MainParamsExt, SBGC_NO_CONFIRM);
-				SBGC32_WriteParamsExt2(&SBGC32_Device, &MainParamsExt2, SBGC_NO_CONFIRM);
-				SBGC32_WriteParamsExt3(&SBGC32_Device, &MainParamsExt3, SBGC_NO_CONFIRM);
+			SBGC32_WriteParams3(&SBGC32_Device, &MainParams3, SBGC_NO_CONFIRM);
+			SBGC32_WriteParamsExt(&SBGC32_Device, &MainParamsExt, SBGC_NO_CONFIRM);
+			SBGC32_WriteParamsExt2(&SBGC32_Device, &MainParamsExt2, SBGC_NO_CONFIRM);
+			SBGC32_WriteParamsExt3(&SBGC32_Device, &MainParamsExt3, SBGC_NO_CONFIRM);
 
-				// Stop writing
-				SBGC32_WriteParamsSet(&SBGC32_Device, PWF_STOP_WRITING, SBGC_NO_CONFIRM);
-			}
+			// Stop writing
+			SBGC32_WriteParamsSet(&SBGC32_Device, PWF_STOP_WRITING, SBGC_NO_CONFIRM);
 
  *	@endcode
  *
@@ -478,7 +472,7 @@ sbgcCommandStatus_t SBGC32_ManageProfileSet (sbgcGeneral_t *gSBGC, sbgcProfileSe
  *	@param	action - stop/start operation
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteParamsSet (sbgcGeneral_t *gSBGC, sbgcProfileWritingFlag_t action, sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -491,7 +485,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsSet (sbgcGeneral_t *gSBGC, sbgcProfileWrit
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PARAMS_SET SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -522,7 +516,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsSet (sbgcGeneral_t *gSBGC, sbgcProfileWrit
  *	@param	*profileNames - structure with written profile names
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteProfileNames (sbgcGeneral_t *gSBGC, const sbgcProfileNames_t *profileNames, sbgcConfirm_t *confirm
 											  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -533,7 +527,7 @@ sbgcCommandStatus_t SBGC32_WriteProfileNames (sbgcGeneral_t *gSBGC, const sbgcPr
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PROFILE_NAMES SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -573,7 +567,7 @@ sbgcCommandStatus_t SBGC32_WriteProfileNames (sbgcGeneral_t *gSBGC, const sbgcPr
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*profileNames - structure for storing profile names
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadProfileNames (sbgcGeneral_t *gSBGC, sbgcProfileNames_t *profileNames
 											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -585,7 +579,7 @@ sbgcCommandStatus_t SBGC32_ReadProfileNames (sbgcGeneral_t *gSBGC, sbgcProfileNa
 	gSBGC->_api->assignEvent(gSBGC, NULL, profileNames, SBGC_MAX_PROF_NAME_LEN * SBGC_PROFILES_NUM);
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -612,7 +606,7 @@ sbgcCommandStatus_t SBGC32_ReadProfileNames (sbgcGeneral_t *gSBGC, sbgcProfileNa
  *	@param	*gSBGC - serial connection descriptor
  *	@param	profileID - profile ID
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_UseDefaults (sbgcGeneral_t *gSBGC, sbgcProfile_t profileID
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -675,7 +669,7 @@ sbgcCommandStatus_t SBGC32_UseDefaults (sbgcGeneral_t *gSBGC, sbgcProfile_t prof
  *	@param	*mainParams3 - structure with written profile parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteParams3 (sbgcGeneral_t *gSBGC, const sbgcMainParams3_t *mainParams3, sbgcConfirm_t *confirm
 										 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -686,7 +680,7 @@ sbgcCommandStatus_t SBGC32_WriteParams3 (sbgcGeneral_t *gSBGC, const sbgcMainPar
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PARAMS_3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -723,7 +717,7 @@ sbgcCommandStatus_t SBGC32_WriteParams3 (sbgcGeneral_t *gSBGC, const sbgcMainPar
  *	@param	*mainParams3 - structure for storing profile parameters
  *	@param	profileID - profile number
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadParams3 (sbgcGeneral_t *gSBGC, sbgcMainParams3_t *mainParams3, sbgcProfile_t profileID
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -740,7 +734,7 @@ sbgcCommandStatus_t SBGC32_ReadParams3 (sbgcGeneral_t *gSBGC, sbgcMainParams3_t 
 	gSBGC->_api->assignEvent(gSBGC, NULL, mainParams3, sizeof(sbgcMainParams3_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -772,7 +766,7 @@ sbgcCommandStatus_t SBGC32_ReadParams3 (sbgcGeneral_t *gSBGC, sbgcMainParams3_t 
  *	@param	*mainParamsExt - structure with written profile parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteParamsExt (sbgcGeneral_t *gSBGC, const sbgcMainParamsExt_t *mainParamsExt, sbgcConfirm_t *confirm
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -783,7 +777,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt (sbgcGeneral_t *gSBGC, const sbgcMainP
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PARAMS_EXT SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -808,7 +802,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt (sbgcGeneral_t *gSBGC, const sbgcMainP
  *	@param	*mainParamsExt - structure for storing profile parameters
  *	@param	profileID - profile number
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadParamsExt (sbgcGeneral_t *gSBGC, sbgcMainParamsExt_t *mainParamsExt, sbgcProfile_t profileID
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -825,7 +819,7 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt (sbgcGeneral_t *gSBGC, sbgcMainParamsEx
 	gSBGC->_api->assignEvent(gSBGC, NULL, mainParamsExt, sizeof(sbgcMainParamsExt_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -857,7 +851,7 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt (sbgcGeneral_t *gSBGC, sbgcMainParamsEx
  *	@param	*mainParamsExt2 - structure with written profile parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteParamsExt2 (sbgcGeneral_t *gSBGC, const sbgcMainParamsExt2_t *mainParamsExt2, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -868,7 +862,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt2 (sbgcGeneral_t *gSBGC, const sbgcMain
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PARAMS_EXT2 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -893,7 +887,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt2 (sbgcGeneral_t *gSBGC, const sbgcMain
  *	@param	*mainParamsExt2 - structure for storing profile parameters
  *	@param	profileID - profile number
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadParamsExt2 (sbgcGeneral_t *gSBGC, sbgcMainParamsExt2_t *mainParamsExt2, sbgcProfile_t profileID
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -910,7 +904,7 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt2 (sbgcGeneral_t *gSBGC, sbgcMainParamsE
 	gSBGC->_api->assignEvent(gSBGC, NULL, mainParamsExt2, sizeof(sbgcMainParamsExt2_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -944,7 +938,7 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt2 (sbgcGeneral_t *gSBGC, sbgcMainParamsE
  *	@param	*mainParamsExt3 - structure with written profile parameters
  *	@param	*confirm - confirmation result storage structure
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_WriteParamsExt3 (sbgcGeneral_t *gSBGC, const sbgcMainParamsExt3_t *mainParamsExt3, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -957,7 +951,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt3 (sbgcGeneral_t *gSBGC, const sbgcMain
 
 	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_WRITE_PARAMS_EXT3 SBGC_ADVANCED_ARGS__);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 
@@ -984,7 +978,7 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt3 (sbgcGeneral_t *gSBGC, const sbgcMain
  *	@param	*mainParamsExt3 - structure for storing profile parameters
  *	@param	profileID - profile number
  *
- *	@return	Communication status
+ *	@return	Communication status. See @ref Readme_S2
  */
 sbgcCommandStatus_t SBGC32_ReadParamsExt3 (sbgcGeneral_t *gSBGC, sbgcMainParamsExt3_t *mainParamsExt3, sbgcProfile_t profileID
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -1003,7 +997,7 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt3 (sbgcGeneral_t *gSBGC, sbgcMainParamsE
 	gSBGC->_api->assignEvent(gSBGC, NULL, mainParamsExt3, sizeof(sbgcMainParamsExt3_t));
 	gSBGC->_api->finishRead(gSBGC);
 
-	gSBGC->_api->bound(gSBGC);
+	gSBGC->_api->link(gSBGC);
 
 	serialAPI_GiveToken()
 

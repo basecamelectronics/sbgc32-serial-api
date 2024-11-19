@@ -15,8 +15,7 @@
 
 const char *imagePathsReferenceArray [] =
 {
-	"return_up.bmp",
-	"return_left.bmp",
+	"exit.bmp",
 
 	"arrow_up.bmp",
 	"arrow_down.bmp",

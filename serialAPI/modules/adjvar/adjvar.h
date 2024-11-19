@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.0
+ *	SBGC32 Serial API Library v2.1
  *
  *	@file		adjvar.h
  *
@@ -329,7 +329,7 @@ typedef struct PACKED__
 	ui8		triggerSrcCh,							/*!<  See @ref sbgcRC_MapSourceType_t and @ref sbgcRC_MapSource_t enumerations		*/
 			triggerAction [5];						/*!<  See @ref sbgcMenuCommand_t enumeration										*/
 
-}			sbgcTriggerSlot_t;
+}	sbgcTriggerSlot_t;
 
 /**	@brief	Part of sbgcAdjVarsCfg_t structure
  *
@@ -344,7 +344,7 @@ typedef struct PACKED__
 			maxVal;									/*!<  ...Is specify a working range, that is mapped to a native range
 														  of particular parameter														*/
 
-}			sbgcAnalogSlot_t;
+}	sbgcAnalogSlot_t;
 
 /**	@brief	Structure type for work with
  *			sbgcAdjVarsCfg parameters
@@ -360,7 +360,7 @@ typedef struct PACKED__
 
 	ui8		reserved [8];
 
-}			sbgcAdjVarsCfg_t;
+}	sbgcAdjVarsCfg_t;
 
 
 #if (SBGC_USES_REF_INFO)
@@ -411,7 +411,7 @@ typedef struct PACKED__
 	i16		lutSrcValue;							/*!<  -16384 --> 16384. Signal value requested in the lutSrcID						*/
 	float	lutVarValue;							/*!<  Current value of variable requested in the lutVarID							*/
 
-}			sbgcAdjVarsState_t;
+}	sbgcAdjVarsState_t;
 
 
 #if (SBGC_USES_REF_INFO)

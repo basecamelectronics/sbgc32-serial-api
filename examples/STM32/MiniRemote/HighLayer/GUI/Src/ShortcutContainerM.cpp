@@ -100,26 +100,38 @@ void CShortcutContainerM::Init (void)
 	wi.g.parent = ghContainer;
 
 	/* Title label */
-	wi.g.width = DISPLAY_WIDTH - (WIDGET_IMAGE_SIZE * 2);
+	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_HOR_MARGIN + WIDGET_IMAGE_CLEARANCE) * 2);
 	wi.g.height = LARGE_FONT_HEIGHT;
-	wi.g.x = WIDGET_IMAGE_SIZE;
-	wi.g.y = 0;
+	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
+	wi.g.y = CONTAINER_TITLE_Y_MARGIN;
+	wi.text = "Shortcuts";
+	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
+	wi.customParam = (void*)justifyCenter;
+	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
+	ghLabelTitle = gwinLabelCreate(0, &wi);
+	gwinSetFont(ghLabelTitle, MiniRemote.GetLargeFont());
+
+	/* Shortcut label */
+	wi.g.width = DISPLAY_WIDTH;
+	wi.g.height = LARGE_FONT_HEIGHT;
+	wi.g.x = 0;
+	wi.g.y = DISPLAY_HEIGHT - LARGE_FONT_HEIGHT - 1;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customParam = (void*)justifyCenter;
 	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
 	ghLabelSelect = gwinLabelCreate(0, &wi);
 
-	/* Return arrow */
-	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_ARROW_RETURN_UP]);
-	wi.g.x = 0;
-	wi.g.y = 0;
+	/* Exit image */
+	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_EXIT]);
+	wi.g.x = WIDGET_HOR_MARGIN;
+	wi.g.y = WIDGET_VERT_MARGIN;
 	wi.g.height = imageBuff->height;
 	wi.g.width = imageBuff->width;
 	wi.text = "";
 	wi.customStyle = &CWidgetStyle::MonoImgStyleNormal;
 	wi.customDraw = gwinImageWOpenAndDrawCustom_Mono;
-	wi.customParam = (void*)imagePathsReferenceArray[IPR_ARROW_RETURN_UP];
+	wi.customParam = (void*)imagePathsReferenceArray[IPR_EXIT];
 	ghImageReturn = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(imageBuff);
 
@@ -141,7 +153,8 @@ void CShortcutContainerM::Init (void)
 		memcpy((void*)shortcut[i].imagePath, shortcutParametersReferenceArray[i].imagePath, strlenTemp);
 	}
 
-	ui8 xCoordPointer = (SHORTCUT_IMAGE_CLEARANCE * 2) + 1;
+	ui8 xCoordPointer = (DISPLAY_WIDTH / 2) - (SHORTCUT_IMAGE_SIZE / 2) - ((SHORTCUT_IMAGE_SIZE + SHORTCUT_IMAGE_CLEARANCE) *
+			(INITIAL_SHORTCUT_NUM / 2));
 
 	/* Pre-loading */
 	for (ui8 i = 0; i < INITIAL_SHORTCUT_NUM; i++)
@@ -179,7 +192,7 @@ void CShortcutContainerM::Init (void)
 
 	/* Down arrow */
 	Utils::imageOpenFile(imageBuff, imagePathsReferenceArray[IPR_ARROW_DOWN]);
-	wi.g.x = (DISPLAY_WIDTH / 2) - (SELECT_ARROW_SIZE / 2) - 1;
+	wi.g.x = (DISPLAY_WIDTH / 2) - (SELECT_ARROW_SIZE / 2);
 	wi.g.y = DOWN_ARROW_Y_POS;
 	wi.g.height = imageBuff->height;
 	wi.g.width = imageBuff->width;
@@ -361,7 +374,7 @@ void CShortcutContainerM::vTask (void *pvParameters)
 		if (((osGetTickCount() - lastCalibInfoTime) > CALIB_INFO_UPDATE_TIME) &&
 			SBGC_CalibrationStateMask(Gimbal.GetCurrentState()))
 		{
-			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+			Gimbal.RequestCalibInfo(SBGC_TARGET_IMU, SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 			if (Gimbal.GetCommunicationState())
 				lastCalibInfoTime = osGetTickCount();
@@ -584,8 +597,8 @@ void CShortcutContainerM::DrawLeftArrow (sbgcBoolean_t color)
 	else
 		arrowColor = GFX_BLACK;
 
-	gdispDrawLine(0, (DISPLAY_HEIGHT / 2), (SIDE_ARROW_IMAGE_WIDTH - 1), (DISPLAY_HEIGHT / 2) + SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
-	gdispDrawLine(0, (DISPLAY_HEIGHT / 2), (SIDE_ARROW_IMAGE_WIDTH - 1), (DISPLAY_HEIGHT / 2) - SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
+	gdispDrawLine(0, SIDE_ARROW_IMAGE_Y_POS, (SIDE_ARROW_IMAGE_WIDTH - 1), SIDE_ARROW_IMAGE_Y_POS + SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
+	gdispDrawLine(0, SIDE_ARROW_IMAGE_Y_POS, (SIDE_ARROW_IMAGE_WIDTH - 1), SIDE_ARROW_IMAGE_Y_POS - SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
 }
 
 
@@ -599,10 +612,10 @@ void CShortcutContainerM::DrawRightArrow (sbgcBoolean_t color)
 	else
 		arrowColor = GFX_BLACK;
 
-	gdispDrawLine((DISPLAY_WIDTH - 1), (DISPLAY_HEIGHT / 2), (DISPLAY_WIDTH - 1 - (SIDE_ARROW_IMAGE_WIDTH - 1)),
-				(DISPLAY_HEIGHT / 2) + SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
-	gdispDrawLine((DISPLAY_WIDTH - 1), (DISPLAY_HEIGHT / 2), (DISPLAY_WIDTH - 1 - (SIDE_ARROW_IMAGE_WIDTH - 1)),
-				(DISPLAY_HEIGHT / 2) - SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
+	gdispDrawLine((DISPLAY_WIDTH - 1), SIDE_ARROW_IMAGE_Y_POS, (DISPLAY_WIDTH - 1 - (SIDE_ARROW_IMAGE_WIDTH - 1)),
+			SIDE_ARROW_IMAGE_Y_POS + SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
+	gdispDrawLine((DISPLAY_WIDTH - 1), SIDE_ARROW_IMAGE_Y_POS, (DISPLAY_WIDTH - 1 - (SIDE_ARROW_IMAGE_WIDTH - 1)),
+			SIDE_ARROW_IMAGE_Y_POS - SIDE_ARROW_IMAGE_HEIGHT, arrowColor);
 
 	if (color == sbgcFALSE)
 		ghContainer->color = GFX_LIGHT_GRAY;
