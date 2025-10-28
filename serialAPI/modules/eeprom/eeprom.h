@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		eeprom.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *

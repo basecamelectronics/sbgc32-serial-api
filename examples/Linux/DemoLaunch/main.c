@@ -63,8 +63,9 @@ sbgcCommandStatus_t PrintBoardParameters (sbgcProfile_t profileID);
 sbgcCommandStatus_t DemoControl (void);
 void PrintDataStream (void);
 
+/*  = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 
-int main ()
+int main()
 {
 	/* SimpleBGC32 Init */
 	SBGC32_Init(&SBGC32_Device);
@@ -225,7 +226,7 @@ sbgcCommandStatus_t DemoControl (void)
 	{
 		/* Printing. SBGC_ADJ_VARS_NAMES parameter must be sbgcON */
 		for (ui8 k = 0; k < countof_(AdjVarGeneral); k++)
-			DebugSBGC32_PrintStructElement(&SBGC32_Device, &AdjVarGeneral[k].value, AdjVarGeneral[k].name, sbgcSHORT);
+			DebugSBGC32_PrintStructElement(&SBGC32_Device, &AdjVarGeneral[k].value, AdjVarGeneral[i].name, sbgcSHORT);
 
 		Control.AxisC[YAW].angle = sbgcAngleToDegree(50);
 		Control.AxisC[PITCH].angle = sbgcAngleToDegree(-25);

@@ -25,8 +25,9 @@
 
 typedef enum
 {
-	ADC_INIT_FINISHED				= 0,
-	ADC_DEINITED
+	ADC_DEINITED					= 0,
+	ADC_MODULE_INITED				= 1,
+	ADC_CHANNELS_INITED				= 2
 
 }	ADC_InitState_t;
 

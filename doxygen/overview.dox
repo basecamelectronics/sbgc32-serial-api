@@ -10,7 +10,7 @@
  *	For more comfortable interaction with the SBGC32 devices repository contents possible [examples](../../../examples) of implementations of the
  *	driver algorithms are presented. General protocol source files are placed in the [modules](../../../serialAPI/modules) folder. Also, you may include
  *	the pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS. See the
- *	[drivers](../../../serialAPI/drivers) folder. Additionally, the library is compatible with [AzureRTOS, FreeRTOS, and Linux OS](../../../serialAPI/os).
+ *	[drivers](../../../serialAPI/drivers) folder. Additionally, the library is compatible with [AzureRTOS, FreeRTOS, and PThread](../../../serialAPI/os).
  *	Pay attention to the [serialAPI_ConfigTemplate.h](../../../serialAPI/serialAPI_ConfigTemplate.h) file. This file helps to configure the internal
  *	functionality of the library. Copy it, rename it to "serialAPI_Config.h", move it wherever you want and configure the contents.
  *
@@ -35,7 +35,7 @@
  *	------------
  *	Minimum device requirements for using this library: at least **2 KB RAM** and at least **16 KB** FLASH.
  *	To fully use the functions of this library, it is recommended to use a device with at least **32 KB RAM**
- *	and at least **64 KB FLASH**.
+ *	and at least **64 KB FLASH**. 
  *
  *	How to use this library
  *	-----------------------
@@ -47,7 +47,7 @@
  *	Additionally, please refer to the note contained in the [sbgc32.h](../../../serialAPI/sbgc32.h) file. It includes a lot of useful information
  *	about the features of this library. See the @ref Readme topic.
  *
- *	To connect the library to your project, just place the [serialAPI](../../../serialAPI) folder in it.
+ *	To connect the library to your project, just place or link the [serialAPI](../../../serialAPI) folder in it.
  *
  *	**Initialization:**
  *
@@ -62,7 +62,7 @@
  *
  *	Documentation
  *	-------------
- *	Use the Doxygen application with the provided [doxygen configuration file](../../doxygen/doxyfile) to generate the library documentation.
+ *	Use the Doxygen application with the provided [doxygen configuration file](../../doxyfile) to generate the library documentation.
  *
  *	Feedback
  *	--------

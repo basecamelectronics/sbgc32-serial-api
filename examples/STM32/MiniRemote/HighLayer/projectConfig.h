@@ -29,7 +29,7 @@ extern 		"C" {
 
 /* Common ------------------------------------------
  */
-#define		MINI_REMOTE_FIRMWARE_VERSION	131072	// 1 - major version, 2 : 3 - minor version, 4 : 5 : 6 - build
+#define		MINI_REMOTE_FIRMWARE_VERSION	134000	// 1 - major version, 2 : 3 - minor version, 4 : 5 : 6 - build
 
 #define		STATE_LIFO_SIZE					8		// Size of state machine LIFO buffer
 
@@ -82,7 +82,8 @@ extern 		"C" {
 
 #define		SHOW_MESSAGE_TIME		2000			// Units: ms
 
-#define		STRING_SCROLLING_SPEED	1				// 1 Min --> 4 Max. Units: pixels
+#define		STRING_SCROLLING_DEADBAND		(-2)	// 0 Max. Units: pixels. Starting value for scrolling
+#define		STRING_SCROLLING_SPEED			1		// 1 Min --> 4 Max. Units: pixels
 #define		STRING_SCROLLING_START_DELAY	500		// Units: milliseconds
 #define		STRING_SCROLLING_FINISH_DELAY	1000	// Units: milliseconds
 

@@ -45,13 +45,28 @@ AnalogInput Potentiometer(	POT_ADC_CHANNEL,
 							PotentiometerReadValue);
 
 
+extern JoystickDetermineState_t joystickDetermineState;
+
+
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *														   Class Methods
  */
 void AnalogInput::Init (void)
 {
+	static ui8 rank = 0;
+
 	if (initFlag == ADC_DEINITED)
 	{
+		if ((joystickDetermineState == JDS_DIGITAL) && (analogChannel != POT_ADC_CHANNEL))
+		{
+			SetState(IN_OFF);
+
+			return;
+		}
+
+		else if (joystickDetermineState == JDS_ERROR)
+			channelsNum += DJOY_PRPH_PINS_NUM;
+
 		DMA_ClockEnable();
 
 		hdma.Instance = DMA_Stream;
@@ -100,7 +115,7 @@ void AnalogInput::Init (void)
 		/* Initialize all inputs together */
 		InputsClockEnable();
 
-		initFlag = ADC_INIT_FINISHED;
+		initFlag = ADC_MODULE_INITED;
 	}
 
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -108,7 +123,18 @@ void AnalogInput::Init (void)
 
 	sConfig.SamplingTime	= ADC_SAMPLETIME_480CYCLES;
 	sConfig.Channel			= analogChannel;
-	sConfig.Rank			= channelsNum;
+	sConfig.Rank			= rank + 1;
+
+	if (joystickDetermineState != JDS_DIGITAL)
+	{
+		rank++;
+
+		if (rank >= (1 + DJOY_PRPH_PINS_NUM))
+			initFlag = ADC_CHANNELS_INITED;
+	}
+
+	else
+		initFlag = ADC_CHANNELS_INITED;
 
 	if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
 		HardwareErrorHandler();
@@ -116,11 +142,12 @@ void AnalogInput::Init (void)
 	/* ADC Channel GPIO pin configuration */
 	GPIO_InitStruct.Pin = GPIO_Channel->pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIO_Channel->port, &GPIO_InitStruct);
 
-	if (HAL_ADC_Start_DMA(&hadc, (ui32*)anValue, channelsNum * ANALOG_VALUES_AVERAGE) != HAL_OK)
-		HardwareErrorHandler();
+	/* Wait to start DMA */
+	if (initFlag == ADC_CHANNELS_INITED)
+		if (HAL_ADC_Start_DMA(&hadc, (ui32*)anValue, channelsNum * ANALOG_VALUES_AVERAGE) != HAL_OK)
+			HardwareErrorHandler();
 
 
 	SetState(IN_ON);
@@ -138,9 +165,9 @@ void AnalogJoystickX_ChannelReadValue (void)
 		if (!(i % AnalogInput::channelsNum))
 			averageValue += AnalogInput::anValue[i];
 
-	averageValue /= ANALOG_VALUES_AVERAGE;
+	averageValue = (averageValue * 16) / ANALOG_VALUES_AVERAGE;
 
-	AnalogJoystickChannelX.SetValue(averageValue * 16);
+	AnalogJoystickChannelX.SetValue(averageValue);
 }
 
 
@@ -152,9 +179,9 @@ void AnalogJoystickY_ChannelReadValue (void)
 		if (!((i - 1) % AnalogInput::channelsNum) && (i < (ANALOG_VALUES_AVERAGE * AnalogInput::channelsNum)))
 			averageValue += AnalogInput::anValue[i] & 0x0000FFFF;
 
-	averageValue /= ANALOG_VALUES_AVERAGE;
+	averageValue = (averageValue * 16) / ANALOG_VALUES_AVERAGE;
 
-	AnalogJoystickChannelY.SetValue(averageValue * 16);
+	AnalogJoystickChannelY.SetValue(averageValue);
 }
 
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		profiles.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -139,13 +139,13 @@ typedef enum
  */
 typedef enum
 {
-	sbgcPROFILE_SET_1					= 1,
-	sbgcPROFILE_SET_2					= 2,
-	sbgcPROFILE_SET_3					= 3,
-	sbgcPROFILE_SET_4					= 4,
-	sbgcPROFILE_SET_5					= 5,
+	sbgcPROFILE_SET_1				= 1,
+	sbgcPROFILE_SET_2				= 2,
+	sbgcPROFILE_SET_3				= 3,
+	sbgcPROFILE_SET_4				= 4,
+	sbgcPROFILE_SET_5				= 5,
 
-	sbgcPROFILE_SET_BACKUP				= 6
+	sbgcPROFILE_SET_BACKUP			= 6
 
 }	sbgcProfileSet_t;
 
@@ -156,12 +156,12 @@ typedef enum
  */
 typedef enum
 {
-	SSpeed_115200					= 0,
-	SSpeed_57600					= 1,
-	SSpeed_38400					= 2,
-	SSpeed_19200					= 3,
-	SSpeed_9600						= 4,
-	SSpeed_256000					= 5
+	sbgcSERIAL_SPEED_115200			= 0,
+	sbgcSERIAL_SPEED_57600			= 1,
+	sbgcSERIAL_SPEED_38400			= 2,
+	sbgcSERIAL_SPEED_19200			= 3,
+	sbgcSERIAL_SPEED_9600			= 4,
+	sbgcSERIAL_SPEED_256000			= 5
 
 }	sbgcSerialSpeed_t;
 /**	@}
@@ -304,7 +304,7 @@ static inline sbgcRC_MixFC_Target_t ParserSBGC32_GetRC_MixFC_Target (ui8 value)
  */
 static inline ui8 ParserSBGC32_PackRC_MixFC (ui8 rate, sbgcRC_MixFC_Target_t target)
 {
-	return constrain_(rate, 0, 63) | ((target << 6) & 0b11000000);
+	return constrainmax_(rate, 63) | ((target << 6) & 0b11000000);
 }
 
 
@@ -416,7 +416,9 @@ typedef enum
 	GF1_BLINK_BAT_LEVEL				= BIT_11_SET,
 	GF1_ADAPTIVE_GYRO_TRUST			= BIT_12_SET,
 	/* frw. ver. 2.66+ */
-	GF1_IS_UPSIDE_DOWN				= BIT_13_SET
+	GF1_IS_UPSIDE_DOWN				= BIT_13_SET,
+	GF1_UART_3_SERIAL_API			= BIT_14_SET,
+	GF1_FRAME_INV_RC_INV			= BIT_15_SET
 
 }	sbgcGeneralFlag1_t;
 
@@ -649,7 +651,7 @@ typedef enum
 	GF2_SAVE_SYSTEM_STAT			= BIT_12_SET,
 	GF2_FLAG2_DISABLE_ACC			= BIT_13_SET,
 	GF2_FLAG2_DISABLE_POWER_MANAGER	= BIT_14_SET,
-	GF2_ALLOW_FRAME_IMU_AS_MAIN		= BIT_15_SET
+	GF2_ALLOW_ONBOARD_IMU_AS_MAIN	= BIT_15_SET
 
 }	sbgcGeneralFlag2_t;
 
@@ -1116,9 +1118,31 @@ typedef enum
 	GF3_RETRACTED_POSITION_SHORTEST	= BIT_18_SET,
 	GF3_RETRACTED_POSITION_RC_CONTROL
 									= BIT_19_SET,
-	GF3_ACC_LIMIT_EXT_RANGE			= BIT_20_SET
+	GF3_ACC_LIMIT_EXT_RANGE			= BIT_20_SET,
+	GF3_MOVE_SHORT_PATH_ROLL		= BIT_21_SET,
+	GF3_MOVE_SHORT_PATH_PITCH		= BIT_22_SET,
+	GF3_MOVE_SHORT_PATH_YAW			= BIT_23_SET,
+	GF3_FRAME_INV_SOFT_LIMIT_MIDDLE	= BIT_24_SET,
+	GF3_FRAME_INV_SOFT_LIMIT_OUTER	= BIT_25_SET,
+	GF3_CAN_IMU_SERVO1_DUTY_MODE	= BIT_26_SET,
+	GF3_CAN_IMU_SERVO2_DUTY_MODE	= BIT_27_SET,
 
 }	sbgcGeneralFlag3_t;
+
+
+/**	@note	sbgcMainParamsExt3_t.profileFlags3
+ */
+typedef enum
+{
+	PF3_ACC_LIMIT_AUTO_R			= BIT_0_SET,
+	PF3_ACC_LIMIT_AUTO_P			= BIT_1_SET,
+	PF3_ACC_LIMIT_AUTO_Y			= BIT_2_SET,
+	PF3_SHAKE_GENERATOR_ENABLED		= BIT_3_SET,
+	PF3_ERR_CORR_LONG_R				= BIT_4_SET,
+	PF3_ERR_CORR_LONG_P				= BIT_5_SET,
+	PF3_ERR_CORR_LONG_Y				= BIT_6_SET
+
+}	sbgcProfileFlag3_t;
 
 
 /**	@note	sbgcMainParamsExt3_t.encoderCfgExt
@@ -1144,6 +1168,22 @@ typedef enum
 	ECE_MULTI_TURN_BIT_2			= BIT_7_SET
 
 }	sbgcEncoderCfgExt_t;
+
+
+/**	@note	sbgcMainParamsExt3_t.generalFlags4
+ */
+typedef enum
+{
+	GF4_ACC_LIMIT_BY_MOMENTUM		= BIT_0_SET,
+	GF4_CALIB_MOMENTUM_IN_NORMAL_POS
+									= BIT_1_SET,
+
+	/* EULER_INVERSE_INIT_MASK = ((1<<2)|(1<<3))
+	   filed expands as: */
+	GF4_EULER_MIDDLE_AXIS			= BIT_2_SET,
+	GF4_EULER_MATCH_MOTOR_ROTATION	= BIT_3_SET,
+
+}	sbgcGeneralFlag4_t;
 /**	@}
  */
 
@@ -1567,7 +1607,7 @@ typedef struct PACKED__
 														  [2] - power_off_delay, units: 100 ms
 														  [3] - power_on_limiter, 0..255
 														  [4...7] - reserved															*/
-	ui8		reserved2 [3];
+	ui8		LPF_Q_Inv [3];							/*!<  var_float = 0.2 + val_int * 0.02												*/
 	ui8		CAN_IMU_ExtSensType;					/*!<  See @ref sbgcCAN_IMU_ExtSensType_t enumeration								*/
 	ui16	profileFlags2;							/*!<  See @ref sbgcProfileFlag2_t enumeration										*/
 	ui8		reserved3 [3];
@@ -1592,7 +1632,7 @@ typedef struct PACKED__
 														  set, use this values for PITCH and YAW axes; otherwise, common RC_DEADBAND
 														  and RC_EXPO_RATE variables are used for all axes								*/
 
-	ui32	profileFlags3;
+	ui32	profileFlags3;							/*!<  See @ref sbgcProfileFlag3_t enumeration										*/
 	ui8		defaultProfile;							/*!<  0 --> 4																		*/
 	i16		retractedAngle [3];
 
@@ -1617,7 +1657,24 @@ typedef struct PACKED__
 	ui16	encoderCfgExt [3];						/*!<  Extra configuration for the main encoders. bit0..4: resolution + 12. bit5..7:
 														  multi-turn (no, 12, 16, 20, 24). See @ref sbgcEncoderCfgExt_t enumeration		*/
 	ui8		extSensParams [16];						/*!<  Parameters for CAN_IMU external sensor. Structure depends on its type			*/
-	ui8		reserved5 [64];
+
+	i16		IMU_AngleCorrR,							/*!<  ...																			*/
+			IMU_AngleCorrP;							/*!<  ...Units: 0.01 degrees														*/
+
+	ui8		CAN_IMU_ServoOut [2];					/*!<  Disabled = 0. 1..32 - Virtual channel number as source of data to be output
+														  on CAN_IMU auxiliary pins as PWM Duty mode is set by
+														  generalFlags3.GF3_CAN_IMU_SERVOx_DUTY_MODE									*/
+	ui8		CAN_IMU_ServoRate;						/*!<  5 --> 40. Units: 10 Hz														*/
+	ui8		servoOuterP_Mult;						/*!<  0 --> 255. Servo mode multiplier for position loop, applied to
+														  OUTER_P[], in logarithmic scale (0..255 --> 0.1..50.0)
+														  val_float = 0.1 * exp(val_log * ln(50 / 0.1) / 255)							*/
+	ui8		servoOuterI;							/*!<  0 --> 255. Servo mode position loop integral term in logarithmic scale
+														  (0..255 --> 0..255.0):
+														  val_float = 5 * exp(val_log * ln(260 / 5) / 255) – 5							*/
+	ui16	extPwrSwShuntR;							/*!<  Units: 0.01 Ohm. External power switch shunt resistance						*/
+	ui32	generalFlags4;							/*!<  See @ref sbgcGeneralFlag4_t enumeration										*/
+
+	ui8		reserved5 [49];
 
 }	sbgcMainParamsExt3_t;
 

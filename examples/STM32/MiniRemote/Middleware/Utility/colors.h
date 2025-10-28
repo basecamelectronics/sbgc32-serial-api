@@ -15,7 +15,7 @@
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
 
-#include <ugfxHelper.h>
+#include	"ugfxHelper.h"
 
 #define		GFX_DARK_GRAY			HTML2COLOR(0x404040)
 #define		GFX_LIGHT_GRAY			HTML2COLOR(0xC0C0C0)

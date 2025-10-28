@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		glueFreeRTOS.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -57,17 +57,15 @@ extern NORETURN__ sbgcThreadRetval_t SBGC32_HandlerThread (sbgcThreadArg_t threa
 static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 {
 	sbgcGeneral_t *sbgcGeneral = (sbgcGeneral_t*)threadArg;
-
-	sbgcGeneral->_api->busyFlag = sbgcFALSE;
-
+	
 	PrivateSBGC32_EnterInit(sbgcGeneral);
-
+	
 	#if (SBGC_NEED_ASSERTS)
 
 		if (sbgcGeneral->_api->serialAPI_Status != serialAPI_OK)
 		{
 			/*  - - - - - - User Init Error Handler - - - - - - - */
-			(void)(1);
+			SerialAPI_FatalErrorHandler();
 			/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
 		}
 
@@ -84,15 +82,30 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 }
 
 
-/**	@brief	Creates initialization thread.
- *			Starts the scheduler if necessary
+/**	@brief	Creates initialization thread
  *
  *	@param	*gSBGC - pointer to sbgcGeneral_t object
  */
 void SystemSBGC32_Init (void *gSBGC)
 {
-	SystemSBGC32_CreateThread(SBGC32_InitThread, "SBGC32 Init", SBGC_INIT_THREAD_STACK,
-							  gSBGC, SBGC_THREAD_PRIOR_HIGH, NULL);
+	configSTACK_DEPTH_TYPE usStackDepth = configMINIMAL_STACK_SIZE;
+	usStackDepth = (usStackDepth > 64) ? usStackDepth : 64;
+
+	if (SystemSBGC32_CreateThread(SBGC32_InitThread, "SBGC32 Init", usStackDepth,
+								  gSBGC, SBGC_THREAD_PRIOR, NULL) != pdPASS)
+		SerialAPI_FatalErrorHandler();
+}
+
+
+/**	@brief	Removes the SBGC32 handler thread
+ *
+ *	@param	*gSBGC - pointer to sbgcGeneral_t object
+ */
+void SystemSBGC32_Deinit (void *gSBGC)
+{
+	sbgcGeneral_t *sbgcGeneral = (sbgcGeneral_t*)gSBGC;
+
+	sbgcThreadDestroy(sbgcGeneral->_api->threadHandle);
 }
 
 
@@ -104,14 +117,16 @@ void SystemSBGC32_Init (void *gSBGC)
  *	@param	*pvParameters - pointer to parameter for the task
  *	@param	uxPriority - priority at which the task should run
  *	@param	*pxCreatedTask - reference handle for created task
+ *
+ *	@return	Thread creation status
  */
-void SystemSBGC32_CreateThread (TaskFunction_t pxTaskCode, const char * const pcName,
-								const configSTACK_DEPTH_TYPE usStackDepth,
-								void * const pvParameters,
-								UBaseType_t uxPriority,
-								TaskHandle_t * const pxCreatedTask)
+BaseType_t SystemSBGC32_CreateThread (TaskFunction_t pxTaskCode, const char * const pcName,
+									  const configSTACK_DEPTH_TYPE usStackDepth,
+									  void * const pvParameters,
+									  UBaseType_t uxPriority,
+									  TaskHandle_t * const pxCreatedTask)
 {
-	xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
+	return xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
 }
 
 
@@ -130,6 +145,10 @@ void SystemSBGC32_DestroyThreadItself (void)
 void SystemSBGC32_Yield (void)
 {
 	sbgcYield();
+
+	#if (SBGC_USE_ESPIDF_DRIVER)
+		sbgcDelay(1);
+	#endif
 }
 
 

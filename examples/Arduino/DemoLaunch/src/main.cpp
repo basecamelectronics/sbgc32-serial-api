@@ -22,8 +22,6 @@
 
 			sbgcGeneral_t 			SBGC32_Device;
 
-/* Adjustable variables are excluded from Arduino example */
-
 static		sbgcControl_t			Control;
 static		sbgcControlConfig_t		ControlConfig;
 
@@ -241,6 +239,8 @@ sbgcCommandStatus_t DemoControl (void)
 
 		sbgcDelay(500);
 	}
+
+	DebugSBGC32_PrintMessage(&SBGC32_Device, "____________________________\n\n");
 
 	Control.mode[PITCH] = CtrlMODE_NO_CONTROL;
 	Control.mode[YAW] = CtrlMODE_NO_CONTROL;

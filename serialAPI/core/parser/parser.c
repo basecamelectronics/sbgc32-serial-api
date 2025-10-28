@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		parser.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -632,6 +632,8 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_EXT_MOTORS_STATE :					memcpy(str, TEXT_LENGTH_("CMD_EXT_MOTORS_STATE")); break;
 		case CMD_ADJ_VARS_INFO :					memcpy(str, TEXT_LENGTH_("CMD_ADJ_VARS_INFO")); break;
 		case CMD_SERVO_OUT_EXT :					memcpy(str, TEXT_LENGTH_("CMD_SERVO_OUT_EXT")); break;
+		case CMD_SET_ADJ_VARS_VAL_F :				memcpy(str, TEXT_LENGTH_("CMD_SET_ADJ_VARS_VAL_F")); break;
+		case CMD_GET_ADJ_VARS_VAL_F :				memcpy(str, TEXT_LENGTH_("CMD_GET_ADJ_VARS_VAL_F")); break;
 		case CMD_CONTROL_QUAT :						memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT")); break;
 		case CMD_CONTROL_QUAT_STATUS :				memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT_STATUS")); break;
 		case CMD_CONTROL_QUAT_CONFIG :				memcpy(str, TEXT_LENGTH_("CMD_CONTROL_QUAT_CONFIG")); break;
@@ -725,11 +727,11 @@ void ParserSBGC32_FormatDeviceType (sbgcGeneral_t *gSBGC, ui8 boardVer, char *pB
 	{
 		case 25 :	gSBGC->_ll->debugSprintf(pBuff, "Tiny rev. C GD32");	break;
 		case 27 :	gSBGC->_ll->debugSprintf(pBuff, "Extended Long GD32");	break;
-		case 30 :	gSBGC->_ll->debugSprintf(pBuff, "Regular rev. A/B");	break;
-		case 31 :	gSBGC->_ll->debugSprintf(pBuff, "Tiny rev. B/C");		break;
+		case 30 :	gSBGC->_ll->debugSprintf(pBuff, "Regular");				break;
+		case 31 :	gSBGC->_ll->debugSprintf(pBuff, "Tiny");				break;
 		case 34 :	gSBGC->_ll->debugSprintf(pBuff, "OEM");					break;
 		case 36 :	gSBGC->_ll->debugSprintf(pBuff, "Extended");			break;
-		case 42 :	gSBGC->_ll->debugSprintf(pBuff, "Pro");					break;
+		case 41 :	gSBGC->_ll->debugSprintf(pBuff, "Pro");					break;
 		case 50 :	gSBGC->_ll->debugSprintf(pBuff, "CAN MCU");				break;
 
 		default:	break;
@@ -861,7 +863,6 @@ static sbgcParserMap_t ParserSBGC32_GetCommandParserMap (serialAPI_Command_t *se
 
 			case CMD_CONTROL_EXT :													return PM_CONTROL_EXT;
 			case CMD_CONTROL_QUAT :													return PM_CONTROL_QUAT;
-			case CMD_EXT_MOTORS_CONTROL :											return PM_EXT_MOTORS_CONTROL;
 			case CMD_CONTROL_CONFIG :												return PM_CONTROL_CONFIG;
 			case CMD_CONTROL_QUAT_CONFIG :											return PM_CONTROL_QUAT_CONFIG;
 			case CMD_EXT_MOTORS_CONTROL_CONFIG :									return PM_EXT_MOTORS_CONTROL_CONFIG;

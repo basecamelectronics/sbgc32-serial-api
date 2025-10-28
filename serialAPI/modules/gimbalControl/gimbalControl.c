@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		gimbalControl.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -453,6 +453,9 @@ sbgcCommandStatus_t SBGC32_ControlExt (sbgcGeneral_t *gSBGC, const sbgcControlEx
  *			adjusted with the @ref SBGC32_ControlConfig
  *			function
  *
+ *	@pre	Board features:\n
+ *			QUAT_CONTROL = (1 << 3) (ext.2)
+ *
  *	@post	If sbgcControlQuat_t.flags is set to
  *			CtrlQ_FLAG_NEED_CONFIRM, SBGC32
  *			will send confirmation command
@@ -668,6 +671,10 @@ sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlEx
  *
  *	@attention	Firmware: 2.61+
  *
+ *	@note	sbgcControlConfig_t.EulerOrder field value
+ *			must be increased by 1
+ *
+ *
  *	@code
 
 			#define SBGC_PITCH_LPF 5
@@ -718,6 +725,9 @@ sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcContro
  *
  *	####	TX —> CMD_CONTROL_QUAT_CONFIG :	1-24 bytes
  *	####	RX <— CMD_CONFIRM :				1-6 bytes
+ *
+ *	@pre	Board features:\n
+ *			QUAT_CONTROL = (1 << 3) (ext.2)
  *
  *	@attention	Firmware: 2.73+
  *

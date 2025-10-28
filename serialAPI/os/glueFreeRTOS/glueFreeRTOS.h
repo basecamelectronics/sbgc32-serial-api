@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		glueFreeRTOS.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -49,8 +49,13 @@ extern		"C" {
 
 #if (SBGC_USE_FREE_RTOS)
 
-#include	"FreeRTOS.h"
-#include	"semphr.h"
+#if (SBGC_USE_ESPIDF_DRIVER)
+	#include	"freertos/FreeRTOS.h"
+	#include	"freertos/semphr.h"
+#else
+	#include	"FreeRTOS.h"
+	#include	"semphr.h"
+#endif
 
 
 /**	@addtogroup	FreeRTOS_Glue
@@ -78,9 +83,10 @@ typedef		xSemaphoreHandle		sbgcMutex_t;
 #define		sbgcMalloc(size)		pvPortMalloc(size)
 #define		sbgcFree(ptr)			vPortFree(ptr)
 
-#define		sbgcDelay(tick)			vTaskDelay(tick)
+#define		sbgcDelay(tick)			vTaskDelay(tick / portTICK_PERIOD_MS)
 #define		sbgcGetTick()			xTaskGetTickCount()
-#define		sbgcMsToTicks(ms)		((__Ticks_t)((ms) / portTICK_PERIOD_MS))
+#define		sbgcTickToMs(tick)		((tick) * (1000.0 / configTICK_RATE_HZ))
+#define		sbgcMsToTick(ms)		((ms) / portTICK_PERIOD_MS)
 
 #define		sbgcYield()				taskYIELD()
 
@@ -98,18 +104,17 @@ typedef		xSemaphoreHandle		sbgcMutex_t;
 #define		SBGC_THREAD_PRIOR_NORMAL		(configMAX_PRIORITIES / 2)
 #define		SBGC_THREAD_PRIOR_HIGH			(configMAX_PRIORITIES - 1)
 
-#define		SBGC_INIT_THREAD_STACK			64
-
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
 void SystemSBGC32_Init (void *gSBGC);
-void SystemSBGC32_CreateThread (TaskFunction_t pxTaskCode, const char * const pcName,
-								const configSTACK_DEPTH_TYPE usStackDepth,
-								void * const pvParameters,
-								UBaseType_t uxPriority,
-								TaskHandle_t * const pxCreatedTask);
+void SystemSBGC32_Deinit (void *gSBGC);
+BaseType_t SystemSBGC32_CreateThread (TaskFunction_t pxTaskCode, const char * const pcName,
+									  const configSTACK_DEPTH_TYPE usStackDepth,
+									  void * const pvParameters,
+									  UBaseType_t uxPriority,
+									  TaskHandle_t * const pxCreatedTask);
 void SystemSBGC32_DestroyThreadItself (void);
 void SystemSBGC32_Yield (void);
 void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle);

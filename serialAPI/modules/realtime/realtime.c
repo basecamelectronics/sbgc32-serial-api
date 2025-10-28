@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		realtime.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -285,6 +285,16 @@
  *			@ref ParserSBGC32_CAN_DT_FlagsAndID_ToStream \n
  *			@ref ParserSBGC32_EMS_ID_AndSetToStream
  *
+ *	@pre	Board requirements:\n
+ *			ENCODERS = (1 << 2) when using RTDCF_ENCODER_RAW24 \n
+ *			SCRIPTING = (1 << 4) when using RTDCF_SCRIPT_VARS_FLOAT or
+ *			RTDCF_SCRIPT_VARS_INT16 \n
+ *			CAN_PORT = (1 << 10) when using DSC_CMD_CAN_DRV_TELEMETRY \n
+ *			POWER_MANAGEMENT = (1 << 19) (ext.) when using RTDCF_SYSTEM_POWER_STATE \n
+ *			EXT_MOTORS = (1 << 2) (ext.2) when using DSC_CMD_EXT_MOTORS_STATE \n
+ *			QUAT_CONTROL = (1 << 3) (ext.2) when using RTDCF_IMU_QUAT or
+ *			RTDCF_TARGET_QUAT or RTDCF_IMU_TO_FRAME_QUAT
+ *
  *	@post	Use the @ref SBGC32_ReadDataStream function
  *			for parse the requested data
  *
@@ -515,22 +525,22 @@ sbgcCommandStatus_t SBGC32_StopDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamI
  */
 static void PostReadDataStream (sbgcGeneral_t *gSBGC)
 {
-	if (serialAPI_CurCmd_->_destinationSize < serialAPI_CurCmd_->_payloadSize)
+	if (curCmd_->_destinationSize < curCmd_->_payloadSize)
 		SerialAPI_FatalErrorHandler();
 
-	switch (serialAPI_CurCmd_->_commandID)
+	switch (curCmd_->_commandID)
 	{
 		case CMD_REALTIME_DATA_3 :
 		{
 			/* dataStreamStruct = &RealTimeData_t struct for reading */
-			gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, SIZEOF_REALTIME_DATA_3);
+			gSBGC->_api->readBuff(gSBGC, curCmdDest_, SIZEOF_REALTIME_DATA_3);
 			break;
 		}
 
 					case CMD_REALTIME_DATA_4 :
 					{
 						/* dataStreamStruct = &RealTimeData_t struct for reading */
-						gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, sizeof(sbgcRealTimeData_t));
+						gSBGC->_api->readBuff(gSBGC, curCmdDest_, sizeof(sbgcRealTimeData_t));
 						break;
 					}
 
@@ -546,14 +556,14 @@ static void PostReadDataStream (sbgcGeneral_t *gSBGC)
 			   *RealTimeDataCustom = (sbgcRealTimeDataCustomReference_t*)pDestination for reading
 			 */
 
-			gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize);
+			gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize);
 			break;
 		}
 
 					case CMD_AHRS_HELPER :
 					{
 						/* dataStreamStruct = &RealTimeData_t->Z_Vect[0] field for reading */
-						gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize);
+						gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize);
 						for (ui8 i = 0; i < 6; i++) gSBGC->_api->readLong(gSBGC);
 						break;
 					}
@@ -563,7 +573,7 @@ static void PostReadDataStream (sbgcGeneral_t *gSBGC)
 		case CMD_EXT_MOTORS_STATE :
 		{
 			/* The structure should be prepared for reading at this point. Read all the data */
-			gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize);
+			gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize);
 			break;
 		}
 
@@ -652,17 +662,19 @@ sbgcCommandStatus_t SBGC32_ReadDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamC
  */
 static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 {
-	if (serialAPI_CurCmd_->_destinationSize < serialAPI_CurCmd_->_payloadSize)
+	if (curCmd_->_destinationSize < curCmd_->_payloadSize)
+	{
 		SerialAPI_FatalErrorHandler();
+	}
 
 	#if (SBGC_SYS_LITTLE_ENDIAN)
 
 		/* Skip flags and read */
-		gSBGC->_api->readBuff(gSBGC, ((ui8*)serialAPI_CurCmdDest_) + 4, serialAPI_CurCmd_->_payloadSize);
+		gSBGC->_api->readBuff(gSBGC, ((ui8*)curCmdDest_) + 4, curCmd_->_payloadSize);
 
 	#else
 
-		sbgcRealTimeDataCustomReference_t *realTimeDataCustom = serialAPI_CurCmdDest_;
+		sbgcRealTimeDataCustomReference_t *realTimeDataCustom = curCmdDest_;
 
 		realTimeDataCustom->timestampMs = gSBGC->_api->readWord(gSBGC);
 
@@ -737,14 +749,14 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_MOTOR4_CONTROL)
 					{
-						serialAPI_CurCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->Motor4_Control, serialAPI_CurCmd_->_payload,
+						curCmd_->_payload +=
+								gSBGC->_api->convWithPM(&realTimeDataCustom->Motor4_Control, curCmd_->_payload,
 														sizeof(sbgcMotor4_Control_t), PM_MOTOR_4_CONTROL);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_AHRS_DEBUG_INFO)
 		{
-			serialAPI_CurCmd_->_payload += gSBGC->_api->convWithPM(&realTimeDataCustom->AHRS_DebugInfo, serialAPI_CurCmd_->_payload,
+			curCmd_->_payload += gSBGC->_api->convWithPM(&realTimeDataCustom->AHRS_DebugInfo, curCmd_->_payload,
 			sizeof(sbgcAHRS_DebugInfo_t), PM_AHRS_DEBUG_INFO);
 		}
 
@@ -776,8 +788,8 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_SYSTEM_POWER_STATE)
 					{
-						serialAPI_CurCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->SystemPowerState, serialAPI_CurCmd_->_payload,
+						curCmd_->_payload +=
+								gSBGC->_api->convWithPM(&realTimeDataCustom->SystemPowerState, curCmd_->_payload,
 														sizeof(sbgcSystemPowerState_t), PM_SYSTEM_POWER_STATE);
 					}
 
@@ -804,15 +816,15 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_COMM_ERRORS)
 					{
-						serialAPI_CurCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->CommunicationErrors, serialAPI_CurCmd_->_payload,
+						curCmd_->_payload +=
+								gSBGC->_api->convWithPM(&realTimeDataCustom->CommunicationErrors, curCmd_->_payload,
 														sizeof(sbgcCommunicationErrors_t), PM_COMMUNICATION_ERRORS);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_SYSTEM_STATE)
 		{
-			serialAPI_CurCmd_->_payload +=
-					gSBGC->_api->convWithPM(&realTimeDataCustom->SystemState, serialAPI_CurCmd_->_payload,
+			curCmd_->_payload +=
+					gSBGC->_api->convWithPM(&realTimeDataCustom->SystemState, curCmd_->_payload,
 							sizeof(sbgcSystemState_t), PM_SYSTEM_STATE);
 		}
 
@@ -824,6 +836,31 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_IMU_TO_FRAME_QUAT)
 						gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->IMU_ToFrameQuat, sizeof(realTimeDataCustom->IMU_ToFrameQuat));
+
+		if (realTimeDataCustom->flags & RTDCF_ADC_CH_RAW)
+			for (ui8 k = 0; k < 4; k++)
+				realTimeDataCustom->ADC_ChRaw[k] = gSBGC->_api->readWord(gSBGC);
+
+					if (realTimeDataCustom->flags & RTDCF_SW_LIMITS_DIST)
+						for (ui8 k = 0; k < 3; k++)
+						{
+							realTimeDataCustom->swLimitsDist[k][0] = (i16)gSBGC->_api->readWord(gSBGC);
+							realTimeDataCustom->swLimitsDist[k][1] = (i16)gSBGC->_api->readWord(gSBGC);
+						}
+
+		if (realTimeDataCustom->flags & RTDCF_FOLLOW_DIST)
+			for (ui8 k = 0; k < 3; k++)
+				realTimeDataCustom->followDist[k] = (i16)gSBGC->_api->readWord(gSBGC);
+
+					if (realTimeDataCustom->flags & RTDCF_EXT_TARGET_LIMIT)
+					{
+						realTimeDataCustom->extTargetLimitMin[ROLL] = (i32)gSBGC->_api->readLong(gSBGC);
+						realTimeDataCustom->extTargetLimitMin[PITCH] = (i32)gSBGC->_api->readLong(gSBGC);
+						realTimeDataCustom->extTargetLimitMin[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
+						realTimeDataCustom->extTargetLimitMax[ROLL] = (i32)gSBGC->_api->readLong(gSBGC);
+						realTimeDataCustom->extTargetLimitMax[PITCH] = (i32)gSBGC->_api->readLong(gSBGC);
+						realTimeDataCustom->extTargetLimitMax[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
+					}
 
 	#endif
 }
@@ -860,7 +897,20 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *				bit20:		sbgcRealTimeDataCustomReference_t.SystemStateFlags			RTDCF_SYSTEM_STATE			Frw. ver. 2.73+		\n
  *				bit21:		sbgcRealTimeDataCustomReference_t.IMU_Quat [8]				RTDCF_IMU_QUAT				Frw. ver. 2.73+		\n
  *				bit22:		sbgcRealTimeDataCustomReference_t.targetQuat [8]			RTDCF_TARGET_QUAT			Frw. ver. 2.73+		\n
- *				bit23:		sbgcRealTimeDataCustomReference_t.IMU_ToFrameQuat [8]		RTDCF_IMU_TO_FRAME_QUAT		Frw. ver. 2.73+
+ *				bit23:		sbgcRealTimeDataCustomReference_t.IMU_ToFrameQuat [8]		RTDCF_IMU_TO_FRAME_QUAT		Frw. ver. 2.73+		\n
+ *				bit24:		sbgcRealTimeDataCustomReference_t.ADC_ChRaw [4]				RTDCF_ADC_CH_RAW			Frw. ver. 2.73+		\n
+ *				bit25:		sbgcRealTimeDataCustomReference_t.swLimitsDist [3][2]		RTDCF_SW_LIMITS_DIST		Frw. ver. 2.73.8+	\n
+ *				bit26:		sbgcRealTimeDataCustomReference_t.followDist [3]			RTDCF_FOLLOW_DIST			Frw. ver. 2.73.8+	\n
+ *				bit27:		sbgcRealTimeDataCustomReference_t.extTargetLimitMin [3],
+ *							sbgcRealTimeDataCustomReference_t.extTargetLimitMax [3]		RTDCF_EXT_TARGET_LIMIT		Frw. ver. 2.73.8+
+ *
+ *	@pre	Board requirements:\n
+ *			ENCODERS = (1 << 2) when using RTDCF_ENCODER_RAW24 \n
+ *			SCRIPTING = (1 << 4) when using RTDCF_SCRIPT_VARS_FLOAT or
+ *			RTDCF_SCRIPT_VARS_INT16 \n
+ *			POWER_MANAGEMENT = (1 << 19) (ext.) when using RTDCF_SYSTEM_POWER_STATE \n
+ *			QUAT_CONTROL = (1 << 3) (ext.2) when using RTDCF_IMU_QUAT or
+ *			RTDCF_TARGET_QUAT or RTDCF_IMU_TO_FRAME_QUAT
  *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
  *			function with PM_MOTOR_4_CONTROL or
@@ -1162,12 +1212,12 @@ sbgcCommandStatus_t SBGC32_GetAnglesExt (sbgcGeneral_t *gSBGC, sbgcGetAnglesExt_
  */
 static void PostReadRC_Inputs (sbgcGeneral_t *gSBGC)
 {
-	if (serialAPI_CurCmd_->_destinationSize < serialAPI_CurCmd_->_payloadSize)
+	if (curCmd_->_destinationSize < curCmd_->_payloadSize)
 		SerialAPI_FatalErrorHandler();
 
-	sbgcRC_Inputs_t *RC_Inputs = (sbgcRC_Inputs_t*)serialAPI_CurCmdDest_;
+	sbgcRC_Inputs_t *RC_Inputs = (sbgcRC_Inputs_t*)curCmdDest_;
 
-	for (ui8 i = 0; i < (serialAPI_CurCmd_->_payloadSize / 2); i++)
+	for (ui8 i = 0; i < (curCmd_->_payloadSize / 2); i++)
 		RC_Inputs[i].RC_Val = (i16)gSBGC->_api->readWord(gSBGC);
 }
 
@@ -1247,12 +1297,12 @@ sbgcCommandStatus_t SBGC32_ReadRC_Inputs (sbgcGeneral_t *gSBGC, sbgcRC_Inputs_t 
  */
 static void PostRequestDebugVarInfo3 (sbgcGeneral_t *gSBGC)
 {
-	sbgcDebugVar3_Info_t *debugVars3_Info = (sbgcDebugVar3_Info_t*)serialAPI_CurCmdDest_;
-	ui8 payloadSize = serialAPI_CurCmd_->_payloadSize;
+	sbgcDebugVar3_Info_t *debugVars3_Info = (sbgcDebugVar3_Info_t*)curCmdDest_;
+	ui8 payloadSize = curCmd_->_payloadSize;
 
 	ui8 varNum = gSBGC->_api->readByte(gSBGC);
 
-	if (serialAPI_CurCmd_->_destinationSize < (sizeof(sbgcDebugVar3_Info_t) * varNum))
+	if (curCmd_->_destinationSize < (sizeof(sbgcDebugVar3_Info_t) * varNum))
 		SerialAPI_FatalErrorHandler();
 
 	payloadSize--;
@@ -1355,8 +1405,8 @@ sbgcCommandStatus_t SBGC32_RequestDebugVarInfo3 (sbgcGeneral_t *gSBGC, sbgcDebug
  */
 static void PostRequestDebugVarValue3 (sbgcGeneral_t *gSBGC)
 {
-	sbgcDebugVars3_t *debugVars3 = (sbgcDebugVars3_t*)serialAPI_CurCmdDest_;
-	ui8 payloadSize = serialAPI_CurCmd_->_payloadSize;
+	sbgcDebugVars3_t *debugVars3 = (sbgcDebugVars3_t*)curCmdDest_;
+	ui8 payloadSize = curCmd_->_payloadSize;
 	ui8 varNum = 0;
 
 	for ( ; payloadSize; varNum++)
@@ -1506,17 +1556,20 @@ static void PostControlQuatStatus (sbgcGeneral_t *gSBGC)
 {
 	ui8 bytesSkip = sizeof(ui32);
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - bytesSkip))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - bytesSkip))
 		SerialAPI_FatalErrorHandler();
 
 	gSBGC->_api->skipBytes(gSBGC, bytesSkip);
-	gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize - bytesSkip);
+	gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize - bytesSkip);
 }
 
 /**	@brief	Requests quaternions realtime data
  *
  *	####	TX —> CMD_CONTROL_QUAT_STATUS :	4 bytes
  *	####	RX <— CMD_CONTROL_QUAT_STATUS : ? bytes
+ *
+ *	@pre	Board requirements:\n
+ *			QUAT_CONTROL = (1 << 3) (ext.2)
  *
  *	@code
 
@@ -1578,7 +1631,7 @@ sbgcCommandStatus_t SBGC32_ControlQuatStatus (sbgcGeneral_t *gSBGC, sbgcControlQ
 	sbgcAssertFeature2(BFE2_QUAT_CONTROL)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_QUAT_STATUS SBGC_ADVANCED_ARGS__);
-	gSBGC->_api->writeByte(gSBGC, flags);
+	gSBGC->_api->writeLong(gSBGC, flags);
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->startRead(gSBGC, CMD_CONTROL_QUAT_STATUS SBGC_ADVANCED_ARGS__);

@@ -31,6 +31,16 @@
  */
 typedef enum
 {
+	JDS_PROCESS						= 0,
+	JDS_DIGITAL,
+	JDS_ANALOG,
+	JDS_ERROR
+
+}	JoystickDetermineState_t;
+
+
+typedef enum
+{
 	IN_ON,
 	IN_NEED_INIT,
 	IN_NEED_DEINIT,

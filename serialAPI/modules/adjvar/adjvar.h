@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		adjvar.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -108,8 +108,9 @@ extern		"C" {
  */
 
 /** Maximal number of adjustable variables
-	for current library version */
-#define		SBGC_ADJ_VARS_MAX_QUANTITY		91
+	for current library version.
+	@ref SerialAPI_DFP */
+#define		SBGC_ADJ_VARS_MAX_QUANTITY		102
 
 /** Minimal number of adjustable variables
 	compatible with all firmwares */
@@ -129,10 +130,27 @@ extern		"C" {
 /** Can be used for cutting "ADJ_VAR_" prefix
 	from adjustable variable name */
 #define		SBGC_ADJ_VAR_NAME_CUT	8
+/**	@}
+ */
+
+
+/**	@addtogroup	Adjvar_Configs
+ *	@{
+ */
+/** Total number of trigger slots */
+#define		SBGC_ADJ_VAR_TRIGGER_SLOTS_NUM	10
+
+/** Total number of analog slots */
+#define		SBGC_ADJ_VAR_ANALOG_SLOTS_NUM	15
+/**	@}
+ */
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *				Adjustable Variables General Objects
+ */
+/**	@addtogroup	Adjvar
+ *	@{
  */
 /**	@brief	Adjustable variables general enumeration
  *
@@ -233,7 +251,18 @@ typedef enum
 	ADJ_VAR_SHAKE_FREQ_SHIFT_ROLL,
 	ADJ_VAR_SHAKE_FREQ_SHIFT_TILT,
 	ADJ_VAR_SHAKE_FREQ_SHIFT_PAN,
-	ADJ_VAR_SHAKE_MASTER_GAIN
+	ADJ_VAR_SHAKE_MASTER_GAIN,
+	ADJ_VAR_OUTER_P_ROLL,
+	ADJ_VAR_OUTER_P_PITCH,
+	ADJ_VAR_OUTER_P_YAW,
+	ADJ_VAR_D_LPF_FREQ_ROLL,
+	ADJ_VAR_D_LPF_FREQ_PITCH,
+	ADJ_VAR_D_LPF_FREQ_YAW,
+	ADJ_VAR_IMU_ANGLE_CORR_ROLL,
+	ADJ_VAR_IMU_ANGLE_CORR_PITCH,
+	ADJ_VAR_SW_LIM_WIDTH_ROLL,
+	ADJ_VAR_SW_LIM_WIDTH_PITCH,
+	ADJ_VAR_SW_LIM_WIDTH_YAW
 
 }	sbgcAdjVarID_t;
 
@@ -271,7 +300,12 @@ typedef struct
 	i16				minValue,						/*!<  Adjustable variable minimal value												*/
 					maxValue;						/*!<  Adjustable variable maximal value												*/
 
-	i32				value;							/*!<  Adjustable variable value														*/
+	union
+	{
+		i32			value;							/*!<  Adjustable variable value	as 32-bit integer									*/
+		float		value_f;						/*!<  Adjustable variable value	as float											*/
+
+	};
 
 	sbgcAdjVarSyncFlag_t
 					syncFlag;						/*!<  Set when the value of adjustable variable synchronized with gimbal			*/
@@ -354,9 +388,13 @@ typedef struct PACKED__
  */
 typedef struct PACKED__
 {
-	sbgcTriggerSlot_t		TriggerSlot [10];
+	sbgcTriggerSlot_t
+			TriggerSlot
+			[SBGC_ADJ_VAR_TRIGGER_SLOTS_NUM];
 
-	sbgcAnalogSlot_t		AnalogSlot [15];
+	sbgcAnalogSlot_t
+			AnalogSlot
+			[SBGC_ADJ_VAR_ANALOG_SLOTS_NUM];
 
 	ui8		reserved [8];
 
@@ -452,12 +490,19 @@ sbgcAdjVarGeneral_t *SerialAPI_FindAdjVarByID (sbgcGeneral_t *gSBGC, sbgcAdjVarG
  *	@{
  */
 void SerialAPI_EditAdjVarValue (sbgcAdjVarGeneral_t *adjVarGeneral, i32 value);
+void SerialAPI_EditAdjVarValueFloat (sbgcAdjVarGeneral_t *adjVarGeneral, float value);
 sbgcCommandStatus_t SBGC32_SetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
 										   SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_SetAdjVarValueFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
+												SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm
 											SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_SetAdjVarValuesFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm
+												 SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_GetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_GetAdjVarValueFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_GetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_GetAdjVarValuesFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
 											   SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm

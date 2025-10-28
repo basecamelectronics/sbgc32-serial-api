@@ -9,7 +9,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include serialAPI/os/glueLinuxOS/subdir.mk
+-include serialAPI/os/gluePThread/subdir.mk
 -include serialAPI/os/glueFreeRTOS/subdir.mk
 -include serialAPI/os/glueAzureRTOS/subdir.mk
 -include serialAPI/modules/service/subdir.mk
@@ -22,6 +22,7 @@ RM := rm -rf
 -include serialAPI/modules/adjvar/subdir.mk
 -include serialAPI/drivers/driverSTM32/subdir.mk
 -include serialAPI/drivers/driverLinux/subdir.mk
+-include serialAPI/drivers/driverESP32/subdir.mk
 -include serialAPI/core/parser/subdir.mk
 -include serialAPI/core/highLayer/subdir.mk
 -include serialAPI/core/debug/subdir.mk

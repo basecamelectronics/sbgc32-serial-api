@@ -8,7 +8,7 @@ This library is a helping instrument for communication between the SimpleBGC32 d
 For more comfortable interaction with the SBGC32 devices repository contents possible [examples](examples) of implementations of the
 driver algorithms are presented. General protocol source files are placed in the [modules](serialAPI/modules) folder. Also, you may include 
 the pre-made driver files if you rather to create an application using the Arduino (AVR MCUs), STM32 or Linux OS. See the
-[drivers](serialAPI/drivers) folder. Additionally, the library is compatible with [AzureRTOS, FreeRTOS, and Linux OS](serialAPI/os).
+[drivers](serialAPI/drivers) folder. Additionally, the library is compatible with [AzureRTOS, FreeRTOS, and PThread](serialAPI/os).
 Pay attention to the [serialAPI_ConfigTemplate.h](serialAPI/serialAPI_ConfigTemplate.h) file. This file helps to configure the internal
 functionality of the library. Copy it, rename it to "serialAPI_Config.h", move it wherever you want and configure the contents.
 
@@ -45,7 +45,7 @@ controller for the SBGC32-based devices. Other examples work exclusively in bloc
 Additionally, please refer to the note contained in the [sbgc32.h](serialAPI/sbgc32.h) file. It includes a lot of useful information
 about the features of this library.
 
-To connect the library to your project, just place the [serialAPI](serialAPI) folder in it.
+To connect the library to your project, just place or link the [serialAPI](serialAPI) folder in it.
 
 **Initialization:**
 

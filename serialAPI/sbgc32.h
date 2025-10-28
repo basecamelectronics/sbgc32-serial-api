@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		sbgc32.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -114,7 +114,7 @@
 
 			// Declare a general SBGC32 object
 			sbgcGeneral_t SBGC32_Device;
-
+			
 			#if (SBGC_USES_CUSTOM_DRIVER)
 
 				// Link user-defined driver functions
@@ -171,7 +171,7 @@
  *	**OS-mode:**\n
  *	@ref SBGC_NON_BLOCKING_MODE == sbgcON and the library are using an
  *	OS helper driver (@ref SBGC_USE_AZURE_RTOS, @ref SBGC_USE_FREE_RTOS
- *	or @ref SBGC_USE_LINUX_OS setting is sbgcON) - non-blocking mode
+ *	or @ref SBGC_USE_PTHREAD_OS setting is sbgcON) - non-blocking mode
  *	with OS-oriented functions implementation. The @ref SBGC32_Init
  *	function creates its own thread, initializes the library core
  *	within it and deletes it. Then it creates a new thread to run a
@@ -276,11 +276,16 @@
  *			+ @ref SerialAPI_InitAdjVar - Automatically initializes adjustable variable					\n
  *			+ @ref SerialAPI_InitAllAdjVars - Automatically initializes all adjustable variables		\n
  *			+ @ref SerialAPI_FindAdjVarByID - Finds adjustable variable by its ID						\n
- *			+ @ref SerialAPI_EditAdjVarValue - Changes the value of adjustable variable					\n
+ *			+ @ref SerialAPI_EditAdjVarValue - Changes the value of adjustable variable as int32		\n
+ *			+ @ref SerialAPI_EditAdjVarValueFloat - Changes the value of adjustable variable as float	\n
  *			+ @ref SBGC32_SetAdjVarValue - Sets a new value for the adjustable variable					\n
+ *			+ @ref SBGC32_SetAdjVarValueFloat - Sets a new float value for the adjustable variable		\n
  *			+ @ref SBGC32_SetAdjVarValues - Sets new values for a set of adjustable variables			\n
+ *			+ @ref SBGC32_SetAdjVarValuesFloat - Sets new float values for a set of adjustable variables\n
  *			+ @ref SBGC32_GetAdjVarValue - Queries the actual value of selected variable				\n
+ *			+ @ref SBGC32_GetAdjVarValueFloat - Queries the actual value of selected variable in float	\n
  *			+ @ref SBGC32_GetAdjVarValues - Requires the value of adjustable variables					\n
+ *			+ @ref SBGC32_GetAdjVarValuesFloat - Requires the value of adjustable variables in float	\n
  *			+ @ref SBGC32_SaveAdjVarToEEPROM - Saves current value of adjustable variable to EEPROM		\n
  *			+ @ref SBGC32_SaveAdjVarsToEEPROM - Saves current adjustable variables' value to EEPROM		\n
  *			+ @ref SBGC32_SaveAllActiveAdjVarsToEEPROM - Saves all not saved active variables			\n
@@ -584,6 +589,7 @@
  *			+ @ref SBGC32_Reset - Resets the controller													\n
  *			+ @ref SBGC32_SetTriggerPin - Triggers output pin											\n
  *			+ @ref SBGC32_ExecuteMenu - Executes menu command											\n
+ *			+ @ref SBGC32_ExecuteMenuExt - Executes menu command with optional flags					\n
  *			+ @ref SBGC32_SetServoOut - Sets output PWM signal on the specified pins					\n
  *			+ @ref SBGC32_SetServoOutExt - Sets output PWM signal on the specified
  *			pins in extended format																		\n
@@ -767,6 +773,10 @@
  *
  *	* Notes and tips:
  *
+ *		- @anchor SerialAPI_DFP
+ *		*- Developer Focus Point. A critical section in the code that
+ *		requires additional verification with each firmware update;*
+ *
  *		- @anchor Note1
  *		*- If* @ref SBGC_SEVERAL_DEVICES == sbgcON, *it's possible to
  *		use internal driver functions having manually initialized
@@ -815,9 +825,12 @@
  *		*- Starting to work with the gimbal using Arduino don't forget
  *		to check the **SERIAL_TX_BUFFER_SIZE** and
  *		**SERIAL_RX_BUFFER_SIZE** constants in the "HardwareSerial.h"
- *		file. Strongly recommend increasing these values to 256;*\n
+ *		file. Strongly recommend increasing these values to 256.
+ *		Since the Arduino ESP32 framework provides methods for
+ *		modifying these buffers, this action is not necessary
+ *		when working with the ESP32;*\n
  *
- *		*- When a SBGC32 connected with Linux device you need to set
+ *		*- When a SBGC32 connected with  device you need to set
  *		**choose mode** for this connection to **read, write, and
  *		executable**. Use the next command for terminal:
  *		<sudo chmod a+rwx /dev/ttyXXxx>;*\n
@@ -853,6 +866,12 @@
  *		*- In the OS mode, the command timeout is converted into its
  *		period. Now, this command will be processed once every x
  *		milliseconds regardless of the execution result;*\n
+ *
+ *		*- When working with ESP-IDF, it's possible to wrap the library
+ *		with a FreeRTOS layer. To avoid compilation issues, enable the
+ *		sdkconfig option: Component config -> FreeRTOS ->
+ *		Run the Amazon SMP FreeRTOS kernel instead.*\n
+ *
  *
  *		*- It is possible to use the* @ref sbgcMalloc *macro to
  *		allocate memory space, but be careful when using AzureRTOS
@@ -1079,8 +1098,8 @@ extern		"C" {
 	#define	SBGC_USE_FREE_RTOS		sbgcOFF
 #endif
 
-#ifndef	SBGC_USE_LINUX_OS
-	#define	SBGC_USE_LINUX_OS		sbgcOFF
+#ifndef	SBGC_USE_PTHREAD_OS
+	#define	SBGC_USE_PTHREAD_OS		sbgcOFF
 #endif
 
 #ifndef	SBGC_THREAD_STACK_SIZE
@@ -1113,6 +1132,10 @@ extern		"C" {
 
 #ifndef SBGC_USE_ARDUINO_DRIVER
 	#define	SBGC_USE_ARDUINO_DRIVER	sbgcOFF
+#endif
+
+#ifndef SBGC_USE_ESPIDF_DRIVER
+	#define	SBGC_USE_ESPIDF_DRIVER	sbgcOFF
 #endif
 
 #ifndef SBGC_USE_LINUX_DRIVER
@@ -1158,20 +1181,17 @@ extern		"C" {
 	#endif
 #endif
 
-#if ((SBGC_USE_AZURE_RTOS && SBGC_USE_FREE_RTOS) ||\
-	 (SBGC_USE_FREE_RTOS && SBGC_USE_LINUX_OS) ||\
-	 (SBGC_USE_LINUX_OS && SBGC_USE_AZURE_RTOS))
+#if ((SBGC_USE_AZURE_RTOS + SBGC_USE_FREE_RTOS + SBGC_USE_PTHREAD_OS) < sbgcON)
 	#error "Error! Select the one target OS"
 #endif
 
 #if ((SBGC_NON_BLOCKING_MODE == sbgcOFF) &&\
-	 (SBGC_USE_AZURE_RTOS || SBGC_USE_FREE_RTOS ||SBGC_USE_LINUX_OS))
+	 (SBGC_USE_AZURE_RTOS || SBGC_USE_FREE_RTOS ||SBGC_USE_PTHREAD_OS))
 	#error "Error! This software won't work with OS in blocking mode"
 #endif
 
-#if ((SBGC_USE_ARDUINO_DRIVER && SBGC_USE_LINUX_DRIVER) ||\
-	 (SBGC_USE_LINUX_DRIVER && SBGC_USE_STM32_DRIVER) ||\
-	 (SBGC_USE_STM32_DRIVER && SBGC_USE_ARDUINO_DRIVER))
+#if ((SBGC_USE_ARDUINO_DRIVER + SBGC_USE_ESPIDF_DRIVER +\
+	SBGC_USE_LINUX_DRIVER + SBGC_USE_STM32_DRIVER) < sbgcON)
 	#error "Error! Select the one driver supply"
 #endif
 
@@ -1195,8 +1215,8 @@ extern		"C" {
 #define		SBGC_DRV_RX_BUSY_FLAG			0
 #define		SBGC_DRV_RX_BUFF_EMPTY_FLAG		BIT_0_SET
 
-#if (SBGC_USE_ARDUINO_DRIVER || SBGC_USE_LINUX_DRIVER ||\
-	 SBGC_USE_STM32_DRIVER)
+#if (SBGC_USE_ARDUINO_DRIVER || SBGC_USE_ESPIDF_DRIVER ||\
+	SBGC_USE_LINUX_DRIVER || SBGC_USE_STM32_DRIVER)
 	#define	SBGC_USES_CUSTOM_DRIVER	sbgcOFF
 #else
 	#define	SBGC_USES_CUSTOM_DRIVER	sbgcON
@@ -1212,8 +1232,8 @@ extern		"C" {
 	#include		"os/glueAzureRTOS/glueAzureRTOS.h"
 #elif (SBGC_USE_FREE_RTOS)
 	#include		"os/glueFreeRTOS/glueFreeRTOS.h"
-#elif (SBGC_USE_LINUX_OS)
-	#include		"os/glueLinuxOS/glueLinuxOS.h"
+#elif (SBGC_USE_PTHREAD_OS)
+	#include		"os/gluePThread/gluePThread.h"
 #endif
 
 #ifndef SBGC_USES_OS_SUPPORT
@@ -1268,6 +1288,10 @@ extern		"C" {
 
 /* Enable driver modules ---------------------------
  */
+#if (SBGC_USE_ESPIDF_DRIVER)
+	#include		"drivers/driverESP32/driverESP32.h"
+#endif
+ 
 #if (SBGC_USE_LINUX_DRIVER)
 	#include		"drivers/driverLinux/driverLinux.h"
 #endif
@@ -1282,6 +1306,7 @@ extern		"C" {
  *	@{
  */
 sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *sbgcGeneral);
+void SBGC32_Deinit (sbgcGeneral_t *gSBGC);
 void SerialAPI_FatalErrorHandler (void);
 void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC);
 /**	@}

@@ -54,6 +54,12 @@ void MiniRemoteGeneral::Init (void)
 					OS_HIGH_PRIORITY,
 					NULL);
 
+	/* Wait until init */
+	osDelay(50);
+
+	for (ui8 i = 0; i < MIX_CHANNELS_TOTAL_NUMBER; i++)
+		if (inputClassesArray[i]->GetState() == IN_OFF)
+			FindMixerByInput(Presets.mixChannel, inputClassesArray[i]->GetID())->state = MIX_CHANNEL_OFF;
 
 	static MixChannel_t* mixChannelTemp = Presets.mixChannel;
 

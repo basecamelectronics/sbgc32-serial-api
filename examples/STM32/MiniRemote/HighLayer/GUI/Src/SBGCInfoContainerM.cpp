@@ -158,7 +158,9 @@ sMenuItem exsSBGC32_BoardInfoItems [] =
 	{ ITEM_TYPE_VALUE, "Connection Flag", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "FRW Extra ID", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Board Features Ext", 0, 0, NULL, NULL },
-	/* reserved [3] */
+	{ ITEM_TYPE_VALUE, "Main IMU Sens Model", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Frame IMU Sens Model", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Build Number", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Base FRW Version", 0, 0, NULL, NULL },
 
 	/* BoardInfo3_t */
@@ -172,8 +174,19 @@ sMenuItem exsSBGC32_BoardInfoItems [] =
 	{ ITEM_TYPE_VALUE, "Script Slot 5 Size", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Profile Set Slots", 0, 0, NULL, NULL },
 	{ ITEM_TYPE_VALUE, "Profile Set Cur", 0, 0, NULL, NULL },
-	{ ITEM_TYPE_VALUE, "Flash Size", 0, 0, NULL, NULL }
-	/* reserved [31] */
+	{ ITEM_TYPE_VALUE, "IMU Calib Info", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Script Slot 6 Size", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Script Slot 7 Size", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Script Slot 8 Size", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Script Slot 9 Size", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Script Slot 10 Size", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Hardware Flags", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Board Features Ext 2", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "CAN Drv Main Limit", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "CAN Drv Aux. Limit", 0, 0, NULL, NULL },
+	{ ITEM_TYPE_VALUE, "Adj Vars Total Num", 0, 0, NULL, NULL }
+
+	/* reserved [10] */
 
 };
 
@@ -434,7 +447,9 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 		default :
 		/* Flag case */
 		{
-			dataStrCount = sprintf_(dataStrTemp, "F.O.");  // Flag Optimization
+			if (dataType & sbgcFLAG)
+				dataStrCount = sprintf_(dataStrTemp, "F.O.");  // Flag optimization
+
 			break;
 		}
 	}
@@ -448,7 +463,7 @@ static void ConvertDataToMenuElement (sMenuItem *arr, ui8 elementNumber, void* d
 static void BoardInfoMenuInit (void)
 {
 	/* Reading board info */
-	Gimbal.ReadBoardInfo(0, SCParam_NO, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
+	Gimbal.ReadBoardInfo(0, SCParam_FREEZE, SCPrior_NORMAL, SCTimeout_DEFAULT, SBGC_NO_CALLBACK_);
 
 	if ((!Gimbal.GetCommunicationState()) &&
 		(MiniRemote.GetDisconnectionMessageState() != DM_SHOWED))
@@ -456,38 +471,30 @@ static void BoardInfoMenuInit (void)
 
 	/* Printing */
 	ui8 i = 0;
-	ui8 reservedCount = 0;
 
 	for (; i < boardInfoReferenceInfoArrayElCnt; i++)
 	{
-		if (boardInfoReferenceInfoArray[i].type == sbgcRCHAR)
-			reservedCount++;
-
-		else
-			ConvertDataToMenuElement(exsSBGC32_BoardInfoItems, i,
-									 Gimbal.GetStructureElement(Gimbal.GetAddressBoardInfo(), PM_BOARD_INFO, i),
-									 boardInfoReferenceInfoArray[i].type);
+		ConvertDataToMenuElement(exsSBGC32_BoardInfoItems, i,
+								 Gimbal.GetStructureElement(Gimbal.GetAddressBoardInfo(), PM_BOARD_INFO, i),
+								 boardInfoReferenceInfoArray[i].type);
 	}
 
-	i -= reservedCount;
-
-	exsSBGC32_BoardInfoItems[i].value = (char*)osMalloc(10);
-	exsSBGC32_BoardInfoItems[i].value[10] = '\0';
-	memcpy(exsSBGC32_BoardInfoItems[i].value, Gimbal.GetAddressBoardInfo3()->deviceID, 9);
+	/* Device ID*/
+	exsSBGC32_BoardInfoItems[i].value = (char*)osMalloc(sizeof("A.O."));
+	memcpy(exsSBGC32_BoardInfoItems[i].value, BUFF_SIZE_("A.O."));
 	i++;
 
-	exsSBGC32_BoardInfoItems[i].value = (char*)osMalloc(13);
-	exsSBGC32_BoardInfoItems[i].value[13] = '\0';
-	memcpy(exsSBGC32_BoardInfoItems[i].value, Gimbal.GetAddressBoardInfo3()->MCU_ID, 12);
+	/* MCU ID */
+	exsSBGC32_BoardInfoItems[i].value = (char*)osMalloc(sizeof("A.O."));
+	memcpy(exsSBGC32_BoardInfoItems[i].value, BUFF_SIZE_("A.O."));
 
 	i = 2;
 
 	for (; i < boardInfo3_ReferenceInfoArrayElCnt; i++)
 	{
-		if (boardInfo3_ReferenceInfoArray[i].type != sbgcRCHAR)
-			ConvertDataToMenuElement(exsSBGC32_BoardInfoItems, (boardInfoReferenceInfoArrayElCnt - reservedCount) + i,
-									 Gimbal.GetStructureElement(Gimbal.GetAddressBoardInfo3(), PM_BOARD_INFO_3, i),
-									 boardInfo3_ReferenceInfoArray[i].type);
+		ConvertDataToMenuElement(exsSBGC32_BoardInfoItems, boardInfoReferenceInfoArrayElCnt + i,
+								 Gimbal.GetStructureElement(Gimbal.GetAddressBoardInfo3(), PM_BOARD_INFO_3, i),
+								 boardInfo3_ReferenceInfoArray[i].type);
 	}
 }
 
@@ -538,7 +545,7 @@ static void ActiveAdjVarsMenuInit (void)
 	memset(exsPrefSBGC32_AdjvarsData.Menu->psItems, 0, (sizeof(sMenuItem) * (activeAdjVarsCount + SBGC_MENU_ADJVARS_ADD_FUNC_NUM)));
 
 	exsPrefSBGC32_AdjvarsData.Menu->nItems = activeAdjVarsCount + SBGC_MENU_ADJVARS_ADD_FUNC_NUM;
-	exsPrefSBGC32_AdjvarsData.Menu->pszTitle = "Adj. Vars. Data";
+	exsPrefSBGC32_AdjvarsData.Menu->pszTitle = "Adj.Vars. Data";
 	exsPrefSBGC32_AdjvarsData.nItems = 1;
 
 	/* Reading active adjvars */
@@ -623,7 +630,7 @@ static void OtherAdjVarsMenuInit (void)
 	memset(exsPrefSBGC32_AdjvarsDataOther.Menu->psItems, 0, (sizeof(sMenuItem) * otherAdjvarCount));
 
 	exsPrefSBGC32_AdjvarsDataOther.Menu->nItems = otherAdjvarCount;
-	exsPrefSBGC32_AdjvarsDataOther.Menu->pszTitle = " Other Adj. Vars.";  // special ' ' GUI cheat
+	exsPrefSBGC32_AdjvarsDataOther.Menu->pszTitle = "Other Adj.Vars.";
 	exsPrefSBGC32_AdjvarsDataOther.nItems = 1;
 
 	/* Reading active adjvars */
@@ -778,6 +785,18 @@ void CSBGCInfoContainerM::Init (void)
 
 	ghMenu = 0;
 
+	/* Title label */
+	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE) * 2);
+	wi.g.height = LARGE_FONT_HEIGHT + 2;
+	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
+	wi.g.y = CONTAINER_TITLE_Y_MARGIN;
+	wi.text = "";
+	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
+	wi.customParam = (void*)(justifyCenter | justifyMiddle);
+	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
+	ghLabelTitle = gwinLabelCreate(0, &wi);
+	gwinSetFont(ghLabelTitle, MiniRemote.GetLargeFont());
+
 	/* Return arrow */
 	static gdispImage *gdispImageBuff;
 	Utils::imageOpenFile(gdispImageBuff, imagePathsReferenceArray[IPR_EXIT]);
@@ -805,18 +824,6 @@ void CSBGCInfoContainerM::Init (void)
 	ghImageSync = gwinImageWCreate(0, &wi);
 	Utils::imageCloseFile(gdispImageBuff);
 	gwinHide(ghImageSync);
-
-	/* Title label */
-	wi.g.width = DISPLAY_WIDTH - ((WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE) * 2) + WIDGET_HOR_MARGIN;
-	wi.g.height = LARGE_FONT_HEIGHT + 2;
-	wi.g.x = WIDGET_HOR_MARGIN + WIDGET_IMAGE_SIZE + WIDGET_IMAGE_CLEARANCE;
-	wi.g.y = CONTAINER_TITLE_Y_MARGIN;
-	wi.text = "";
-	wi.customStyle = &CWidgetStyle::MonoImgStyleLabelDimmed;
-	wi.customParam = (void*)(justifyCenter | justifyMiddle);
-	wi.customDraw = gwinLabelDrawJustifiedCustomMono;
-	ghLabelTitle = gwinLabelCreate(0, &wi);
-	gwinSetFont(ghLabelTitle, MiniRemote.GetLargeFont());
 
 	/* Dynamic structures pre-init */
 	exsPrefSBGC32_RC_Inputs.menuType = SBGC_MENU_RC_INPUTS;

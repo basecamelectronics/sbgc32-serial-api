@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		highLayer.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -141,17 +141,17 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC);
 		if (rxCmdID)
 			needRx = sbgcTRUE;
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
+		for (ui8 i = 0; i < api_->commandNumber; i++)
 		{
-			if (((gSBGC->_api->commandBuff[i]._CID & 0x000000FF) == (ui32)txCmdID) &&
-				(!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX)))
+			if (((api_->commandBuff[i]._CID & 0x000000FF) == (ui32)txCmdID) &&
+				(!(api_->commandBuff[i].parameters & SCParam_RX)))
 			{
 				complexIndex |= (i & 0x00FF);
 				txCmdID = 0;
 			}
 
-			else if ((gSBGC->_api->commandBuff[i]._CID & 0x000000FF) == (ui32)rxCmdID &&
-					 (gSBGC->_api->commandBuff[i].parameters & SCParam_RX))
+			else if ((api_->commandBuff[i]._CID & 0x000000FF) == (ui32)rxCmdID &&
+					 (api_->commandBuff[i].parameters & SCParam_RX))
 			{
 				complexIndex |= ((i << 8) & 0xFF00);
 				rxCmdID = 0;
@@ -180,33 +180,33 @@ static void SerialAPI_DeleteSentCommand (sbgcGeneral_t *gSBGC, serialAPI_Command
 	if (serialCommand->_payloadSize == 0)
 		return;
 
-	ui16 buffPointer = (ui16)(serialCommand->_payload - gSBGC->_api->txCommandBuff);
-	ui16 shiftSize = calcFreeSpaceFIFO(gSBGC->_api->txCommandBuffHead, buffPointer, SBGC_TX_BUFF_TOTAL_SIZE);
+	ui16 buffPointer = (ui16)(serialCommand->_payload - api_->txCommandBuff);
+	ui16 shiftSize = calcFreeSpaceFIFO(api_->txCommandBuffHead, buffPointer, SBGC_TX_BUFF_TOTAL_SIZE);
 	shiftSize = (shiftSize == SBGC_TX_BUFF_TOTAL_SIZE) ? 0 : shiftSize;
 
-	if (buffPointer != gSBGC->_api->txCommandBuffTail)
+	if (buffPointer != api_->txCommandBuffTail)
 	/* This command isn't first */
 	{
-		if (((buffPointer + serialCommand->_payloadSize) & SBGC_TX_BUFF_SIZE_MASK) == gSBGC->_api->txCommandBuffHead)
+		if (((buffPointer + serialCommand->_payloadSize) & SBGC_TX_BUFF_SIZE_MASK) == api_->txCommandBuffHead)
 		/* This command is latest */
 		{
-			gSBGC->_api->txCommandBuffHead -= serialCommand->_payloadSize;
+			api_->txCommandBuffHead -= serialCommand->_payloadSize;
 			return;
 		}
 
 		/* This command is between other commands */
 		for (ui16 i = 0; i < shiftSize; i++)
 		/* Shifting */
-			gSBGC->_api->txCommandBuff[((buffPointer + i) & SBGC_TX_BUFF_SIZE_MASK)] =
-					gSBGC->_api->txCommandBuff[((buffPointer + serialCommand->_payloadSize + i) & SBGC_TX_BUFF_SIZE_MASK)];
+			api_->txCommandBuff[((buffPointer + i) & SBGC_TX_BUFF_SIZE_MASK)] =
+					api_->txCommandBuff[((buffPointer + serialCommand->_payloadSize + i) & SBGC_TX_BUFF_SIZE_MASK)];
 
 		/* Shift head after buffer shifting */
-		gSBGC->_api->txCommandBuffHead -= serialCommand->_payloadSize;
+		api_->txCommandBuffHead -= serialCommand->_payloadSize;
 	}
 
 	else
 	/* This command is first */
-		gSBGC->_api->txCommandBuffTail += serialCommand->_payloadSize;
+		api_->txCommandBuffTail += serialCommand->_payloadSize;
 }
 
 
@@ -221,8 +221,8 @@ static void SerialAPI_DeleteSentCommand (sbgcGeneral_t *gSBGC, serialAPI_Command
  */
 static void SerialAPI_SaveReceivedCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmdID, ui8 payloadSize, ui8 const *payload)
 {
-	if ((calcFreeSpaceFIFO(gSBGC->_api->rxCommandBuffTail, gSBGC->_api->rxCommandBuffHead, SBGC_RX_BUFF_TOTAL_SIZE) < (payloadSize + 2)) &&
-		(gSBGC->_api->rxCommandBuffHead != gSBGC->_api->rxCommandBuffTail))
+	if ((calcFreeSpaceFIFO(api_->rxCommandBuffTail, api_->rxCommandBuffHead, SBGC_RX_BUFF_TOTAL_SIZE) < (payloadSize + 2)) &&
+		(api_->rxCommandBuffHead != api_->rxCommandBuffTail))
 	{
 		#if (SBGC_RX_CMD_OLD_PRIOR)
 			/* Exit to save old serial commands */
@@ -232,19 +232,19 @@ static void SerialAPI_SaveReceivedCommand (sbgcGeneral_t *gSBGC, serialAPI_Comma
 		#else
 
 			/* It's necessary to clean the space for a new serial command */
-			while ((calcFreeSpaceFIFO(gSBGC->_api->rxCommandBuffTail, gSBGC->_api->rxCommandBuffHead, SBGC_RX_BUFF_TOTAL_SIZE) < (payloadSize + 2)))
-				gSBGC->_api->rxCommandBuffTail += gSBGC->_api->rxCommandBuff[(gSBGC->_api->rxCommandBuffTail + 1) & SBGC_RX_BUFF_SIZE_MASK] + 2;
+			while ((calcFreeSpaceFIFO(api_->rxCommandBuffTail, api_->rxCommandBuffHead, SBGC_RX_BUFF_TOTAL_SIZE) < (payloadSize + 2)))
+				api_->rxCommandBuffTail += api_->rxCommandBuff[(api_->rxCommandBuffTail + 1) & SBGC_RX_BUFF_SIZE_MASK] + 2;
 
-			gSBGC->_api->rxCommandBuffCurP = gSBGC->_api->rxCommandBuffTail;
+			api_->rxCommandBuffCurP = api_->rxCommandBuffTail;
 
 		#endif
 	}
 
-	gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffHead++] = cmdID;
-	gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffHead++] = payloadSize;
+	api_->rxCommandBuff[api_->rxCommandBuffHead++] = cmdID;
+	api_->rxCommandBuff[api_->rxCommandBuffHead++] = payloadSize;
 
 	for (ui16 i = 0; i < payloadSize; i++)
-		gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffHead++] = payload[i];
+		api_->rxCommandBuff[api_->rxCommandBuffHead++] = payload[i];
 }
 
 
@@ -257,12 +257,12 @@ static void SerialAPI_SaveReceivedCommand (sbgcGeneral_t *gSBGC, serialAPI_Comma
  */
 static ui8 SerialAPI_ReadReceivedCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *serialCommand)
 {
-	serialCommand->_commandID = gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffCurP++];
+	serialCommand->_commandID = api_->rxCommandBuff[api_->rxCommandBuffCurP++];
 
-	ui8 payloadSize = gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffCurP++];
+	ui8 payloadSize = api_->rxCommandBuff[api_->rxCommandBuffCurP++];
 
-	serialCommand->_payload = &gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffCurP];
-	gSBGC->_api->rxCommandBuffCurP += payloadSize;
+	serialCommand->_payload = &api_->rxCommandBuff[api_->rxCommandBuffCurP];
+	api_->rxCommandBuffCurP += payloadSize;
 
 	return payloadSize;
 }
@@ -281,43 +281,43 @@ static void SerialAPI_DeleteReceivedCommand (sbgcGeneral_t *gSBGC, ui8 const *pa
 	if (payload == NULL)
 		return;
 
-	/* Note: gSBGC->_api->rxCommandBuffCurP aren't available to read here */
+	/* Note: api_->rxCommandBuffCurP aren't available to read here */
 
-	ui16 buffPointer = (((((uintptr_t)payload) - 2) & SBGC_RX_BUFF_SIZE_MASK) - (uintptr_t)gSBGC->_api->rxCommandBuff) & SBGC_RX_BUFF_SIZE_MASK;
-	ui8 cmdSize = gSBGC->_api->rxCommandBuff[((buffPointer + 1) & SBGC_RX_BUFF_SIZE_MASK)] + 2;
-	ui16 shiftSize = calcFreeSpaceFIFO(gSBGC->_api->rxCommandBuffHead, (buffPointer + cmdSize) & SBGC_RX_BUFF_SIZE_MASK,
+	ui16 buffPointer = (((((uintptr_t)payload) - 2) & SBGC_RX_BUFF_SIZE_MASK) - (uintptr_t)api_->rxCommandBuff) & SBGC_RX_BUFF_SIZE_MASK;
+	ui8 cmdSize = api_->rxCommandBuff[((buffPointer + 1) & SBGC_RX_BUFF_SIZE_MASK)] + 2;
+	ui16 shiftSize = calcFreeSpaceFIFO(api_->rxCommandBuffHead, (buffPointer + cmdSize) & SBGC_RX_BUFF_SIZE_MASK,
 									   SBGC_RX_BUFF_TOTAL_SIZE);
 	shiftSize = (shiftSize == SBGC_RX_BUFF_TOTAL_SIZE) ? 0 : shiftSize;
 
-	if (buffPointer != gSBGC->_api->rxCommandBuffTail)
+	if (buffPointer != api_->rxCommandBuffTail)
 	/* This command isn't first */
 	{
-		if (((buffPointer + cmdSize) & SBGC_RX_BUFF_SIZE_MASK) == gSBGC->_api->rxCommandBuffHead)
+		if (((buffPointer + cmdSize) & SBGC_RX_BUFF_SIZE_MASK) == api_->rxCommandBuffHead)
 		/* This command is latest */
 		{
-			gSBGC->_api->rxCommandBuffHead -= cmdSize;
+			api_->rxCommandBuffHead -= cmdSize;
 
 			/* Prepare the parser for next reading */
-			gSBGC->_api->rxCommandBuffCurP = gSBGC->_api->rxCommandBuffTail;
+			api_->rxCommandBuffCurP = api_->rxCommandBuffTail;
 			return;
 		}
 
 		/* This command is between other commands */
 		for (ui16 i = 0; i < shiftSize; i++)
 		/* Shifting */
-			gSBGC->_api->rxCommandBuff[((buffPointer + i) & SBGC_RX_BUFF_SIZE_MASK)] =
-					gSBGC->_api->rxCommandBuff[((buffPointer + cmdSize + i) & SBGC_RX_BUFF_SIZE_MASK)];
+			api_->rxCommandBuff[((buffPointer + i) & SBGC_RX_BUFF_SIZE_MASK)] =
+					api_->rxCommandBuff[((buffPointer + cmdSize + i) & SBGC_RX_BUFF_SIZE_MASK)];
 
 		/* Shift head after buffer shifting */
-		gSBGC->_api->rxCommandBuffHead -= cmdSize;
+		api_->rxCommandBuffHead -= cmdSize;
 	}
 
 	else
 	/* This command is first */
-		gSBGC->_api->rxCommandBuffTail += cmdSize;  // Shift head pointer
+		api_->rxCommandBuffTail += cmdSize;  // Shift head pointer
 
 	/* Prepare the parser for next reading */
-	gSBGC->_api->rxCommandBuffCurP = gSBGC->_api->rxCommandBuffTail;
+	api_->rxCommandBuffCurP = api_->rxCommandBuffTail;
 }
 
 
@@ -331,24 +331,24 @@ static void SerialAPI_DeleteReceivedCommand (sbgcGeneral_t *gSBGC, ui8 const *pa
  */
 static void SerialAPI_DeleteCommand (sbgcGeneral_t *gSBGC, ui8 index)
 {
-	if ((index >= gSBGC->_api->commandNumber) || (gSBGC->_api->commandNumber == 0))
+	if ((index >= api_->commandNumber) || (api_->commandNumber == 0))
 		return;
 
-	serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[index];
+	curCmd_ = &api_->commandBuff[index];
 
 	#if (SBGC_NON_BLOCKING_MODE)
 
-		if (serialAPI_CurCmd_->parameters & SCParam_RETAIN)
-			gSBGC->_api->retainedCommandNumber--;
+		if (curCmd_->parameters & SCParam_RETAIN)
+			api_->retainedCommandNumber--;
 
 	#endif
 
-	for (int i = 0; i < (gSBGC->_api->commandNumber - index - 1); i++)
-		memcpy(&gSBGC->_api->commandBuff[index + i], &gSBGC->_api->commandBuff[index + i + 1], sizeof(serialAPI_Command_t));
+	for (int i = 0; i < (api_->commandNumber - index - 1); i++)
+		memcpy(&api_->commandBuff[index + i], &api_->commandBuff[index + i + 1], sizeof(serialAPI_Command_t));
 
-	gSBGC->_api->commandNumber--;
+	api_->commandNumber--;
 
-	serialAPI_CurCmd_ = NULL;
+	curCmd_ = NULL;
 }
 
 
@@ -363,9 +363,9 @@ static void SerialAPI_DeleteCommand (sbgcGeneral_t *gSBGC, ui8 index)
  */
 static serialAPI_Command_t *SerialAPI_FindCommandByCID (sbgcGeneral_t *gSBGC, ui32 ID)
 {
-	for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-		if (gSBGC->_api->commandBuff[i]._CID == ID)
-			return &gSBGC->_api->commandBuff[i];
+	for (ui8 i = 0; i < api_->commandNumber; i++)
+		if (api_->commandBuff[i]._CID == ID)
+			return &api_->commandBuff[i];
 
 	return NULL;
 }
@@ -383,9 +383,9 @@ static serialAPI_Command_t *SerialAPI_FindCommandByCID (sbgcGeneral_t *gSBGC, ui
  */
 static serialAPI_Command_t *SerialAPI_FindCommandByAPI_CID (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t commandID)
 {
-	for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-		if (gSBGC->_api->commandBuff[i]._commandID == commandID)
-			return &gSBGC->_api->commandBuff[i];
+	for (ui8 i = 0; i < api_->commandNumber; i++)
+		if (api_->commandBuff[i]._commandID == commandID)
+			return &api_->commandBuff[i];
 
 	return NULL;
 }
@@ -403,7 +403,7 @@ static serialAPI_Command_t *SerialAPI_FindCommandByAPI_CID (sbgcGeneral_t *gSBGC
  */
 static ui8 SerialAPI_GetSerialCommandIndex (sbgcGeneral_t *gSBGC, serialAPI_Command_t *serialCommand)
 {
-	return (((uintptr_t)serialCommand / sizeof(serialAPI_Command_t)) - ((uintptr_t)gSBGC->_api->commandBuff) / sizeof(serialAPI_Command_t));
+	return (((uintptr_t)serialCommand / sizeof(serialAPI_Command_t)) - ((uintptr_t)api_->commandBuff) / sizeof(serialAPI_Command_t));
 }
 
 
@@ -414,17 +414,20 @@ static ui8 SerialAPI_GetSerialCommandIndex (sbgcGeneral_t *gSBGC, serialAPI_Comm
 	 *
 	 *	@note	Private function
 	 *
+	 *	@note	@ref SerialAPI_DFP
+	 *
 	 *	@param	*gSBGC - serial connection descriptor
 	 */
 	static void SerialAPI_DetermineAdjVarsNumber (sbgcGeneral_t *gSBGC)
 	{
-		if (gSBGC->_api->baseFirmwareVersion < 2687) gSBGC->_api->adjVarsNumber = 50;
-		if (gSBGC->_api->baseFirmwareVersion < 2688) gSBGC->_api->adjVarsNumber = 51;
-		if (gSBGC->_api->baseFirmwareVersion < 2689) gSBGC->_api->adjVarsNumber = 57;
-		if (gSBGC->_api->baseFirmwareVersion < 2693) gSBGC->_api->adjVarsNumber = 61;
-		if (gSBGC->_api->baseFirmwareVersion < 2704) gSBGC->_api->adjVarsNumber = 65;
-		if (gSBGC->_api->baseFirmwareVersion < 2720) gSBGC->_api->adjVarsNumber = 66;
-		if (gSBGC->_api->baseFirmwareVersion < 2730) gSBGC->_api->adjVarsNumber = 76;
+		if (api_->baseFirmwareVersion < 2687) api_->adjVarsNumber = 50;
+		else if (api_->baseFirmwareVersion < 2688) api_->adjVarsNumber = 51;
+		else if (api_->baseFirmwareVersion < 2689) api_->adjVarsNumber = 57;
+		else if (api_->baseFirmwareVersion < 2693) api_->adjVarsNumber = 61;
+		else if (api_->baseFirmwareVersion < 2704) api_->adjVarsNumber = 65;
+		else if (api_->baseFirmwareVersion < 2720) api_->adjVarsNumber = 66;
+		else if (api_->baseFirmwareVersion < 2730) api_->adjVarsNumber = 76;
+		else api_->adjVarsNumber = SBGC_ADJ_VARS_MAX_QUANTITY;
 	}
 
 #endif
@@ -444,12 +447,12 @@ sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serialAPI_Com
 {
 	sbgcAssertParam(cmdID, CMD_BOARD_INFO_3, CMD_ERROR)
 
-	gSBGC->_api->startWrite(gSBGC, cmdID SBGC_ADVANCED_ARGS__);
-	gSBGC->_api->finishWrite(gSBGC);
+	api_->startWrite(gSBGC, cmdID SBGC_ADVANCED_ARGS__);
+	api_->finishWrite(gSBGC);
 
 	serialAPI_GiveToken()
 
-	return gSBGC->_api->exit(gSBGC);
+	return api_->exit(gSBGC);
 }
 
 
@@ -477,7 +480,7 @@ static void SBGC32_SendCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 		else
 		{
 			serialCommand->_state = SCState_ERROR;
-			gSBGC->_api->txErrorsCount++;
+			api_->txErrorsCount++;
 		}
 
 	#else
@@ -504,7 +507,7 @@ static void SBGC32_SendCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 			else
 			{
 				serialCommand->_state = SCState_ERROR;
-				gSBGC->_api->txErrorsCount++;
+				api_->txErrorsCount++;
 
 				/* Delete chained serial command */
 				serialAPI_Command_t *chainedSerialCommand = SerialAPI_FindCommandByCID(gSBGC, serialCommand->_chainedCommandID);
@@ -617,17 +620,17 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 
 	#endif
 
-	gSBGC->_api->rxCommandBuffCurP = gSBGC->_api->rxCommandBuffTail;
+	api_->rxCommandBuffCurP = api_->rxCommandBuffTail;
 
 	/* Start high-layer parsing */
 	while (1)
 	{
-		if (gSBGC->_api->rxCommandBuffCurP == gSBGC->_api->rxCommandBuffHead)
+		if (api_->rxCommandBuffCurP == api_->rxCommandBuffHead)
 		/* Read a new data if the Rx buffer is empty or there wasn't a needed command there */
 			gSBGC->_ll->rx(gSBGC);
 
 		#if (SBGC_USES_OS_SUPPORT == sbgcOFF)
-			cmdID_Temp = gSBGC->_api->rxCommandBuff[gSBGC->_api->rxCommandBuffCurP];
+			cmdID_Temp = api_->rxCommandBuff[api_->rxCommandBuffCurP];
 		#endif
 
 		/* Handling */
@@ -666,7 +669,7 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 
 				else if (cmdID_Temp != cmdID)
 				/* Has wrong command parsed */
-					gSBGC->_api->rxCommandBuffCurP += gSBGC->_api->rxCommandBuff[(gSBGC->_api->rxCommandBuffCurP + 1) & SBGC_RX_BUFF_SIZE_MASK] + 2;
+					api_->rxCommandBuffCurP += api_->rxCommandBuff[(api_->rxCommandBuffCurP + 1) & SBGC_RX_BUFF_SIZE_MASK] + 2;
 
 			#endif
 		}
@@ -677,13 +680,13 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 		/* Timeout and buffer ending checking */
 		#if (SBGC_NON_BLOCKING_MODE)
 
-			if ((gSBGC->_api->rxCommandBuffCurP == gSBGC->_api->rxCommandBuffHead) &&
+			if ((api_->rxCommandBuffCurP == api_->rxCommandBuffHead) &&
 				(gSBGC->_lastSerialCommandStatus != serialAPI_TX_RX_OK))
 			/* There wasn't a needed command anywhere */
 
 		#else
 
-			if (((gSBGC->_api->rxCommandBuffCurP == gSBGC->_api->rxCommandBuffHead) &&
+			if (((api_->rxCommandBuffCurP == api_->rxCommandBuffHead) &&
 				(gSBGC->_lastSerialCommandStatus != serialAPI_TX_RX_OK)) &&
 				((serialAPI_GetTick() - launchTime) >= serialCommand->timeout))
 			/* There wasn't a needed command anywhere and command processing time is over */
@@ -692,7 +695,7 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 
 			{
 				/* Return rxCommandBuffCurP to the buffer start */
-				gSBGC->_api->rxCommandBuffCurP = gSBGC->_api->rxCommandBuffTail;
+				api_->rxCommandBuffCurP = api_->rxCommandBuffTail;
 
 				#if (SBGC_USES_OS_SUPPORT == sbgcOFF)
 
@@ -706,14 +709,14 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 							else
 							{
 								serialCommand->_state = SCState_ERROR;
-								gSBGC->_api->rxErrorsCount++;
+								api_->rxErrorsCount++;
 							}
 						}
 
 					#else
 
 						serialCommand->_state = SCState_ERROR;
-						gSBGC->_api->rxErrorsCount++;
+						api_->rxErrorsCount++;
 
 					#endif
 
@@ -739,34 +742,34 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 	 */
 	static void SerialAPI_SortCommands (sbgcGeneral_t *gSBGC)
 	{
-		if (gSBGC->_api->commandSortFlag) return;
+		if (api_->commandSortFlag) return;
 
 		serialAPI_Command_t cmdTemp;
 		ui16 commandIndexTemp;
 		ui8 commandPriorityTemp;
 		ui32 commandID_Temp;
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
+		for (ui8 i = 0; i < api_->commandNumber; i++)
 		{
 			commandIndexTemp = 0;
 			commandPriorityTemp = 0;
 			commandID_Temp = 0xFFFFFFFFU;
 
-			for (ui8 k = i; k < gSBGC->_api->commandNumber; k++)
+			for (ui8 k = i; k < api_->commandNumber; k++)
 			{
 				/* Sorting by priority, direction and index */
-				if ((gSBGC->_api->commandBuff[k].priority > commandPriorityTemp) ||
+				if ((api_->commandBuff[k].priority > commandPriorityTemp) ||
 					/* or there are two same-priority command, but it's necessary to up TX command under RX command */
-					((gSBGC->_api->commandBuff[k].priority == commandPriorityTemp) &&
-					((gSBGC->_api->commandBuff[commandIndexTemp].parameters & SCParam_RX) &&
-					(!(gSBGC->_api->commandBuff[k].parameters & SCParam_RX)))) ||
+					((api_->commandBuff[k].priority == commandPriorityTemp) &&
+					((api_->commandBuff[commandIndexTemp].parameters & SCParam_RX) &&
+					(!(api_->commandBuff[k].parameters & SCParam_RX)))) ||
 					/* or two commands with similar priority and direction, but they have different id (number) */
-					((gSBGC->_api->commandBuff[k].priority == commandPriorityTemp) &&
-					((gSBGC->_api->commandBuff[commandIndexTemp].parameters & SCParam_RX) == (gSBGC->_api->commandBuff[k].parameters & SCParam_RX)) &&
-					(gSBGC->_api->commandBuff[k]._CID < commandID_Temp)))
+					((api_->commandBuff[k].priority == commandPriorityTemp) &&
+					((api_->commandBuff[commandIndexTemp].parameters & SCParam_RX) == (api_->commandBuff[k].parameters & SCParam_RX)) &&
+					(api_->commandBuff[k]._CID < commandID_Temp)))
 				{
-					commandPriorityTemp = gSBGC->_api->commandBuff[k].priority;
-					commandID_Temp = gSBGC->_api->commandBuff[k]._CID;
+					commandPriorityTemp = api_->commandBuff[k].priority;
+					commandID_Temp = api_->commandBuff[k]._CID;
 
 					commandIndexTemp = k;
 				}
@@ -774,13 +777,13 @@ static void SBGC32_FindCommand (sbgcGeneral_t *gSBGC, serialAPI_Command_t *seria
 
 			if ((commandIndexTemp != i) && (commandPriorityTemp > 0))
 			{
-				memcpy(&cmdTemp, &gSBGC->_api->commandBuff[i], sizeof(serialAPI_Command_t));
-				memcpy(&gSBGC->_api->commandBuff[i], &gSBGC->_api->commandBuff[commandIndexTemp], sizeof(serialAPI_Command_t));
-				memcpy(&gSBGC->_api->commandBuff[commandIndexTemp], &cmdTemp, sizeof(serialAPI_Command_t));
+				memcpy(&cmdTemp, &api_->commandBuff[i], sizeof(serialAPI_Command_t));
+				memcpy(&api_->commandBuff[i], &api_->commandBuff[commandIndexTemp], sizeof(serialAPI_Command_t));
+				memcpy(&api_->commandBuff[commandIndexTemp], &cmdTemp, sizeof(serialAPI_Command_t));
 			}
 		}
 
-		gSBGC->_api->commandSortFlag = sbgcTRUE;
+		api_->commandSortFlag = sbgcTRUE;
 	}
 
 #endif
@@ -799,24 +802,24 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 {
 	sbgcBoolean_t commandExist = sbgcTRUE;
 
-	serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[index];
+	curCmd_ = &api_->commandBuff[index];
 
-	sbgcBoolean_t thisCommandRx = (serialAPI_CurCmd_->parameters & SCParam_RX) ? sbgcTRUE : sbgcFALSE;
+	sbgcBoolean_t thisCommandRx = (curCmd_->parameters & SCParam_RX) ? sbgcTRUE : sbgcFALSE;
 
 	if (thisCommandRx)
 	{
 		thisCommandRx = sbgcTRUE;
 		/* Don't find command yet if the library uses OS functional */
 		#if (SBGC_USES_OS_SUPPORT == sbgcOFF)
-			SBGC32_FindCommand(gSBGC, serialAPI_CurCmd_, serialAPI_CurCmd_->_commandID);
+			SBGC32_FindCommand(gSBGC, curCmd_, curCmd_->_commandID);
 		#endif
 	}
 
 	else
-		SBGC32_SendCommand(gSBGC, serialAPI_CurCmd_);
+		SBGC32_SendCommand(gSBGC, curCmd_);
 
 	/* After physical operations... */
-	switch (serialAPI_CurCmd_->_state)
+	switch (curCmd_->_state)
 	{
 		case SCState_PROCESSED :
 		case SCState_ERROR :
@@ -825,43 +828,43 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 			#if (SBGC_USES_LOGS)
 
 				/* Print log */
-				gSBGC->_api->log(gSBGC, serialAPI_CurCmd_);
+				api_->log(gSBGC, curCmd_);
 
 			#endif
 
 			/* It's necessary to save payload pointer cause the next actions may shift it */
-			void *payloadTemp = serialAPI_CurCmd_->_payload;
+			void *payloadTemp = curCmd_->_payload;
 
-			if (serialAPI_CurCmd_->_state == SCState_PROCESSED)
+			if (curCmd_->_state == SCState_PROCESSED)
 			/* Execute SerialAPI event */
 			{
-				if (serialAPI_CurCmd_->_serialAPI_Event)
-					((serialAPI_Event_t)serialAPI_CurCmd_->_serialAPI_Event)(gSBGC);
+				if (curCmd_->_serialAPI_Event)
+					((serialAPI_Event_t)curCmd_->_serialAPI_Event)(gSBGC);
 
-				else if (thisCommandRx && (serialAPI_CurCmd_->_pDestination != NULL))  // and it don't have an event
+				else if (thisCommandRx && (curCmd_->_pDestination != NULL))  // and it don't have an event
 				{
-					if (serialAPI_CurCmd_->_destinationSize < serialAPI_CurCmd_->_payloadSize)
+					if (curCmd_->_destinationSize < curCmd_->_payloadSize)
 						SerialAPI_FatalErrorHandler();
 
 					else
-						gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmd_->_pDestination, serialAPI_CurCmd_->_payloadSize);
+						api_->readBuff(gSBGC, curCmd_->_pDestination, curCmd_->_payloadSize);
 				}
 
 				/* Return payload pointer to the start */
-				serialAPI_CurCmd_->_payload = payloadTemp;
+				curCmd_->_payload = payloadTemp;
 			}
 
 			#if (SBGC_USES_CALLBACKS)
 
-				if (((serialAPI_CurCmd_->_state == SCState_PROCESSED) || (serialAPI_CurCmd_->parameters & SCParam_FORCE_CALLBACK)) &&
-					serialAPI_CurCmd_->callback)
+				if (((curCmd_->_state == SCState_PROCESSED) || (curCmd_->parameters & SCParam_FORCE_CALLBACK)) &&
+					curCmd_->callback)
 				/* Pass to user's callback */
 				{
-					if (serialAPI_CurCmd_->callbackArg == NULL)
+					if (curCmd_->callbackArg == NULL)
 					/* If callbackArg is NULL, assign the general object to this */
-						serialAPI_CurCmd_->callbackArg = gSBGC;
+						curCmd_->callbackArg = gSBGC;
 
-					((serialAPI_Callback_t)serialAPI_CurCmd_->callback)(serialAPI_CurCmd_->callbackArg);
+					((serialAPI_Callback_t)curCmd_->callback)(curCmd_->callbackArg);
 				}
 
 			#endif
@@ -870,33 +873,33 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 			/* Delete command ID, size and payload from Rx buffer in any case */
 				SerialAPI_DeleteReceivedCommand(gSBGC, payloadTemp);
 
-			else if (!(serialAPI_CurCmd_->parameters & SCParam_RETAIN))
+			else if (!(curCmd_->parameters & SCParam_RETAIN))
 			/* Delete command payload from Tx buffer and command object from main command buffer */
-				SerialAPI_DeleteSentCommand(gSBGC, serialAPI_CurCmd_);
+				SerialAPI_DeleteSentCommand(gSBGC, curCmd_);
 
 			#if (SBGC_NON_BLOCKING_MODE)
 
-				if (serialAPI_CurCmd_->parameters & SCParam_RETAIN)
+				if (curCmd_->parameters & SCParam_RETAIN)
 					/* Command processed fine. Reload it */
-					serialAPI_CurCmd_->_state = SCState_RELOAD;
+					curCmd_->_state = SCState_RELOAD;
 
 			#endif
 
 			#if (SBGC_USES_OS_SUPPORT)
 
 				/* Don't delete this command if another thread is waiting it */
-				if (serialAPI_CurCmd_->parameters & SCParam_FREEZE)
+				if (curCmd_->parameters & SCParam_FREEZE)
 				{
 					serialAPI_Suspend()
 
 					/* ... */
 					/* Return here from another thread and finish */
-					gSBGC->_api->threadState = SATS_NORMAL;
+					api_->threadState = SATS_NORMAL;
 				}
 
 			#endif
 
-			if (serialAPI_CurCmd_->_state != SCState_RELOAD)
+			if (curCmd_->_state != SCState_RELOAD)
 			{
 				commandExist = sbgcFALSE;
 				SerialAPI_DeleteCommand(gSBGC, index);
@@ -906,7 +909,7 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 
 				else
 				/* Reload serial command */
-					serialAPI_CurCmd_->_state = SCState_PREPARED;
+					curCmd_->_state = SCState_PREPARED;
 
 			#endif
 
@@ -918,18 +921,18 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 			#if (SBGC_USES_LOGS)
 
 				/* Print log */
-				gSBGC->_api->log(gSBGC, serialAPI_CurCmd_);
+				api_->log(gSBGC, curCmd_);
 
 				#if (SBGC_USES_CALLBACKS)
 
-					if ((serialAPI_CurCmd_->parameters & SCParam_FORCE_CALLBACK) && serialAPI_CurCmd_->callback)
+					if ((curCmd_->parameters & SCParam_FORCE_CALLBACK) && curCmd_->callback)
 					/* Pass to user's callback */
 					{
-						if (serialAPI_CurCmd_->callbackArg == NULL)
+						if (curCmd_->callbackArg == NULL)
 						/* If callbackArg is NULL, assign the general object to this */
-							serialAPI_CurCmd_->callbackArg = gSBGC;
+							curCmd_->callbackArg = gSBGC;
 
-						((serialAPI_Callback_t)serialAPI_CurCmd_->callback)(serialAPI_CurCmd_->callbackArg);
+						((serialAPI_Callback_t)curCmd_->callback)(curCmd_->callbackArg);
 					}
 
 				#endif
@@ -939,9 +942,9 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 			#if (SBGC_NON_BLOCKING_MODE && (SBGC_USES_OS_SUPPORT == sbgcOFF))
 
 				/* Reload serial command */
-				serialAPI_CurCmd_->_state = SCState_PREPARED;
+				curCmd_->_state = SCState_PREPARED;
 
-				serialAPI_CurCmd_->_timestamp = serialAPI_GetTick();
+				curCmd_->_timestamp = serialAPI_GetTick();
 
 			#endif
 
@@ -974,9 +977,9 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 		SerialAPI_SortCommands(gSBGC);
 
 		/* Transmit */
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber;)
+		for (ui8 i = 0; i < api_->commandNumber;)
 		{
-			if ((!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX)) && (gSBGC->_api->commandBuff[i]._state != SCState_RELOAD))
+			if ((!(api_->commandBuff[i].parameters & SCParam_RX)) && (api_->commandBuff[i]._state != SCState_RELOAD))
 			{
 				if (SerialAPI_ProcessCommand(gSBGC, i))
 					i++;
@@ -993,29 +996,29 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 		}
 
 		/* Handle Rx commands */
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber;)
+		for (ui8 i = 0; i < api_->commandNumber;)
 		/* Check all commands' lifetime */
 		{
-			if ((gSBGC->_api->commandBuff[i].parameters & SCParam_RX) && (gSBGC->_api->commandBuff[i]._state != SCState_RELOAD))
+			if ((api_->commandBuff[i].parameters & SCParam_RX) && (api_->commandBuff[i]._state != SCState_RELOAD))
 			{
 				/* Launch the new commands */
-				if (gSBGC->_api->commandBuff[i]._state == SCState_PREPARED)
+				if (api_->commandBuff[i]._state == SCState_PREPARED)
 				{
-					gSBGC->_api->commandBuff[i]._timestamp = serialAPI_GetTick();
-					gSBGC->_api->commandBuff[i]._state = SCState_PROCESSING;
+					api_->commandBuff[i]._timestamp = serialAPI_GetTick();
+					api_->commandBuff[i]._state = SCState_PROCESSING;
 				}
 
 				/* Timeout check for existing commands */
-				if (gSBGC->_api->commandBuff[i].timeout < (serialAPI_GetTick() - gSBGC->_api->commandBuff[i]._timestamp))
+				if (api_->commandBuff[i].timeout < (serialAPI_GetTick() - api_->commandBuff[i]._timestamp))
 				/* This serial command must be deleted or reloaded */
 				{
-					if (gSBGC->_api->commandBuff[i].parameters & SCParam_RETAIN)
-						gSBGC->_api->commandBuff[i]._state = SCState_RELOAD;
+					if (api_->commandBuff[i].parameters & SCParam_RETAIN)
+						api_->commandBuff[i]._state = SCState_RELOAD;
 
 					else
 					{
-						gSBGC->_api->commandBuff[i]._state = SCState_ERROR;
-						gSBGC->_api->rxErrorsCount++;
+						api_->commandBuff[i]._state = SCState_ERROR;
+						api_->rxErrorsCount++;
 					}
 
 					/* Logs, events, delete or reload */
@@ -1032,9 +1035,9 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 		/* Count the Rx commands */
 		ui8 rxCommandsCount = 0;
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-			if ((gSBGC->_api->commandBuff[i].parameters & SCParam_RX) &&
-				(gSBGC->_api->commandBuff[i]._state != SCState_RELOAD))
+		for (ui8 i = 0; i < api_->commandNumber; i++)
+			if ((api_->commandBuff[i].parameters & SCParam_RX) &&
+				(api_->commandBuff[i]._state != SCState_RELOAD))
 				rxCommandsCount++;
 
 		/* Reading */
@@ -1048,33 +1051,33 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 				gSBGC->_lastCommandStatus = sbgcCOMMAND_OK;
 
 				/* It's okay, we have some serial command now. Try to find a subscriber to this command */
-				for (ui8 i = 0; i < gSBGC->_api->commandNumber;)
+				for (ui8 i = 0; i < api_->commandNumber;)
 				{
-					if ((gSBGC->_api->commandBuff[i].parameters & SCParam_RX) && (gSBGC->_api->commandBuff[i]._state != SCState_RELOAD))
+					if ((api_->commandBuff[i].parameters & SCParam_RX) && (api_->commandBuff[i]._state != SCState_RELOAD))
 					/* This command is Rx and ready */
 					{
-						if (gSBGC->_api->commandBuff[i]._commandID == serialCommand._commandID)
+						if (api_->commandBuff[i]._commandID == serialCommand._commandID)
 						/* We got necessary command */
 						{
 							#if (SBGC_NEED_CONFIRM_CMD)
 
-								if (gSBGC->_api->commandBuff[i]._commandID == CMD_CONFIRM)
+								if (api_->commandBuff[i]._commandID == CMD_CONFIRM)
 								{
 									/* Assign destination for the next filter if this command is CMD_CONFIRM */
-									serialCommand._pDestination = gSBGC->_api->commandBuff[i]._pDestination;
+									serialCommand._pDestination = api_->commandBuff[i]._pDestination;
 
 									/* Add command ID to confirm */
-									gSBGC->_api->commandBuff[i]._payload = serialCommand._payload;
+									api_->commandBuff[i]._payload = serialCommand._payload;
 								}
 
 							#endif
 
-							if (SerialAPI_FilterSerialCommand(&gSBGC->_api->commandBuff[i], serialCommand._payloadSize))
+							if (SerialAPI_FilterSerialCommand(&api_->commandBuff[i], serialCommand._payloadSize))
 							/* The command is passed all checks */
 							{
 								/* Write new serial command */
-								gSBGC->_api->commandBuff[i]._payload = serialCommand._payload;
-								gSBGC->_api->commandBuff[i]._state = serialCommand._state;
+								api_->commandBuff[i]._payload = serialCommand._payload;
+								api_->commandBuff[i]._state = serialCommand._state;
 
 								/* Logs, events, delete or reload */
 								SerialAPI_ProcessCommand(gSBGC, i);
@@ -1092,7 +1095,7 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 				gSBGC->_lastCommandStatus = sbgcCOMMAND_RX_ERROR;
 		}
 
-		gSBGC->_api->rxCommandBuffTail = gSBGC->_api->rxCommandBuffHead;
+		api_->rxCommandBuffTail = api_->rxCommandBuffHead;
 
 		serialAPI_Unlock()
 
@@ -1126,8 +1129,8 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 		sbgcCommandToken_t token = SerialAPI_FindCommandsByToken(gSBGC, *commandToken);
 		ui8 txIndex = token;
 
-		if ((token == SBGC_EMPTY_TOKEN) || (txIndex >= gSBGC->_api->commandNumber) ||
-			(gSBGC->_api->commandBuff[txIndex].parameters & SCParam_RX))
+		if ((token == SBGC_EMPTY_TOKEN) || (txIndex >= api_->commandNumber) ||
+			(api_->commandBuff[txIndex].parameters & SCParam_RX))
 		{
 			serialAPI_Unlock()
 
@@ -1170,8 +1173,8 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 		sbgcCommandToken_t token = SerialAPI_FindCommandsByToken(gSBGC, *commandToken);
 		ui8 rxIndex = (token >> 8) & 0x00FF;
 
-		if ((token == SBGC_EMPTY_TOKEN) || (rxIndex >= gSBGC->_api->commandNumber) ||
-			(!(gSBGC->_api->commandBuff[rxIndex].parameters & SCParam_RX)))
+		if ((token == SBGC_EMPTY_TOKEN) || (rxIndex >= api_->commandNumber) ||
+			(!(api_->commandBuff[rxIndex].parameters & SCParam_RX)))
 		{
 			serialAPI_Unlock()
 
@@ -1214,13 +1217,13 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 
 		SerialAPI_SortCommands(gSBGC);
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber;)
+		for (ui8 i = 0; i < api_->commandNumber;)
 		{
-			if (!(gSBGC->_api->commandBuff[i].parameters & SCParam_RX))
+			if (!(api_->commandBuff[i].parameters & SCParam_RX))
 			{
 				queueIsEmptyFlag = sbgcFALSE;
 
-				commandNumber = gSBGC->_api->commandNumber;
+				commandNumber = api_->commandNumber;
 
 				SerialAPI_ProcessCommand(gSBGC, i);
 
@@ -1234,7 +1237,7 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 				{
 					gSBGC->_lastCommandStatus = sbgcCOMMAND_OK;
 
-					if (commandNumber == gSBGC->_api->commandNumber)
+					if (commandNumber == api_->commandNumber)
 					/* There was a retained command */
 						i++;
 				}
@@ -1268,13 +1271,13 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 
 		SerialAPI_SortCommands(gSBGC);
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber;)
+		for (ui8 i = 0; i < api_->commandNumber;)
 		{
-			if (gSBGC->_api->commandBuff[i].parameters & SCParam_RX)
+			if (api_->commandBuff[i].parameters & SCParam_RX)
 			{
 				queueIsEmptyFlag = sbgcFALSE;
 
-				commandNumber = gSBGC->_api->commandNumber;
+				commandNumber = api_->commandNumber;
 
 				SerialAPI_ProcessCommand(gSBGC, i);
 
@@ -1288,7 +1291,7 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 				{
 					gSBGC->_lastCommandStatus = sbgcCOMMAND_OK;
 
-					if (commandNumber == gSBGC->_api->commandNumber)
+					if (commandNumber == api_->commandNumber)
 					/* There was a retained command */
 						i++;
 				}
@@ -1350,7 +1353,7 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 			sbgcConfirm_t Confirm;
 			ui8 parameters;
 
-			gSBGC->_api->startWrite(gSBGC, CMD_EXECUTE_MENU SBGC_DEFAULT_ARGS__);
+			api_->startWrite(gSBGC, CMD_EXECUTE_MENU SBGC_DEFAULT_ARGS__);
 
 			parameters = SCParam_FORCE_CALLBACK | SCParam_RETAIN;
 
@@ -1358,75 +1361,75 @@ static sbgcBoolean_t SerialAPI_ProcessCommand (sbgcGeneral_t *gSBGC, ui8 index)
 				parameters |= SCParam_NO_NEED_LOG;
 			#endif
 
-			gSBGC->_api->currentSerialCommand->parameters = parameters;
-			gSBGC->_api->currentSerialCommand->timeout = SBGC_AUTO_PING_PERIOD;
+			api_->currentSerialCommand->parameters = parameters;
+			api_->currentSerialCommand->timeout = SBGC_AUTO_PING_PERIOD;
 
-			gSBGC->_api->writeByte(gSBGC, 0);
-			gSBGC->_api->finishWrite(gSBGC);
+			api_->writeByte(gSBGC, 0);
+			api_->finishWrite(gSBGC);
 
-			gSBGC->_api->addConfirm(gSBGC, &Confirm, CMD_EXECUTE_MENU SBGC_DEFAULT_ARGS__);
+			api_->addConfirm(gSBGC, &Confirm, CMD_EXECUTE_MENU SBGC_DEFAULT_ARGS__);
 
-			gSBGC->_api->currentSerialCommand->parameters |= parameters;
-			gSBGC->_api->currentSerialCommand->timeout = SBGC_AUTO_PING_PERIOD;
+			api_->currentSerialCommand->parameters |= parameters;
+			api_->currentSerialCommand->timeout = SBGC_AUTO_PING_PERIOD;
 
 			#if (SBGC_AUTO_PING_CALLBACK)
-				gSBGC->_api->currentSerialCommand->callback = (serialAPI_Callback_t)SBGC32_AutoPingCallback;
+				api_->currentSerialCommand->callback = (serialAPI_Callback_t)SBGC32_AutoPingCallback;
 			#endif
 
-			gSBGC->_api->link(gSBGC);
+			api_->link(gSBGC);
 
-			gSBGC->_api->retainedCommandNumber += 2;
+			api_->retainedCommandNumber += 2;
 
-			gSBGC->_api->exit(gSBGC);
+			api_->exit(gSBGC);
 
 		#endif
 
-		gSBGC->_api->busyFlag = sbgcTRUE;
+		api_->busyFlag = sbgcTRUE;
 
 		while (1)
 		{
-			if ((gSBGC->_api->threadState == SATS_LOW_PRIOR) && (gSBGC->_api->retainedCommandNumber != gSBGC->_api->commandNumber))
+			if ((api_->threadState == SATS_LOW_PRIOR) && (api_->retainedCommandNumber != api_->commandNumber))
 			{
-				gSBGC->_api->threadState = SATS_NORMAL;
+				api_->threadState = SATS_NORMAL;
 				serialAPI_RestoreThreadPrior()
 			}
 
 			/* Handle whole serial buffer */
 			SBGC32_ProcessAllCommandsOS(gSBGC);
 
-			for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
-				if (gSBGC->_api->commandBuff[i]._state == SCState_RELOAD)
+			for (ui8 i = 0; i < api_->commandNumber; i++)
+				if (api_->commandBuff[i]._state == SCState_RELOAD)
 				/* It's a retained command */
-					if ((gSBGC->_api->commandBuff[i]._timestamp + gSBGC->_api->commandBuff[i].timeout) <= serialAPI_GetTick())
+					if ((api_->commandBuff[i]._timestamp + api_->commandBuff[i].timeout) <= serialAPI_GetTick())
 					/* It needs to be reloaded */
 					{
-						if (gSBGC->_api->commandBuff[i]._chainedCommandID)
+						if (api_->commandBuff[i]._chainedCommandID)
 						{
 							serialAPI_CommandState_t chainedCommandState =
-									SerialAPI_FindCommandByCID(gSBGC, gSBGC->_api->commandBuff[i]._chainedCommandID)->_state;
+									SerialAPI_FindCommandByCID(gSBGC, api_->commandBuff[i]._chainedCommandID)->_state;
 
 							if (!((chainedCommandState == SCState_RELOAD) || (chainedCommandState == SCState_PREPARED)))
 								/* Wait for chained (Rx) serial command completion */
 								continue;
 
 							/* Reload the chained serial command */
-							SerialAPI_FindCommandByCID(gSBGC, gSBGC->_api->commandBuff[i]._chainedCommandID)->_state = SCState_PREPARED;
+							SerialAPI_FindCommandByCID(gSBGC, api_->commandBuff[i]._chainedCommandID)->_state = SCState_PREPARED;
 						}
 
-						gSBGC->_api->commandBuff[i]._state = SCState_PREPARED;
+						api_->commandBuff[i]._state = SCState_PREPARED;
 					}
 
-			if (gSBGC->_api->commandNumber == 0)
+			if (api_->commandNumber == 0)
 			/* Stop SerialAPI handler if there are no commands left */
 				serialAPI_Suspend()
 
-			if ((gSBGC->_api->threadState == SATS_NORMAL) && (gSBGC->_api->retainedCommandNumber != 0) &&
-				(gSBGC->_api->retainedCommandNumber == gSBGC->_api->commandNumber))
+			if ((api_->threadState == SATS_NORMAL) && (api_->retainedCommandNumber != 0) &&
+				(api_->retainedCommandNumber == api_->commandNumber))
 			{
-				gSBGC->_api->threadState = SATS_LOW_PRIOR;
+				api_->threadState = SATS_LOW_PRIOR;
 				serialAPI_DemoteThreadPrior()
 			}
-
+			
 			serialAPI_Yield()
 		}
 	}
@@ -1467,43 +1470,43 @@ static void PostGetBoardData (sbgcGeneral_t *gSBGC)
 	/* Read all data manually only */
 
 	/* First part */
-	if (serialAPI_CurCmd_->_commandID == CMD_BOARD_INFO)
+	if (curCmd_->_commandID == CMD_BOARD_INFO)
 	/* Getting board information */
 	{
 		ui32 boardFeatures;
 
 		/* Don't care about _payload pointer verge cause there is a first command */
-		gSBGC->_api->boardVersion = *(serialAPI_CurCmd_->_payload + BI_BOARD_VER_OFFSET);
-		gSBGC->_api->fromLE(&gSBGC->_api->firmwareVersion, serialAPI_CurCmd_->_payload + BI_FRW_VER_OFFSET,
-							sizeof(gSBGC->_api->firmwareVersion));
+		api_->boardVersion = *(curCmd_->_payload + BI_BOARD_VER_OFFSET);
+		api_->fromLE(&api_->firmwareVersion, curCmd_->_payload + BI_FRW_VER_OFFSET,
+							sizeof(api_->firmwareVersion));
 
-		boardFeatures = (((ui32)(*(ui16*)(serialAPI_CurCmd_->_payload + BI_BOARD_FTR_OFFSET))) & 0x0000FFFF) |
-				((((ui32)(*(ui16*)(serialAPI_CurCmd_->_payload + BI_BOARD_FTR_E_OFFSET))) << 16) & 0xFFFF0000);
+		boardFeatures = (((ui32)(*(ui16*)(curCmd_->_payload + BI_BOARD_FTR_OFFSET))) & 0x0000FFFF) |
+				((((ui32)(*(ui16*)(curCmd_->_payload + BI_BOARD_FTR_E_OFFSET))) << 16) & 0xFFFF0000);
 
-		gSBGC->_api->fromLE(&gSBGC->_api->boardFeatures, (ui8*)(&boardFeatures), sizeof(gSBGC->_api->boardFeatures));
+		api_->fromLE(&api_->boardFeatures, (ui8*)(&boardFeatures), sizeof(api_->boardFeatures));
 
-		gSBGC->_api->fromLE(&gSBGC->_api->baseFirmwareVersion, serialAPI_CurCmd_->_payload + BI_BASE_FRW_VER_OFFSET,
-							sizeof(gSBGC->_api->baseFirmwareVersion));
+		api_->fromLE(&api_->baseFirmwareVersion, curCmd_->_payload + BI_BASE_FRW_VER_OFFSET,
+							sizeof(api_->baseFirmwareVersion));
 
-		if (gSBGC->_api->baseFirmwareVersion == 0)
+		if (api_->baseFirmwareVersion == 0)
 		/* Some SBGC32 boards have no this data field */
-			gSBGC->_api->baseFirmwareVersion = gSBGC->_api->firmwareVersion;
+			api_->baseFirmwareVersion = api_->firmwareVersion;
 	}
 
 	/* Second part */
 	else
 	/* Getting total adjustable variables number */
 	{
-		gSBGC->_api->fromLE(&gSBGC->_api->boardFeatures2, serialAPI_CurCmd_->_payload + BI3_BOARD_FTR_E2_OFFSET,
-							sizeof(gSBGC->_api->boardFeatures2));
+		api_->fromLE(&api_->boardFeatures2, curCmd_->_payload + BI3_BOARD_FTR_E2_OFFSET,
+							sizeof(api_->boardFeatures2));
 
 		#if (SBGC_ADJVAR_MODULE)
 
-			if (gSBGC->_api->baseFirmwareVersion < 2730)
+			if (api_->baseFirmwareVersion < 2730)
 				SerialAPI_DetermineAdjVarsNumber(gSBGC);
 
 			else
-				gSBGC->_api->adjVarsNumber = *(serialAPI_CurCmd_->_payload + BI3_ADJ_VAR_NUM_OFFSET);
+				api_->adjVarsNumber = *(curCmd_->_payload + BI3_ADJ_VAR_NUM_OFFSET);
 
 		#endif
 	}
@@ -1520,20 +1523,20 @@ static void PostGetBoardData (sbgcGeneral_t *gSBGC)
  */
 static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
 {
-	gSBGC->_api->startWrite(gSBGC, CMD_BOARD_INFO SBGC_DEFAULT_ARGS__);
-	gSBGC->_api->writeWord(gSBGC, 0);
+	api_->startWrite(gSBGC, CMD_BOARD_INFO SBGC_DEFAULT_ARGS__);
+	api_->writeWord(gSBGC, 0);
 
 	#if (SBGC_USES_OS_SUPPORT)
-		serialAPI_CurCmd_->priority = SCPrior_SUPREME;
+		curCmd_->priority = SCPrior_SUPREME;
 	#endif
 
-	gSBGC->_api->finishWrite(gSBGC);
+	api_->finishWrite(gSBGC);
 
 	serialAPI_Unlock()
 
 	#if (SBGC_NON_BLOCKING_MODE)
 		#if (SBGC_USES_OS_SUPPORT)
-			while (gSBGC->_api->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
+			while (api_->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
 		#else
 			sbgcBlockQueue(SBGC32_TransmitAllCommands(gSBGC));
 		#endif
@@ -1541,20 +1544,20 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
 
 	serialAPI_LockRead();
 
-	gSBGC->_api->startRead(gSBGC, CMD_BOARD_INFO SBGC_DEFAULT_ARGS__);
-	gSBGC->_api->assignEvent(gSBGC, PostGetBoardData, gSBGC, SBGC_MAX_PAYLOAD_SIZE);
+	api_->startRead(gSBGC, CMD_BOARD_INFO SBGC_DEFAULT_ARGS__);
+	api_->assignEvent(gSBGC, PostGetBoardData, gSBGC, SBGC_MAX_PAYLOAD_SIZE);
 
 	#if (SBGC_USES_OS_SUPPORT)
-		serialAPI_CurCmd_->priority = SCPrior_SUPREME;
+		curCmd_->priority = SCPrior_SUPREME;
 	#endif
 
-	gSBGC->_api->finishRead(gSBGC);
+	api_->finishRead(gSBGC);
 
 	serialAPI_Unlock()
 
 	#if (SBGC_NON_BLOCKING_MODE)
 		#if (SBGC_USES_OS_SUPPORT)
-			while (gSBGC->_api->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
+			while (api_->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
 		#else
 			sbgcBlockQueue(SBGC32_ReceiveAllCommands(gSBGC));
 		#endif
@@ -1563,19 +1566,19 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
 	if (gSBGC->_lastCommandStatus == sbgcCOMMAND_OK)
 	/* Getting the second features part and total adjustable variables number */
 	{
-		gSBGC->_api->startWrite(gSBGC, CMD_BOARD_INFO_3 SBGC_DEFAULT_ARGS__);
+		api_->startWrite(gSBGC, CMD_BOARD_INFO_3 SBGC_DEFAULT_ARGS__);
 
 		#if (SBGC_USES_OS_SUPPORT)
-			serialAPI_CurCmd_->priority = SCPrior_SUPREME;
+			curCmd_->priority = SCPrior_SUPREME;
 		#endif
 
-		gSBGC->_api->finishWrite(gSBGC);
+		api_->finishWrite(gSBGC);
 
 		serialAPI_Unlock()
 
 		#if (SBGC_NON_BLOCKING_MODE)
 			#if (SBGC_USES_OS_SUPPORT)
-				while (gSBGC->_api->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
+				while (api_->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
 			#else
 				sbgcBlockQueue(SBGC32_TransmitAllCommands(gSBGC));
 			#endif
@@ -1583,20 +1586,20 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
 
 		serialAPI_LockRead();
 
-		gSBGC->_api->startRead(gSBGC, CMD_BOARD_INFO_3 SBGC_DEFAULT_ARGS__);
-		gSBGC->_api->assignEvent(gSBGC, PostGetBoardData, gSBGC, SBGC_MAX_PAYLOAD_SIZE);
+		api_->startRead(gSBGC, CMD_BOARD_INFO_3 SBGC_DEFAULT_ARGS__);
+		api_->assignEvent(gSBGC, PostGetBoardData, gSBGC, SBGC_MAX_PAYLOAD_SIZE);
 
 		#if (SBGC_USES_OS_SUPPORT)
-			serialAPI_CurCmd_->priority = SCPrior_SUPREME;
+			curCmd_->priority = SCPrior_SUPREME;
 		#endif
 
-		gSBGC->_api->finishRead(gSBGC);
+		api_->finishRead(gSBGC);
 
 		serialAPI_Unlock()
 
 		#if (SBGC_NON_BLOCKING_MODE)
 			#if (SBGC_USES_OS_SUPPORT)
-				while (gSBGC->_api->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
+				while (api_->commandNumber) SBGC32_ProcessAllCommandsOS(gSBGC);
 			#else
 				sbgcBlockQueue(SBGC32_ReceiveAllCommands(gSBGC));
 			#endif
@@ -1608,15 +1611,15 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
 
 		char divideLine [] = "\n************************************\n";
 
-		if (gSBGC->_api->firmwareVersion && (gSBGC->_lastSerialCommandStatus == serialAPI_TX_RX_OK))
+		if (api_->firmwareVersion && (gSBGC->_lastSerialCommandStatus == serialAPI_TX_RX_OK))
 		{
 			char deviceTypeStr [SBGC_DEVICE_TYPE_MAX_LEN],
 				 boardVersionStr [SBGC_BOARD_VERSION_MAX_LEN],
-				 firmwareVersionStr [SBGC_FIRMWARE_VERSION_MAX_LEN];
+				 firmwareVersionStr [SBGC_FIRMWARE_VERSION_MAX_LEN] = { 0 };
 
-			ParserSBGC32_FormatDeviceType (gSBGC, gSBGC->_api->boardVersion, BUFF_SIZE_(deviceTypeStr));
-			ParserSBGC32_FormatBoardVersion(gSBGC, gSBGC->_api->boardVersion, BUFF_SIZE_(boardVersionStr));
-			ParserSBGC32_FormatFirmwareVersion(gSBGC, gSBGC->_api->firmwareVersion, BUFF_SIZE_(firmwareVersionStr));
+			ParserSBGC32_FormatDeviceType(gSBGC, api_->boardVersion, BUFF_SIZE_(deviceTypeStr));
+			ParserSBGC32_FormatBoardVersion(gSBGC, api_->boardVersion, BUFF_SIZE_(boardVersionStr));
+			ParserSBGC32_FormatFirmwareVersion(gSBGC, api_->firmwareVersion, BUFF_SIZE_(firmwareVersionStr));
 
 			DebugSBGC32_PrintMessage(gSBGC, divideLine);
 			DebugSBGC32_PrintMessage(gSBGC, "The system is ready to go!\n");
@@ -1652,7 +1655,7 @@ static sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC)
  */
 sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC)
 {
-	gSBGC->_api = (serialAPI_General_t*)sbgcMalloc(sizeof(serialAPI_General_t));
+	api_ = (serialAPI_General_t*)sbgcMalloc(sizeof(serialAPI_General_t));
 
 	PrivateSerialAPI_LinkLowLayer(gSBGC);
 	PrivateSerialAPI_LinkConverter(gSBGC);
@@ -1664,78 +1667,96 @@ sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC)
 	PrivateSerialAPI_LinkCommandBuild(gSBGC);
 
 	/* Link high-layer service functions */
-	gSBGC->_api->saveCmd = SerialAPI_SaveReceivedCommand;
-	gSBGC->_api->findCmd = SerialAPI_FindCommandByCID;
+	api_->saveCmd = SerialAPI_SaveReceivedCommand;
+	api_->findCmd = SerialAPI_FindCommandByCID;
 
 	#if (SBGC_USES_BLOCKING_MODE || SBGC_SEND_IMMEDIATELY)
-		gSBGC->_api->process = SerialAPI_ProcessCommand;
+		api_->process = SerialAPI_ProcessCommand;
 	#endif
 
 	#if (SBGC_USES_OS_SUPPORT)
+	
+		SystemSBGC32_CreateMutex(&api_->mutexSerialAPI);
+		SystemSBGC32_GiveMutex(&api_->mutexSerialAPI);
 
-		SystemSBGC32_CreateMutex(&gSBGC->_api->mutexSerialAPI);
-		SystemSBGC32_GiveMutex(&gSBGC->_api->mutexSerialAPI);
-
-		gSBGC->_api->busyFlag = sbgcFALSE;
-		gSBGC->_api->threadState = SATS_NORMAL;
-
+		api_->busyFlag = sbgcFALSE;
+		api_->threadState = SATS_NORMAL;
+		
 	#endif
 
-	gSBGC->_api->serialAPI_Status = serialAPI_OK;
+	api_->serialAPI_Status = serialAPI_OK;
 
-	gSBGC->_api->boardVersion = 0;
-	gSBGC->_api->firmwareVersion = 0;
-	gSBGC->_api->baseFirmwareVersion = 0;
+	api_->boardVersion = 0;
+	api_->firmwareVersion = 0;
+	api_->baseFirmwareVersion = 0;
 
 	#if (SBGC_ADJVAR_MODULE)
-		gSBGC->_api->adjVarsNumber = SBGC_ADJ_VARS_MIN_QUANTITY;
+		api_->adjVarsNumber = SBGC_ADJ_VARS_MIN_QUANTITY;
 	#endif
 
-	gSBGC->_api->txErrorsCount = 0;
-	gSBGC->_api->rxErrorsCount = 0;
+	api_->txErrorsCount = 0;
+	api_->rxErrorsCount = 0;
 
-	gSBGC->_api->commandBuff = (serialAPI_Command_t*)sbgcMalloc(sizeof(serialAPI_Command_t) * SBGC_MAX_COMMAND_NUM);
-	gSBGC->_api->commandNumber = 0;
+	api_->commandBuff = (serialAPI_Command_t*)sbgcMalloc(sizeof(serialAPI_Command_t) * SBGC_MAX_COMMAND_NUM);
+	api_->commandNumber = 0;
 
 	#if (SBGC_USES_OS_SUPPORT)
-		gSBGC->_api->retainedCommandNumber = 0;
+		api_->retainedCommandNumber = 0;
 	#endif
 
-	gSBGC->_api->commandTotalCount = 0;
+	api_->commandTotalCount = 0;
 
-	gSBGC->_api->currentSerialCommand = NULL;
+	api_->currentSerialCommand = NULL;
 
 	#if (SBGC_NON_BLOCKING_MODE)
-		gSBGC->_api->commandSortFlag = sbgcTRUE;
+		api_->commandSortFlag = sbgcTRUE;
 	#endif
 
 	#if (SBGC_USES_TOKENS)
-		gSBGC->_api->lastCommandToken = 0;
+		api_->lastCommandToken = 0;
 	#endif
 
-	gSBGC->_api->txCommandBuff = (ui8*)sbgcMalloc(SBGC_TX_BUFF_TOTAL_SIZE);
-	gSBGC->_api->txCommandBuffTail = 0;
-	gSBGC->_api->txCommandBuffHead = 0;
+	api_->txCommandBuff = (ui8*)sbgcMalloc(SBGC_TX_BUFF_TOTAL_SIZE);
+	api_->txCommandBuffTail = 0;
+	api_->txCommandBuffHead = 0;
 
-	gSBGC->_api->rxCommandBuff = (ui8*)sbgcMalloc(SBGC_RX_BUFF_TOTAL_SIZE);
-	gSBGC->_api->rxCommandBuffTail = 0;
-	gSBGC->_api->rxCommandBuffHead = 0;
-	gSBGC->_api->rxCommandBuffCurP = 0;
+	api_->rxCommandBuff = (ui8*)sbgcMalloc(SBGC_RX_BUFF_TOTAL_SIZE);
+	api_->rxCommandBuffTail = 0;
+	api_->rxCommandBuffHead = 0;
+	api_->rxCommandBuffCurP = 0;
 
 	gSBGC->_lastSerialCommandStatus = serialAPI_TX_RX_OK;
 	gSBGC->_lastCommandStatus = sbgcCOMMAND_OK;
-
+	
 	/* Startup delay */
 	sbgcTicks_t launchTime = serialAPI_GetTick();
 
-	while ((serialAPI_GetTick() - launchTime) < SBGC_STARTUP_DELAY) { (void)(1); }
+	while ((serialAPI_GetTick() - launchTime) < SBGC_STARTUP_DELAY) { donothing_; }
 
 	/* Getting board information */
 	#if (SBGC_USES_OS_SUPPORT == sbgcOFF)
 		SBGC32_GetBoardData(gSBGC);
 	#endif
-
+	
 	return gSBGC->_lastCommandStatus;
+}
+
+
+/**	@brief	Frees a memory busied by SBGC32 device
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ */
+void SerialAPI_ResetLibrary (sbgcGeneral_t *gSBGC)
+{
+	sbgcFree(gSBGC->_ll);
+	gSBGC->_ll = NULL;
+
+	sbgcFree(api_->txCommandBuff);
+	sbgcFree(api_->rxCommandBuff);
+	sbgcFree(api_->commandBuff);
+
+	sbgcFree(api_);
+	api_ = NULL;
 }
 
 
@@ -1747,8 +1768,9 @@ sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC)
 	 *	####	RX <— CMD_CONFIRM :	1-6 bytes
 	 *
 	 *	@note	Use the @ref SerialAPI_DeleteCommand function
-	 *			with CMD_CONFIRM argument to delete
-	 *			this command manually
+	 *			with CMD_CONFIRM argument to delete this
+	 *			command manually when confirmation
+	 *			stucks for some reason
 	 *
 	 *	@param	*gSBGC - serial connection descriptor
 	 *	@param	*confirm - confirmation result storage structure
@@ -1762,11 +1784,11 @@ sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC)
 		/* It's necessary to lock SerialAPI before Rx operation */
 		serialAPI_LockRead()
 
-		gSBGC->_api->addConfirm(gSBGC, confirm, cmdID SBGC_ADVANCED_ARGS__);
+		api_->addConfirm(gSBGC, confirm, cmdID SBGC_ADVANCED_ARGS__);
 
 		serialAPI_GiveToken()
 
-		return gSBGC->_api->exit(gSBGC);
+		return api_->exit(gSBGC);
 	}
 
 #endif
@@ -1806,7 +1828,7 @@ sbgcCommandStatus_t SBGC32_SendRawCommand (sbgcGeneral_t *gSBGC, ui32 cmdID, ...
 
 	ui32 byte = va_arg(args, ui32);
 
-	gSBGC->_api->startWrite(gSBGC, cmdID SBGC_DEFAULT_ARGS__);
+	api_->startWrite(gSBGC, cmdID SBGC_DEFAULT_ARGS__);
 
 	while (byte != SBGC_RAW_CMD_END_SYMB)
 	{
@@ -1814,15 +1836,15 @@ sbgcCommandStatus_t SBGC32_SendRawCommand (sbgcGeneral_t *gSBGC, ui32 cmdID, ...
 			if (byte > 255U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
 		#endif
 
-		gSBGC->_api->writeByte(gSBGC, (ui8)byte);
+		api_->writeByte(gSBGC, (ui8)byte);
 		byte = va_arg(args, ui32);
 	}
 
 	va_end(args);
 
-	gSBGC->_api->finishWrite(gSBGC);
+	api_->finishWrite(gSBGC);
 
-	return gSBGC->_api->exit(gSBGC);
+	return api_->exit(gSBGC);
 }
 
 
@@ -1846,16 +1868,16 @@ sbgcCommandStatus_t SBGC32_ExpectCommand (sbgcGeneral_t *gSBGC, serialAPI_Comman
 	/* It's necessary to lock SerialAPI before Rx operation */
 	serialAPI_LockRead()
 
-	gSBGC->_api->startRead(gSBGC, cmdID SBGC_ADVANCED_ARGS__);
+	api_->startRead(gSBGC, cmdID SBGC_ADVANCED_ARGS__);
 
-	serialAPI_CurCmd_->_pDestination = pDestination;
-	serialAPI_CurCmd_->_destinationSize = size;
+	curCmd_->_pDestination = pDestination;
+	curCmd_->_destinationSize = size;
 
-	gSBGC->_api->finishRead(gSBGC);
+	api_->finishRead(gSBGC);
 
 	serialAPI_GiveToken()
 
-	return gSBGC->_api->exit(gSBGC);
+	return api_->exit(gSBGC);
 }
 
 
@@ -1967,10 +1989,10 @@ void SerialAPI_ResetTxBuffer (sbgcGeneral_t *gSBGC)
 {
 	serialAPI_TakeMutex()
 
-	gSBGC->_api->txCommandBuffTail = 0;
-	gSBGC->_api->txCommandBuffHead = 0;
+	api_->txCommandBuffTail = 0;
+	api_->txCommandBuffHead = 0;
 
-	gSBGC->_api->serialAPI_Status = serialAPI_OK;
+	api_->serialAPI_Status = serialAPI_OK;
 
 	serialAPI_GiveMutex()
 }
@@ -1984,11 +2006,11 @@ void SerialAPI_ResetRxBuffer (sbgcGeneral_t *gSBGC)
 {
 	serialAPI_TakeMutex()
 
-	gSBGC->_api->rxCommandBuffTail = 0;
-	gSBGC->_api->rxCommandBuffHead = 0;
-	gSBGC->_api->rxCommandBuffCurP = 0;
+	api_->rxCommandBuffTail = 0;
+	api_->rxCommandBuffHead = 0;
+	api_->rxCommandBuffCurP = 0;
 
-	gSBGC->_api->serialAPI_Status = serialAPI_OK;
+	api_->serialAPI_Status = serialAPI_OK;
 
 	serialAPI_GiveMutex()
 }
@@ -2004,7 +2026,7 @@ void SerialAPI_ResetRxBuffer (sbgcGeneral_t *gSBGC)
 	{
 		serialAPI_TakeMutex()
 
-		if (gSBGC->_api->commandNumber == 0)
+		if (api_->commandNumber == 0)
 		{
 			DebugSBGC32_PrintMessage(gSBGC, "The command queue is empty\n");
 
@@ -2018,9 +2040,9 @@ void SerialAPI_ResetRxBuffer (sbgcGeneral_t *gSBGC)
 		DebugSBGC32_PrintMessage(gSBGC, "====================================\n");
 		DebugSBGC32_PrintMessage(gSBGC, "Command queue status:\n");
 
-		for (ui8 i = 0; i < gSBGC->_api->commandNumber; i++)
+		for (ui8 i = 0; i < api_->commandNumber; i++)
 		{
-			serialCommand = &gSBGC->_api->commandBuff[i];
+			serialCommand = &api_->commandBuff[i];
 
 			/* Init buffer */
 			memset(logBuffer, 0, SBGC_LOG_BUFF_SIZE);

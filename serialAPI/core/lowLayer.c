@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		lowLayer.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -38,6 +38,9 @@
 
 #include "../sbgc32.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+
 
 /* Static Constants ----------------------------------------------------
  */
@@ -55,7 +58,7 @@
 	If you want to create your own gimbal communication driver, do it
 	based on these function type templates:
 
-	typedef	sbgcTicks_t		(*sbgcGetTime_t)(void *drv);
+	typedef	sbgcTicks_t		(*sbgcGetTime_t)(void);
 
 	typedef	ui8				(*sbgcTx_t)(void *drv, ui8 *data, ui16 size);
 	typedef	ui8				(*sbgcRx_t)(void *drv, ui8 *data);
@@ -319,8 +322,8 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 
 			availableBytes = gSBGC->_ll->drvAvailableBytes(gSBGC->_ll->drv);
 
-			if ((availableBytes >= headBuff[1] + checksumSize) && (availableBytes != SBGC_RX_BUFFER_OVERFLOW_FLAG))
-				for (ui8 i = 0; i < headBuff[1] + checksumSize; i++)
+			if ((availableBytes >= (headBuff[1] + checksumSize)) && (availableBytes != SBGC_RX_BUFFER_OVERFLOW_FLAG))
+				for (ui8 i = 0; i < (headBuff[1] + checksumSize); i++)
 					gSBGC->_ll->drvRx(gSBGC->_ll->drv, &complexBuff[i + 3]);  // Offset from header space
 
 			else
@@ -398,6 +401,9 @@ void PrivateSerialAPI_LinkLowLayer (sbgcGeneral_t *gSBGC)
 }
 /**	@}
  */
+ 
+ #pragma GCC diagnostic pop
+ 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
 /*                 https://www.basecamelectronics.com                 */

@@ -377,7 +377,7 @@ void CMessageWindowContainerM::vTask (void *pvParameters)
 
 						if (Gimbal.RequestRealTimeDataCustom(&RealTimeDataCustom, sizeof(RealTimeDataCustom), SCParam_FREEZE, SCPrior_NORMAL,
 								SCTimeout_DEFAULT, SBGC_NO_CALLBACK_) == sbgcCOMMAND_OK)
-							if (RealTimeDataCustom.SystemState.calibMode != CalibM_CALIB_MODE_AUTO_PID)
+							if (RealTimeDataCustom.SystemState.calibMode != CALIB_MODE_AUTO_PID)
 								lastAutoTuneTime = 0;
 					}
 

@@ -76,9 +76,7 @@ void TaskStartup (void *pvParameters)
 	CRC32_Module.Init();
 	EEPROM.Init();
 
-	osDelay(10);
-
-	#if (LOADER_NEED_CHANGE_SETTINGS == SET_OFF)
+	#if (LOADER_NEED_CHANGE_SETTINGS == sbgcOFF)
 
 		if (SettingsLoader.Boot())
 			needRefreshGUI_Flag = sbgcTRUE;

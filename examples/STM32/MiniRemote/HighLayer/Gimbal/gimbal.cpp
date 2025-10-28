@@ -35,10 +35,10 @@ void SBGC32_System::Init (SBGC_ADVANCED_PARAMS_)
 
 	DriverSBGC32.Init(MiniRemote.Presets.communicationWay);
 
-	SerialAPI_LinkDriver(&GeneralSBGC, DriverSBGC32_UartTransmitData, DriverSBGC32_UartReceiveByte, DriverSBGC32_GetAvailableBytes,
-						 DriverSBGC32_UartTransmitDebugData, DriverSBGC32_GetTimeMs);
+	SerialAPI_LinkDriver(&GeneralSBGC, DriverSBGC32_TransmitData, DriverSBGC32_ReceiveByte, DriverSBGC32_GetAvailableBytes,
+						 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
 
-	DriverSBGC32_Init(&GeneralSBGC._ll->drv, DriverSBGC32.GetAddressUART_Handle(), NULL);
+	DriverSBGC32_Init(&GeneralSBGC._ll->drv, DriverSBGC32.GetAddressUART_Handle(), 115200);
 
 	SBGC32_Init(&GeneralSBGC);
 
@@ -54,15 +54,13 @@ void SBGC32_System::Init (SBGC_ADVANCED_PARAMS_)
 	/* Other */
 	processStatus = PROCESS_READY;
 	adjVarsSyncState = AVSS_NOT_SYNCHRONIZED;
-
-//	return GetParserCurrentStatus();
 }
 
 
-void SBGC32_System::ResetDriver (SBGC_DRV_UART_TYPE_DEF__ *uart, SBGC_DRV_TIMER_TYPE_DEF__ *tim)
+void SBGC32_System::ResetDriver (SBGC_DRV_UART_TYPE_DEF__ *uart, ui32 serialSpeed)
 {
 	DriverSBGC32_Deinit(&GeneralSBGC._ll->drv);
-	DriverSBGC32_Init(&GeneralSBGC._ll->drv, uart, tim);
+	DriverSBGC32_Init(&GeneralSBGC._ll->drv, uart, serialSpeed);
 
 	/* It's need to re-init ADC, cause it is placed onto the same DMA */
 	Potentiometer.Init();
@@ -436,8 +434,6 @@ void SBGC32_System::ReadEEPROM_AdjVarsSafety (sbgcAdjVarGeneral_t *adjVarGeneral
 	SetAllAdjVarValues(adjVarGeneralTemp, SBGC_ADVANCED_ARGS_);
 
 	osFree(adjVarGeneralTemp);
-
-//	return GetParserCurrentStatus();
 }
 
 
@@ -715,4 +711,3 @@ void FillConsoleDataArr (char *data, ui16 length)
 
 	osSemaphoreGive(Gimbal.xSemaphoreDebugConsole);
 }
-

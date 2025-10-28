@@ -29,6 +29,7 @@
 #include	"watchDog.h"
 
 
+extern JoystickDetermineState_t joystickDetermineState;
 extern Input *inputClassesArray [];
 
 

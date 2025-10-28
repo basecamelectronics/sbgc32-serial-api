@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		debug.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -103,120 +103,67 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 	if (!(vType & sbgcFLAG))
 	/* Simple values */
 	{
+		char valueStr [16] = { 0 };
+
 		switch (vType)
 		{
 			case sbgcUCHAR :
-			{
-				char valueStr [4];
-
 				gSBGC->_ll->debugSprintf(valueStr, "%u", *(ui8*)pValue);
-
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcUSHORT :
-			{
-				char valueStr [6];
-
 				gSBGC->_ll->debugSprintf(valueStr, "%u", *(ui16*)pValue);
-
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcUINT :
-			{
-				char valueStr [11];
-
 				#ifdef _L32__
 					gSBGC->_ll->debugSprintf(valueStr, "%u", *(ui32*)pValue);
 				#else
 					gSBGC->_ll->debugSprintf(valueStr, "%lu", *(ui32*)pValue);
 				#endif
 
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcCHAR :
-			{
-				char valueStr [5];
-
 				gSBGC->_ll->debugSprintf(valueStr, "%i", *(i8*)pValue);
-
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcSHORT :
-			{
-				char valueStr [7];
-
 				gSBGC->_ll->debugSprintf(valueStr, "%i", *(i16*)pValue);
-
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcINT :
-			{
-				char valueStr [12];
-
 				#ifdef _L32__
 					gSBGC->_ll->debugSprintf(valueStr, "%i", *(i32*)pValue);
 				#else
 					gSBGC->_ll->debugSprintf(valueStr, "%li", *(i32*)pValue);
 				#endif
 
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 				break;
-			}
 
 			case sbgcFLOAT :
-			{
-				char valueStr [16];
-
-				gSBGC->_ll->debugSprintf(valueStr, "%.3f", *(float*)pValue);  // .3f is default. May be changed
-
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
+				gSBGC->_ll->debugSprintf(valueStr, "%14.6f", *(float*)pValue);  // 14(8).6f is default. May be changed
 				break;
-			}
 
 			default :  // Prevents [-Wswitch warning]
 				break;
 		}
+
+		if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr)))
+			strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(valueStr));
+
+		gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, valueStr);
 	}
 
 	else
 	/* Flags */
 	{
+		char flagStr [33] = { 0 };
+
 		switch (vType & CLEAN_TYPE_MASK)
 		{
 			case sbgcUCHAR :
 			{
-				char flagStr [9];
 				ui8 valueTemp = *(ui8*)pValue;
 
 				for (ui8 i = 0; i < 8; i++)
@@ -230,16 +177,12 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 
 				flagStr[8] = '\0';
 
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr));
-
 				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, flagStr);
 				break;
 			}
 
 			case sbgcUSHORT :
 			{
-				char flagStr [17];
 				ui16 valueTemp = *(ui16*)pValue;
 
 				for (ui16 i = 0; i < 16; i++)
@@ -253,16 +196,11 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 
 				flagStr[16] = '\0';
 
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, flagStr);
 				break;
 			}
 
 			case sbgcUINT :
 			{
-				char flagStr [33];
 				ui32 valueTemp = *(ui32*)pValue;
 
 				for (ui32 i = 0; i < 32; i++)
@@ -276,13 +214,14 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 
 				flagStr[32] = '\0';
 
-				if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr)))
-					strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr));
-
-				gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, flagStr);
 				break;
 			}
 		}
+
+		if (strlen(str) > (SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr)))
+			strncat(debugStr, str, SBGC_DEBUG_BUFF_SIZE - sizeof(flagStr));
+
+		gSBGC->_ll->debugSprintf(debugStr, "%s %s\n", str, flagStr);
 	}
 
 	DebugSBGC32_PrintMessage(gSBGC, debugStr);

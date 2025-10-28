@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		profiles.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -327,7 +327,7 @@
 													sbgcUCHAR						),  // 10
 		PARAMS_BLOCK_(	"Extra Btn Cfg",			sbgcUCHAR,					5	),  // 11
 		PARAMS_BLOCK_(	"Power Ctrl Cfg",			sbgcUCHAR,					8	),  // 12
-		PARAMS_BLOCK_(	"Reserved 2",				sbgcRCHAR,					3	),  // 13
+		PARAMS_BLOCK_(	"LPF Q Inv",				sbgcUCHAR,					3	),  // 13
 		PARAM_BLOCK_(	"CAN IMU Ext Sens Type",	sbgcUCHAR						),  // 14
 		PARAM_BLOCK_(	"Profile Flags 2",			(sbgcUSHORT | sbgcFLAG)			),  // 15
 		PARAMS_BLOCK_(	"Reserved 3",				sbgcRCHAR,					3	),  // 16
@@ -349,18 +349,29 @@
 		PARAM_BLOCK_(	"Profile Flags 3",			(sbgcUINT | sbgcFLAG)			),  // 30
 		PARAM_BLOCK_(	"Default Profile",			sbgcUCHAR						),  // 31
 		PARAMS_BLOCK_(	"Retracted Angle",			sbgcSHORT,					3	),  // 32
-		PARAMS_BLOCK_(	"Amplitude",				sbgcUCHAR,					3	),  // 33
-		PARAM_BLOCK_(	"Frequency Range",			sbgcUCHAR						),  // 34
-		PARAM_BLOCK_(	"Pause Period",				sbgcUCHAR						),  // 35
-		PARAM_BLOCK_(	"Pause Balance",			sbgcUCHAR						),  // 36
-		PARAM_BLOCK_(	"Pause Attenuation",		sbgcUCHAR						),  // 37
-		PARAM_BLOCK_(	"Pause Randomness",			sbgcUCHAR						),  // 38
-		PARAM_BLOCK_(	"Pause Phase Var",			sbgcUCHAR						),  // 39
-		PARAMS_BLOCK_(	"Resonance Gain",			sbgcUCHAR,					3	),  // 40
-		PARAM_BLOCK_(	"Resonance Frequency",		sbgcUCHAR						),  // 41
-		PARAMS_BLOCK_(	"Frequency Shift",			sbgcCHAR,					3	),  // 42
-		PARAMS_BLOCK_(	"Reserved 4",				sbgcRCHAR,					5	),  // 43
-		PARAMS_BLOCK_(	"Reserved 5",				sbgcRCHAR,					93	),  // 44
+		PARAMS_BLOCK_(	"SGC Amplitude",			sbgcUCHAR,					3	),  // 33
+		PARAM_BLOCK_(	"SGC Frequency Range",		sbgcUCHAR						),  // 34
+		PARAM_BLOCK_(	"SGC Pause Period",			sbgcUCHAR						),  // 35
+		PARAM_BLOCK_(	"SGC Pause Balance",		sbgcUCHAR						),  // 36
+		PARAM_BLOCK_(	"SGC Pause Attenuation",	sbgcUCHAR						),  // 37
+		PARAM_BLOCK_(	"SGC Pause Randomness",		sbgcUCHAR						),  // 38
+		PARAM_BLOCK_(	"SGC Pause Phase Var",		sbgcUCHAR						),  // 39
+		PARAMS_BLOCK_(	"SGC Resonance Gain",		sbgcUCHAR,					3	),  // 40
+		PARAM_BLOCK_(	"SGC Resonance Frequency",	sbgcUCHAR						),  // 41
+		PARAMS_BLOCK_(	"SGC Frequency Shift",		sbgcCHAR,					3	),  // 42
+		PARAMS_BLOCK_(	"SGC Reserved 4",			sbgcRCHAR,					5	),  // 43
+		PARAMS_BLOCK_(	"Ext Motor Drv IDs",		sbgcUCHAR,					7	),  // 44
+		PARAMS_BLOCK_(	"Encoder Cfg Ext",			sbgcUSHORT,					3	),  // 45
+		PARAMS_BLOCK_(	"Ext Sens Params",			sbgcUCHAR,					16	),  // 46
+		PARAM_BLOCK_(	"IMU Angle Corr R",			sbgcSHORT						),  // 47
+		PARAM_BLOCK_(	"IMU Angle Corr P",			sbgcSHORT						),  // 48
+		PARAMS_BLOCK_(	"CAN IMU Servo Out",		sbgcUCHAR,					2	),  // 49
+		PARAM_BLOCK_(	"CAN IMU Servo Rate",		sbgcUCHAR						),  // 50
+		PARAM_BLOCK_(	"Servo Outer P Mult",		sbgcUCHAR						),  // 51
+		PARAM_BLOCK_(	"Servo Outer I",			sbgcUCHAR						),  // 52
+		PARAM_BLOCK_(	"Ext Pwr Sw Shunt R",		sbgcUSHORT						),  // 53
+		PARAM_BLOCK_(	"General Flags 4",			(sbgcUINT | sbgcFLAG)			),  // 54
+		PARAMS_BLOCK_(	"Reserved 5",				sbgcRCHAR,					49	),  // 55
 
 	};
 

@@ -1,14 +1,14 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
- *	@file		glueLinuxOS.c
+ *	@file		gluePThread.c
  *
  *	@brief		Source OS glue file
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -32,7 +32,7 @@
 #include	"../../sbgc32.h"
 
 
-#if (SBGC_USE_LINUX_OS)
+#if (SBGC_USE_PTHREAD_OS)
 
 static sbgcMutex_t handlerTaskBlockMutex;
 static volatile sbgcBoolean_t handlerTaskBlockFlag = sbgcFALSE;
@@ -46,7 +46,7 @@ extern NORETURN__ sbgcThreadRetval_t SBGC32_HandlerThread (sbgcThreadArg_t threa
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													Executable Functions
  */
-/**	@addtogroup	LinuxOS_Glue
+/**	@addtogroup	PThread_Glue
  *	@{
  */
 /**	@brief	SerialAPI initialization thread
@@ -68,7 +68,7 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 		if (gSBGC->_api->serialAPI_Status != serialAPI_TX_RX_OK)
 		{
 			/*  - - - - - - User Init Error Handler - - - - - - - */
-			(void)(1);
+			donothing_;
 			/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
 		}
 
@@ -83,8 +83,7 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 }
 
 
-/**	@brief	Creates initialization thread.
- *			Starts the scheduler if necessary
+/**	@brief	Creates initialization thread
  *
  *	@param	*gSBGC - pointer to sbgcGeneral_t object
  */
@@ -213,7 +212,7 @@ void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newP
 /**	@}
  */
 
-#endif  /* SBGC_USE_LINUX_OS */
+#endif  /* SBGC_USE_PTHREAD_OS */
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ */
 /*                 https://www.basecamelectronics.com                 */

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		sbgc32.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -48,30 +48,17 @@
  */
 sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
 {
-	#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
+	#if (!(SBGC_USES_CUSTOM_DRIVER || SBGC_SEVERAL_DEVICES))
+
+		SerialAPI_LinkDriver(gSBGC, DriverSBGC32_TransmitData, DriverSBGC32_ReceiveByte, DriverSBGC32_GetAvailableBytes,
+							 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
 
 		#if (SBGC_USE_ARDUINO_DRIVER)
-
-			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_TxFuncTemp, DriverSBGC32_RxFuncTemp, DriverSBGC32_AvailableBytesFuncTemp,
-								 DriverSBGC32_TxDebugFuncTemp, DriverSBGC32_GetTimeFuncTemp);
-
-			DriverSBGC32_InitFuncTemp();
-
-		#elif (SBGC_USE_LINUX_DRIVER)
-
-			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_PortTransmitData, DriverSBGC32_PortReceiveByte, DriverSBGC32_GetAvailableBytes,
-								 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
-
+			DriverSBGC32_Init(NULL, NULL, SBGC_SERIAL_SPEED);
+		#else
 			DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_SERIAL_SPEED);
-
-		#elif (SBGC_USE_STM32_DRIVER)
-
-			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_UartTransmitData, DriverSBGC32_UartReceiveByte, DriverSBGC32_GetAvailableBytes,
-								 DriverSBGC32_UartTransmitDebugData, DriverSBGC32_GetTimeMs);
-
-			DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_REFERENCE_TIMER);
-
 		#endif
+
 	#endif
 
 	return SBGC32_SetupLibrary(gSBGC);
@@ -105,7 +92,7 @@ sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
  */
 sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
 {
-	#if (!(SBGC_USE_ARDUINO_DRIVER || SBGC_USE_LINUX_DRIVER || SBGC_USE_STM32_DRIVER))
+	#if (!(SBGC_USE_ARDUINO_DRIVER || SBGC_USE_ESPIDF_DRIVER || SBGC_USE_LINUX_DRIVER || SBGC_USE_STM32_DRIVER))
 
 		/* Attention! When using a custom driver, use the SerialAPI_LinkDriver() and SBGC32_SetupLibrary function! */
 		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
@@ -113,12 +100,30 @@ sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
 	#endif
 
 	#if (SBGC_USES_OS_SUPPORT)
+
 		SystemSBGC32_Init(gSBGC);
+
+		return sbgcCOMMAND_OK;
+
 	#else
 		return PrivateSBGC32_EnterInit(gSBGC);
 	#endif
+}
 
-	return sbgcCOMMAND_OK;
+
+/**	@brief	Performs deinitialization of the library
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ */
+void SBGC32_Deinit (sbgcGeneral_t *gSBGC)
+{
+	#if (SBGC_USES_OS_SUPPORT)
+		SystemSBGC32_Deinit(gSBGC);
+	#endif
+
+	DriverSBGC32_Deinit(&gSBGC->_ll->drv);
+
+	SerialAPI_ResetLibrary(gSBGC);
 }
 
 
@@ -128,7 +133,7 @@ sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
  */
 WEAK__ void SerialAPI_FatalErrorHandler (void)
 {
-	/* User common error handler */
+	/* User fatal errors handler */
 
 	while (1);
 }
@@ -148,7 +153,7 @@ WEAK__ void SerialAPI_FatalErrorHandler (void)
  */
 WEAK__ void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC)
 {
-	/* Any user actions while waiting */
+	/* Any fast user actions while waiting */
 
 	unused_(gSBGC);
 }

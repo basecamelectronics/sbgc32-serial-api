@@ -1,6 +1,9 @@
+.gitignore
+
 # Folders
 doxygen/doc/
 SBGC32_ArduinoDebug/
+SBGC32_ESP32_Debug/
 SBGC32_LinuxDebug/
 SBGC32_STM32_Debug/
 SBGC32_STM32_NoCubeMX/

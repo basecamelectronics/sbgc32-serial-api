@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		imu.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -233,7 +233,7 @@ static inline ui16 ParserSBGC32_PackAHRS_HelperMode (sbgcAHRS_HelperModeDir_t di
 													 sbgcAHRS_HelperModeCorr_t correction, sbgcAHRS_HelperModeTr_t translate,
 													 sbgcAHRS_HelperModeRef_t reference, sbgcAHRS_HelperModeOther_t other)
 {
-	return (direction & (ui16)0b00000001) | ((location << 1) & (ui16)0b00000010) | ((correction << 4) & (ui16)0b00110000) |
+	return (ui16)direction | ((location << 1) & (ui16)0b00000010) | ((correction << 4) & (ui16)0b00110000) |
 		   ((translate << 6) & (ui16)0b11000000) | ((reference << 8) & 0b0000001100000000) | other;
 }
 /**	@}

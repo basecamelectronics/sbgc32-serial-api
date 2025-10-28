@@ -252,7 +252,7 @@ class SBGC32_System
 
 		/* Methods */
 		void				Init (SBGC_ADVANCED_PARAMS_);
-		void				ResetDriver (SBGC_DRV_UART_TYPE_DEF__ *uart, SBGC_DRV_TIMER_TYPE_DEF__ *tim);
+		void				ResetDriver (SBGC_DRV_UART_TYPE_DEF__ *uart, ui32 serialSpeed);
 		void				SetDefaultSettings (void);
 		void				RecoverParameters (SBGC_ADVANCED_PARAMS_);
 

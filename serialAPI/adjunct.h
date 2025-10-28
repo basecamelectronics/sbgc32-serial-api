@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		adjunct.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -145,8 +145,8 @@ typedef enum
     sbgcFLOAT						= 7,
 
 	/* Var modes */
-	sbgcFLAG						= BIT_6_SET,	// This variable is flag. Uses only for reference info
-	sbgcDUMMY						= BIT_7_SET,	// This variable is empty or reserved. Uses only for reference info
+	sbgcFLAG						= BIT_6_SET,	// This field is a flag. Uses only for reference info
+	sbgcDUMMY						= BIT_7_SET,	// This field is empty or reserved. Uses only for reference info
 
 	sbgcRCHAR						= (sbgcUCHAR | sbgcDUMMY)
 
@@ -159,12 +159,15 @@ typedef enum
  *						 Static Functions and Macros
  */
 #define		unused_(x)				((void)(x))
-#define		nameof_(var)			(#var)
+#define		donothing_				(void)(1)
+#define		nameof_(var)			#var
 #define		countof_(arr)			(sizeof(arr) / sizeof(*(arr)))
 #define		offsetof_(pEnd, pStart)	(((ui8*)(pEnd)) - ((ui8*)(pStart)))
 #define		clearbuff_(p)			(memset(p, 0, sizeof(*(p))))
-#define		constrain_(val, min, max)\
-									((val) < (min) ? (min) : (val) > (max) ? (max) : (val))
+#define		constrain_(x, min, max)	((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
+#define		constrainmin_(x, min)	(((x) < (min)) ? (min) : (x))
+#define		constrainmax_(x, max)	(((x) > (max)) ? (max) : (x))
+
 #define		rawconstrain_(val, min, max, raw)\
 									(((val) <= (min)) || ((val) >= (max)) ? (raw) : (val))
 #define		deadbandcross_(val, valOrg, db)\

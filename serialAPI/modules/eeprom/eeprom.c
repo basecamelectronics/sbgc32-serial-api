@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		eeprom.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -203,7 +203,7 @@ sbgcCommandStatus_t SBGC32_ReadRegBuffI2C (sbgcGeneral_t *gSBGC, sbgcI2C_RegBuff
 sbgcCommandStatus_t SBGC32_WriteEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, const i8 *data, ui16 size, sbgcConfirm_t *confirm
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
-	sbgcAssertParam(addr, 0, SBGC_EEPROM_MAX_REQ_ADDR)
+	sbgcAssertUnsParam(addr, SBGC_EEPROM_MAX_REQ_ADDR)
 	sbgcAssertParam(size, SBGC_EEPROM_ALIGN_DATA_LEN, SBGC_MAX_SER_BUFF_SIZE - SBGC_EEPROM_ALIGN_DATA_LEN)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_EEPROM_WRITE SBGC_ADVANCED_ARGS__);
@@ -232,11 +232,11 @@ static void PostReadEEPROM (sbgcGeneral_t *gSBGC)
 {
 	ui8 bytesSkip = sizeof(ui32);
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - bytesSkip))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - bytesSkip))
 		SerialAPI_FatalErrorHandler();
 
 	gSBGC->_api->skipBytes(gSBGC, bytesSkip);  // skip address
-	gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize - bytesSkip);
+	gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize - bytesSkip);
 }
 
 /**	@brief	Requests a reading of block of data from EEPROM
@@ -269,7 +269,7 @@ static void PostReadEEPROM (sbgcGeneral_t *gSBGC)
 sbgcCommandStatus_t SBGC32_ReadEEPROM (sbgcGeneral_t *gSBGC, ui32 addr, i8 *data, ui16 size
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
-	sbgcAssertParam(addr, 0, SBGC_EEPROM_MAX_REQ_ADDR)
+	sbgcAssertUnsParam(addr, SBGC_EEPROM_MAX_REQ_ADDR)
 	sbgcAssertParam(size, SBGC_EEPROM_ALIGN_DATA_LEN, SBGC_MAX_SER_BUFF_SIZE - SBGC_EEPROM_ALIGN_DATA_LEN)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_EEPROM_READ SBGC_ADVANCED_ARGS__);
@@ -446,7 +446,7 @@ sbgcCommandStatus_t SBGC32_WriteFile (sbgcGeneral_t *gSBGC, const sbgcWriteReadF
  */
 static void PostReadFile (sbgcGeneral_t *gSBGC)
 {
-	sbgcWriteReadFile_t *writeReadFile = (sbgcWriteReadFile_t*)serialAPI_CurCmdDest_;
+	sbgcWriteReadFile_t *writeReadFile = (sbgcWriteReadFile_t*)curCmdDest_;
 
 	writeReadFile->fileSize = gSBGC->_api->readWord(gSBGC);
 	writeReadFile->pageOffset = gSBGC->_api->readWord(gSBGC);

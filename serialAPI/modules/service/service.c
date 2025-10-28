@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		service.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -89,7 +89,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
 		PARAM_BLOCK_(	"Script Slot 8 Size",		sbgcUSHORT						),  // 13
 		PARAM_BLOCK_(	"Script Slot 9 Size",		sbgcUSHORT						),  // 14
 		PARAM_BLOCK_(	"Script Slot 10 Size",		sbgcUSHORT						),  // 15
-		PARAM_BLOCK_(	"Hardware Flags",			sbgcUSHORT						),  // 16
+		PARAM_BLOCK_(	"Hardware Flags",			(sbgcUSHORT | sbgcFLAG)			),  // 16
 		PARAM_BLOCK_(	"Board Features Ext 2",		(sbgcUINT | sbgcFLAG)			),  // 17
 		PARAM_BLOCK_(	"CAN Drv Main Limit",		sbgcUCHAR						),  // 18
 		PARAM_BLOCK_(	"CAN Drv Aux Limit",		sbgcUCHAR						),  // 19
@@ -127,34 +127,37 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
 	const sbgcParameterReferenceInfo_t autoPID2_ReferenceInfoArray [] =
 	{
 		PARAM_BLOCK_(	"Action",					sbgcUCHAR						),  // 0
-		PARAMS_BLOCK_(	"Reserved 1",				sbgcRCHAR,					10	),  // 1
-		PARAM_BLOCK_(	"Cfg Version",				sbgcUCHAR						),  // 2
-		PARAM_BLOCK_(	"Axis Flag [ROLL]",			(sbgcUCHAR | sbgcFLAG)			),  // 3
-		PARAM_BLOCK_(	"Gain [ROLL]",				sbgcUCHAR						),  // 4
-		PARAM_BLOCK_(	"Stimulus Gain [ROLL]",		sbgcUSHORT						),  // 5
-		PARAM_BLOCK_(	"Effective Freq [ROLL]",	sbgcUCHAR						),  // 6
-		PARAM_BLOCK_(	"Problem Freq [ROLL]",		sbgcUCHAR						),  // 7
-		PARAM_BLOCK_(	"Problem Margin [ROLL]",	sbgcUCHAR						),  // 8
-		PARAMS_BLOCK_(	"Reserved 2 [ROLL]",		sbgcRCHAR,					6	),  // 9
-		PARAM_BLOCK_(	"Axis Flag [PITCH]",		(sbgcUCHAR | sbgcFLAG)			),  // 10
-		PARAM_BLOCK_(	"Gain [PITCH]",				sbgcUCHAR						),  // 11
-		PARAM_BLOCK_(	"Stimulus Gain [PITCH]",	sbgcUSHORT						),  // 12
-		PARAM_BLOCK_(	"Effective Freq [PITCH]",	sbgcUCHAR						),  // 13
-		PARAM_BLOCK_(	"Problem Freq [PITCH]",		sbgcUCHAR						),  // 14
-		PARAM_BLOCK_(	"Problem Margin [PITCH]",	sbgcUCHAR						),  // 15
-		PARAMS_BLOCK_(	"Reserved 2 [PITCH]",		sbgcRCHAR,					6	),  // 16
-		PARAM_BLOCK_(	"Axis Flag [YAW]",			(sbgcUCHAR | sbgcFLAG)			),  // 17
-		PARAM_BLOCK_(	"Gain [YAW]",				sbgcUCHAR						),  // 18
-		PARAM_BLOCK_(	"Stimulus Gain [YAW]",		sbgcUSHORT						),  // 19
-		PARAM_BLOCK_(	"Effective Freq [YAW]",		sbgcUCHAR						),  // 20
-		PARAM_BLOCK_(	"Problem Freq [YAW]",		sbgcUCHAR						),  // 21
-		PARAM_BLOCK_(	"Problem Margin [YAW]",		sbgcUCHAR						),  // 22
-		PARAMS_BLOCK_(	"Reserved 2 [YAW]",			sbgcRCHAR,					6	),  // 23
-		PARAM_BLOCK_(	"General Flags",			(sbgcUSHORT | sbgcFLAG)			),  // 24
-		PARAM_BLOCK_(	"Reserved 3",				sbgcRCHAR						),  // 25
-		PARAM_BLOCK_(	"Test Frequency From",		sbgcUCHAR						),  // 26
-		PARAM_BLOCK_(	"Test Frequency To",		sbgcUCHAR						),  // 27
-		PARAMS_BLOCK_(	"Reserved 4",				sbgcRCHAR,					17	),  // 28
+		PARAM_BLOCK_(	"Cmd Flags",				(sbgcUSHORT | sbgcFLAG)			),  // 1
+		PARAMS_BLOCK_(	"Reserved 1",				sbgcRCHAR,					8	),  // 2
+		PARAM_BLOCK_(	"Cfg Version",				sbgcUCHAR						),  // 3
+		PARAM_BLOCK_(	"Axis Flag [ROLL]",			(sbgcUCHAR | sbgcFLAG)			),  // 4
+		PARAM_BLOCK_(	"Gain [ROLL]",				sbgcUCHAR						),  // 5
+		PARAM_BLOCK_(	"Stimulus Gain [ROLL]",		sbgcUSHORT						),  // 6
+		PARAM_BLOCK_(	"Effective Freq [ROLL]",	sbgcUCHAR						),  // 7
+		PARAM_BLOCK_(	"Problem Freq [ROLL]",		sbgcUCHAR						),  // 8
+		PARAM_BLOCK_(	"Problem Margin [ROLL]",	sbgcUCHAR						),  // 9
+		PARAMS_BLOCK_(	"Reserved 2 [ROLL]",		sbgcRCHAR,					6	),  // 10
+		PARAM_BLOCK_(	"Axis Flag [PITCH]",		(sbgcUCHAR | sbgcFLAG)			),  // 11
+		PARAM_BLOCK_(	"Gain [PITCH]",				sbgcUCHAR						),  // 12
+		PARAM_BLOCK_(	"Stimulus Gain [PITCH]",	sbgcUSHORT						),  // 13
+		PARAM_BLOCK_(	"Effective Freq [PITCH]",	sbgcUCHAR						),  // 14
+		PARAM_BLOCK_(	"Problem Freq [PITCH]",		sbgcUCHAR						),  // 15
+		PARAM_BLOCK_(	"Problem Margin [PITCH]",	sbgcUCHAR						),  // 16
+		PARAMS_BLOCK_(	"Reserved 2 [PITCH]",		sbgcRCHAR,					6	),  // 17
+		PARAM_BLOCK_(	"Axis Flag [YAW]",			(sbgcUCHAR | sbgcFLAG)			),  // 18
+		PARAM_BLOCK_(	"Gain [YAW]",				sbgcUCHAR						),  // 19
+		PARAM_BLOCK_(	"Stimulus Gain [YAW]",		sbgcUSHORT						),  // 20
+		PARAM_BLOCK_(	"Effective Freq [YAW]",		sbgcUCHAR						),  // 21
+		PARAM_BLOCK_(	"Problem Freq [YAW]",		sbgcUCHAR						),  // 22
+		PARAM_BLOCK_(	"Problem Margin [YAW]",		sbgcUCHAR						),  // 23
+		PARAMS_BLOCK_(	"Reserved 2 [YAW]",			sbgcRCHAR,					6	),  // 24
+		PARAM_BLOCK_(	"General Flags",			(sbgcUSHORT | sbgcFLAG)			),  // 25
+		PARAM_BLOCK_(	"Reserved 3",				sbgcRCHAR						),  // 26
+		PARAM_BLOCK_(	"Test Frequency From",		sbgcUCHAR						),  // 27
+		PARAM_BLOCK_(	"Test Frequency To",		sbgcUCHAR						),  // 28
+		PARAM_BLOCK_(	"Multi Pos Flag",			(sbgcUCHAR | sbgcFLAG)			),  // 29
+		PARAMS_BLOCK_(	"Multi Pos Angle",			sbgcCHAR,					4	),  // 30
+		PARAMS_BLOCK_(	"Reserved 4",				sbgcRCHAR,					12	),  // 31
 
 	};
 
@@ -391,7 +394,7 @@ sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_
  *	@code
 
 			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2730)
-				(void)(1);  // Use the SBGC32_TuneAutoPID2 function
+				donothing_;  // Use the SBGC32_TuneAutoPID2 function
 
 			#define	SBGC_AUTO_PID_PROFILE 0
 			#define	SBGC_AUTO_PID_GAIN_STAB 127
@@ -514,7 +517,7 @@ sbgcCommandStatus_t SBGC32_BreakAutoPID_Tuning (sbgcGeneral_t *gSBGC, sbgcConfir
  *	@code
 
 			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) < 2730)
-				(void)(1);  // Use the SBGC32_TuneAutoPID function
+				donothing_;  // Use the SBGC32_TuneAutoPID function
 
 			#define	SBGC_AUTO_PID_GAIN_STAB 127
 			#define SBGC_AUTO_PID_STIM_GAIN 1000
@@ -752,11 +755,11 @@ static void PostRequestMotorState (sbgcGeneral_t *gSBGC)
 {
 	ui8 bytesSkip = sizeof(ui8) + sizeof(ui32);  // motorID + dataSet
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - bytesSkip))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - bytesSkip))
 		SerialAPI_FatalErrorHandler();
 
 	gSBGC->_api->skipBytes(gSBGC, bytesSkip);
-	gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize - bytesSkip);
+	gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize - bytesSkip);
 
 	/* A big-endian memory parser will be released in the next versions */
 }
@@ -1033,6 +1036,9 @@ sbgcCommandStatus_t SBGC32_SetBootModeExt (sbgcGeneral_t *gSBGC, sbgcBoolean_t n
  *
  *	####	TX —> CMD_RUN_SCRIPT :	34 bytes
  *
+ *	@pre	Board requirements:\n
+ *			SCRIPTING = (1 << 4)
+ *
  *	@post	Use the @ref SBGC32_ReadScriptDebugInfo function
  *			for parse script debug info
  *
@@ -1101,7 +1107,7 @@ sbgcCommandStatus_t SBGC32_RunScript (sbgcGeneral_t *gSBGC, sbgcScriptMode_t mod
  */
 static void PostReadScriptDebugInfo (sbgcGeneral_t *gSBGC)
 {
-	sbgcScriptDebugInfo_t *scriptDebugInfo = (sbgcScriptDebugInfo_t*)serialAPI_CurCmdDest_;
+	sbgcScriptDebugInfo_t *scriptDebugInfo = (sbgcScriptDebugInfo_t*)curCmdDest_;
 
     gSBGC->_api->readBuff(gSBGC, scriptDebugInfo, sizeof(sbgcScriptDebugInfo_t));
 }
@@ -1113,6 +1119,9 @@ static void PostReadScriptDebugInfo (sbgcGeneral_t *gSBGC)
  *	@pre	Call the @ref SBGC32_RunScript function with
  *			ScrtM_START_WITH_DEBUG mode for script debug.
  *			Refer to its documentation for code example details
+ *
+ *	@pre	Board requirements:\n
+ *			SCRIPTING = (1 << 4)
  *
  *	@param	*gSBGC - serial connection descriptor
  *	@param	*scriptDebugInfo - structure storing debug information
@@ -1150,6 +1159,9 @@ sbgcCommandStatus_t SBGC32_ReadScriptDebugInfo (sbgcGeneral_t *gSBGC, sbgcScript
  *
  *	@pre	Use the @ref SBGC32_ReadStateVars function to
  *			obtain this data previously for changing
+ *
+ *	@pre	Board requirements:\n
+ *			STATE_VARS = (1 << 18) (ext.)
  *
  *	@attention	Firmware: 2.68b7+ ("Extended" family only)
  *
@@ -1199,6 +1211,9 @@ sbgcCommandStatus_t SBGC32_WriteStateVars (sbgcGeneral_t *gSBGC, const sbgcState
  *	####	TX —> CMD_READ_STATE_VARS		with no payload
  *	####	RX <— CMD_READ_STATE_VARS :		192 bytes
  *
+ *	@pre	Board requirements:\n
+ *			STATE_VARS = (1 << 18) (ext.)
+ *
  *	@attention	Firmware: 2.68b7+ ("Extended" family only)
  *
  *	@note	Refer to @ref SBGC32_WriteStateVars function
@@ -1240,6 +1255,9 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
  *
  *	####	TX —> CMD_SET_DEBUG_PORT :		16 bytes
  *	####	RX <— CMD_CONFIRM :				1-6 bytes
+ *
+ *	@pre	Board requirements:\n
+ *			PLUS_VER = (1 << 0) (ext.2) when using 'filter'
  *
  *	@code
 
@@ -1306,13 +1324,13 @@ sbgcCommandStatus_t SBGC32_SetDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortActi
  */
 static void PostReadDebugPort (sbgcGeneral_t *gSBGC)
 {
-	sbgcDebugPortData_t *debugPortData = (sbgcDebugPortData_t*)serialAPI_CurCmdDest_;
+	sbgcDebugPortData_t *debugPortData = (sbgcDebugPortData_t*)curCmdDest_;
 
 	debugPortData->timeMs = gSBGC->_api->readWord(gSBGC);
 	debugPortData->portAndDir = gSBGC->_api->readByte(gSBGC);
 	debugPortData->cmdID = gSBGC->_api->readByte(gSBGC);
 
-	gSBGC->_api->readBuff(gSBGC, debugPortData->payload, serialAPI_CurCmd_->_payloadSize - 4);
+	gSBGC->_api->readBuff(gSBGC, debugPortData->payload, curCmd_->_payloadSize - 4);
 }
 
 /**	@brief	Reads debug port data
@@ -1390,13 +1408,13 @@ sbgcCommandStatus_t SBGC32_SendTransparentCommand (sbgcGeneral_t *gSBGC, const s
  */
 static void PostReadTransparentCommand (sbgcGeneral_t *gSBGC)
 {
-	sbgcTransparentCommand_t *cmd = (sbgcTransparentCommand_t*)serialAPI_CurCmdDest_;
+	sbgcTransparentCommand_t *cmd = (sbgcTransparentCommand_t*)curCmdDest_;
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - 1))
 		SerialAPI_FatalErrorHandler();
 
 	cmd->target = gSBGC->_api->readByte(gSBGC);
-	gSBGC->_api->readBuff(gSBGC, cmd->payload, serialAPI_CurCmd_->_payloadSize - 1);
+	gSBGC->_api->readBuff(gSBGC, cmd->payload, curCmd_->_payloadSize - 1);
 }
 
 /**	@brief	Receives data from serial port on
@@ -1652,6 +1670,13 @@ sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID
  *	####	TX —> CMD_EXECUTE_MENU :		1 byte
  *	####	RX <— CMD_CONFIRM :				1-6 bytes
  *
+ *	@pre	Board requirements:\n
+ *			SCRIPTING = (1 << 4) when using MENU_CMD_RUN_SCRIPTx or
+ *			MENU_CMD_STOP_SCRIPT \n
+ *			MAG_SENSOR = (1 << 6) when using MENU_CMD_CALIB_MAG \n
+ *			SHAKE_GENERATOR = (1 << 1) when using MENU_CMD_RETRACTED_POSITION
+ *			or MENU_CMD_SHAKE_GENERATOR_OFF or MENU_CMD_SHAKE_GENERATOR_ON
+ *
  *	@code
 
 			// Turn on/off the motors
@@ -1704,6 +1729,81 @@ sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t 
 
 	return gSBGC->_api->exit(gSBGC);
 }
+
+
+#if (SBGC_NEED_CONFIRM_CMD)
+
+	/**	@brief	Executes menu command with optional flags
+	 *
+	 *	####	TX —> CMD_EXECUTE_MENU :		2 bytes
+	 *	####	RX <— CMD_CONFIRM (opt.) :		1-6 bytes
+	 *
+	 *	@pre	Board requirements:\n
+	 *			SCRIPTING = (1 << 4) when using MENU_CMD_RUN_SCRIPTx or
+	 *			MENU_CMD_STOP_SCRIPT \n
+	 *			MAG_SENSOR = (1 << 6) when using MENU_CMD_CALIB_MAG \n
+	 *			SHAKE_GENERATOR = (1 << 1) when using MENU_CMD_RETRACTED_POSITION
+	 *			or MENU_CMD_SHAKE_GENERATOR_OFF or MENU_CMD_SHAKE_GENERATOR_ON
+	 *
+	 *	@code
+
+				// Turn on/off the motors without confirmation
+				SBGC32_ExecuteMenuExt(&SBGC32_Device, MENU_CMD_MOTOR_TOGGLE, MC_FLAG_NO, SBGC_NO_CONFIRM);
+
+				// Return the gimbal to the home position, get confirm on a finish
+				SBGC32_ExecuteMenuExt(&SBGC32_Device, MENU_CMD_HOME_POSITION, MC_FLAG_CONFIRM_ON_FINISH, SBGC_NO_CONFIRM);
+
+				// Run third-slot script, get confirm on a start and wait for a finish
+				SBGC32_ExecuteMenuExt(&SBGC32_Device, MENU_CMD_RUN_SCRIPT3, MC_FLAG_CONFIRM | MC_FLAG_CONFIRM_ON_FINISH, SBGC_NO_CONFIRM);
+				SBGC32_CheckConfirmation(&SBGC32_Device, SBGC_NO_CONFIRM, CMD_EXECUTE_MENU);
+
+				// Just ping the controller with confirmation command
+				SBGC32_ExecuteMenuExt(&SBGC32_Device, MENU_CMD_NO, MC_FLAG_CONFIRM, SBGC_NO_CONFIRM);
+
+	 *	@endcode
+	 *
+	 *	@param	*gSBGC - serial connection descriptor
+	 *	@param	menuCmdID - menu command identifier
+	 *	@param	flags - optional parameter
+	 *	@param	*confirm - confirmation result storage structure
+	 *
+	 *	@return	Communication status. See @ref Readme_S2
+	 */
+	sbgcCommandStatus_t SBGC32_ExecuteMenuExt (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCmdID, sbgcMenuCmdFlag_t flags, sbgcConfirm_t *confirm
+											   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+	{
+		sbgcAssertParam(menuCmdID, MENU_CMD_NO, MENU_CMD_SERVO_MODE_TOGGLE)
+
+		#if (SBGC_NEED_ASSERTS)
+
+			if (((menuCmdID >= MENU_CMD_RUN_SCRIPT1) && (menuCmdID <= MENU_CMD_RUN_SCRIPT5)) || (menuCmdID == MENU_CMD_STOP_SCRIPT))
+				sbgcAssertFeature(BF_SCRIPTING)
+
+			if (menuCmdID == MENU_CMD_CALIB_MAG)
+				sbgcAssertFeature(BF_MAG_SENSOR)
+
+			if ((menuCmdID >= MENU_CMD_RETRACTED_POSITION) && (menuCmdID <= MENU_CMD_SHAKE_GENERATOR_ON))
+				sbgcAssertFeature2(BFE2_SHAKE_GENERATOR)
+
+		#endif
+
+		gSBGC->_api->startWrite(gSBGC, CMD_EXECUTE_MENU SBGC_ADVANCED_ARGS__);
+		gSBGC->_api->writeByte(gSBGC, menuCmdID);
+		gSBGC->_api->finishWrite(gSBGC);
+
+		if ((flags & MC_FLAG_CONFIRM) | (flags & MC_FLAG_CONFIRM_ON_FINISH))
+		{
+			gSBGC->_api->addConfirm(gSBGC, confirm, CMD_EXECUTE_MENU SBGC_ADVANCED_ARGS__);
+
+			gSBGC->_api->link(gSBGC);
+		}
+
+		serialAPI_GiveToken()
+
+		return gSBGC->_api->exit(gSBGC);
+	}
+
+#endif
 
 
 /**	@brief	Plays melody by motors or emit standard beep sound
@@ -1806,6 +1906,9 @@ sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, cons
  *	####	TX —> CMD_CAN_DEVICE_SCAN		with no payload
  *	####	RX <— CMD_CAN_DEVICE_SCAN :		14 bytes
  *
+ *	@pre	Board requirements:\n
+ *			CAN_PORT = (1 << 10)
+ *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
  *			function with PM_CAN_DEVICE_SCAN to print
  *			received data
@@ -1856,17 +1959,17 @@ sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceS
  */
 static void PostRequestModuleList (sbgcGeneral_t *gSBGC)
 {
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - 1))
 		SerialAPI_FatalErrorHandler();
 
 	gSBGC->_api->skipBytes(gSBGC, 1);
-	gSBGC->_api->readBuff(gSBGC, serialAPI_CurCmdDest_, serialAPI_CurCmd_->_payloadSize - 1);
+	gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize - 1);
 
-	ui8 freeSpaceSize = serialAPI_CurCmd_->_destinationSize - (serialAPI_CurCmd_->_payloadSize - 1);
+	ui8 freeSpaceSize = curCmd_->_destinationSize - (curCmd_->_payloadSize - 1);
 
 	if (freeSpaceSize)
 	/* Fill the remaining space with zeros */
-		memset(((ui8*)serialAPI_CurCmd_->_pDestination) + (serialAPI_CurCmd_->_payloadSize - 1), 0, freeSpaceSize);
+		memset(((ui8*)curCmd_->_pDestination) + (curCmd_->_payloadSize - 1), 0, freeSpaceSize);
 }
 
 
@@ -1874,6 +1977,9 @@ static void PostRequestModuleList (sbgcGeneral_t *gSBGC)
  *
  *	####	TX —> CMD_MODULE_LIST	with no payload
  *	####	RX <— CMD_MODULE_LIST :	1 + (13 * ?) bytes
+ *
+ *	@pre	Board requirements:\n
+ *			CAN_PORT = (1 << 10)
  *
  *	@post	The number of structures can be allocated with a margin.
  *			Any extra space will be filled with zeros. This way,

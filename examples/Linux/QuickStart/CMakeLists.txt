@@ -45,8 +45,8 @@ add_executable(${PROJECT_NAME}
         ${PATH_TO_OS_GLUE}/glueAzureRTOS/glueAzureRTOS.h
         ${PATH_TO_OS_GLUE}/glueFreeRTOS/glueFreeRTOS.c
         ${PATH_TO_OS_GLUE}/glueFreeRTOS/glueFreeRTOS.h
-        ${PATH_TO_OS_GLUE}/glueLinuxOS/glueLinuxOS.c
-        ${PATH_TO_OS_GLUE}/glueLinuxOS/glueLinuxOS.h
+        ${PATH_TO_OS_GLUE}/gluePThread/gluePThread.c
+        ${PATH_TO_OS_GLUE}/gluePThread/gluePThread.h
 
         ${PATH_TO_SERIAL_API}/adjunct.h
         ${PATH_TO_SERIAL_API}/sbgc32.c

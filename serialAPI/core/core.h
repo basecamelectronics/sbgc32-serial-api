@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		core.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -43,7 +43,7 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *					 LL Communication Function Types
  */
-typedef		sbgcTicks_t				(*sbgcGetTime_t)(void *drv);
+typedef		sbgcTicks_t				(*sbgcGetTime_t)(void);
 
 typedef		ui8						(*sbgcTx_t)(void *drv, ui8 *data, ui16 size);
 typedef		ui8						(*sbgcRx_t)(void *drv, ui8 *data);
@@ -243,6 +243,9 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	sbgcAssertParam(val, min, max)	{ if (((val) < (min)) || ((val) > (max))) {\
 											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
 											  return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
+	#define	sbgcAssertUnsParam(val, max)	{ if (((val) > (max))) {\
+											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
+											  return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
 
 #else
 	#define	sbgcAssertBoardVer(board)
@@ -250,6 +253,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	sbgcAssertFeature(ftr)
 	#define	sbgcAssertFeature2(ftr)
 	#define	sbgcAssertParam(val, min, max)
+	#define	sbgcAssertUnsParam(val, max)
 #endif
 
 #define		serialAPI_Assert()		{ if (gSBGC->_api->serialAPI_Status != serialAPI_FORMING) return; }
@@ -260,7 +264,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	serialAPI_GiveToken()
 #endif
 
-#define		serialAPI_GetTick()		gSBGC->_ll->drvGetTime(gSBGC->_ll->drv)
+#define		serialAPI_GetTick()		gSBGC->_ll->drvGetTime()
 
 #define		serialAPI_Lock()		{ serialAPI_TakeMutex();\
 									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) return;\
@@ -282,8 +286,10 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 #define		serialAPI_Error()		{ gSBGC->_api->serialAPI_Status = serialAPI_ERROR; return; }
 
 
-#define		serialAPI_CurCmd_		(gSBGC->_api->currentSerialCommand)
-#define		serialAPI_CurCmdDest_	(gSBGC->_api->currentSerialCommand->_pDestination)
+#define		api_					(gSBGC->_api)
+
+#define		curCmd_					(gSBGC->_api->currentSerialCommand)
+#define		curCmdDest_				(gSBGC->_api->currentSerialCommand->_pDestination)
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -407,6 +413,8 @@ typedef enum
 	CMD_EXT_MOTORS_STATE			= 131,			/*!<  Request real-time data related to auxiliary motors							*/
 	CMD_ADJ_VARS_INFO				= 132,			/*!<  Query the list of all available variables										*/
 	CMD_SERVO_OUT_EXT				= 133,			/*!<  Output PWM signal on the servo pins (internal and external)					*/
+	CMD_SET_ADJ_VARS_VAL_F			= 134,			/*!<  Set the values of selected parameter(s) to floating points					*/
+	CMD_GET_ADJ_VARS_VAL_F			= 135,			/*!<  Query the actual value of selected parameter(s) in floating points			*/
 	CMD_CONTROL_QUAT				= 140,			/*!<  Control gimbal position in quaternions										*/
 	CMD_CONTROL_QUAT_STATUS			= 141,			/*!<  Request real-time data related to gimbal control in quaternions				*/
 	CMD_CONTROL_QUAT_CONFIG			= 142,			/*!<  Configure the quaternion-based control mode									*/
@@ -454,7 +462,7 @@ typedef enum
 	#endif
 
 	/* Error cases */
-	serialAPI_TX_BUS_BUSY_ERROR,					/*!<  Serial driver is busy now for transmit										*/
+	serialAPI_TX_BUS_BUSY_ERROR		= 2,			/*!<  Serial driver is busy now for transmit										*/
 
 	serialAPI_RX_EMPTY_BUFF_ERROR,					/*!<  No data to receive. Driver's Rx buffer is empty								*/
 	serialAPI_RX_BUFFER_REALTIME_ERROR,				/*!<  No data after the start byte was received										*/
@@ -831,7 +839,7 @@ typedef struct
 	/* Driver functions */
 	/** Pointer to a user-defined function that returns the current time in milliseconds */
 	sbgcTicks_t
-			(*drvGetTime)	(void*);
+			(*drvGetTime)	(void);
 
 	/** Pointer to user-defined data buffer transfer function */
 	ui8		(*drvTx)		(void*, ui8*, ui16),

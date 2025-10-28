@@ -34,11 +34,22 @@ DigitalJoystickChannel DigitalJoystickChannelY(	DJOY_YCH_TIM_INSTANCE,
 												NO_PROCESS_FUNC);
 
 
+volatile static ui16 uwDutyCycle, uwIC_Value;
+extern JoystickDetermineState_t joystickDetermineState;
+
+
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *														   Class Methods
  */
 void DigitalJoystickChannel::Init (void)
 {
+	if (joystickDetermineState == JDS_ERROR)
+	{
+		SetState(IN_OFF);
+
+		return;
+	}
+
 	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
 	TIM_IC_InitTypeDef sConfigIC = {0};
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
@@ -131,16 +142,41 @@ void DigitalJoystickChannel::Init (void)
 	if (HAL_TIM_IC_Start_IT(&htim, TIM_CHANNEL_2) != HAL_OK)
 		HardwareErrorHandler();
 
+	/* Delay to understand what joystick type we have */
+	osDelay(10);
 
-	SetState(IN_ON);
+	if (uwDutyCycle > 500 && uwDutyCycle < 65000)
+	{
+		joystickDetermineState = JDS_DIGITAL;
+
+		SetState(IN_ON);
+	}
+
+	else
+	{
+		joystickDetermineState = JDS_ERROR;
+
+		/* Immediate deinitialization */
+		HAL_TIM_IC_Stop_IT(&htim, TIM_CHANNEL_1);
+		HAL_TIM_IC_Stop_IT(&htim, TIM_CHANNEL_2);
+
+		HAL_NVIC_DisableIRQ(IRQn);
+
+		HAL_TIM_IC_DeInit(&htim);
+
+		__HAL_RCC_TIM2_CLK_DISABLE();
+		__HAL_RCC_TIM5_CLK_DISABLE();
+
+		HAL_GPIO_DeInit(GPIO_Channel->port, GPIO_Channel->pin);
+
+		SetState(IN_OFF);
+	}
 }
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													  Interrupt Handlers
  */
-volatile static ui16 uwDutyCycle, uwIC_Value;
-
 /*	Note:	Works as input process function in passive mode
  */
 void HAL_TIM_IC_CaptureCallback (TIM_HandleTypeDef *htim)

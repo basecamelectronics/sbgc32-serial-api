@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		driverLinux.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2023 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -93,7 +93,7 @@ extern		"C" {
 #endif
 
 #ifndef sbgcGetTick
-	#define sbgcGetTick()			DriverSBGC32_GetTimeMs(NULL)
+	#define sbgcGetTick()			DriverSBGC32_GetTimeMs()
 #endif
 
 
@@ -119,13 +119,14 @@ typedef struct
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-void DriverSBGC32_Init (void **driver, const char *dev, ui32 serialSpeed);
+void DriverSBGC32_Init (void **driver, const char *dev, unsigned long serialSpeed);
+void DriverSBGC32_Deinit (void **driver);
 
-sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver);
+sbgcTicks_t DriverSBGC32_GetTimeMs (void);
 
-ui8 DriverSBGC32_PortTransmitData (void *driver, ui8 *data, ui16 size);
+ui8 DriverSBGC32_TransmitData (void *driver, ui8 *data, ui16 size);
 ui16 DriverSBGC32_GetAvailableBytes (void *driver);
-ui8 DriverSBGC32_PortReceiveByte (void *driver, ui8 *data);
+ui8 DriverSBGC32_ReceiveByte (void *driver, ui8 *data);
 
 void DriverSBGC32_PrintDebugData (char *data, ui16 length);
 /**	@}

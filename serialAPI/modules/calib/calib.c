@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		calib.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -210,6 +210,9 @@ sbgcCommandStatus_t SBGC32_CalibGyro (sbgcGeneral_t *gSBGC
  *			paragraph 16. Magnetometer sensor:
  *			https://www.basecamelectronics.com/files/v3/SimpleBGC_32bit_manual_eng.pdf
  *
+ *	@pre	Board requirements:\n
+ *			MAG_SENSOR = (1 << 6)
+ *
  *	@code
 
 			// Select the required sensor (optional)
@@ -356,6 +359,9 @@ sbgcCommandStatus_t SBGC32_CalibGyroExt (sbgcGeneral_t *gSBGC, sbgcIMU_ExtCalib_
  *			paragraph 16. Magnetometer sensor:
  *			https://www.basecamelectronics.com/files/v3/SimpleBGC_32bit_manual_eng.pdf
  *
+ *	@pre	Board requirements:\n
+ *			MAG_SENSOR = (1 << 6)
+ *
  *	@post	If all parameters are valid, confirmation
  *			is sent immediately on reception and in
  *			the end of calibration. This function
@@ -489,6 +495,9 @@ sbgcCommandStatus_t SBGC32_RequestCalibInfo (sbgcGeneral_t *gSBGC, sbgcCalibInfo
  *			instructions provided in the Encoders Manual:
  *			https://www.basecamelectronics.com/files/SimpleBGC_32bit_Encoders.pdf
  *
+ *	@pre	Board requirements:\n
+ *			ENCODERS = (1 << 2)
+ *
  *	@code
 
 			// Start calibration
@@ -529,6 +538,9 @@ sbgcCommandStatus_t SBGC32_CalibEncodersOffset (sbgcGeneral_t *gSBGC, sbgcCalibP
  *			instructions provided in the Encoders Manual:
  *			https://www.basecamelectronics.com/files/SimpleBGC_32bit_Encoders.pdf
  *
+ *	@pre	Board requirements:\n
+ *			ENCODERS = (1 << 2)
+ *
  *	@code
 
 			// Start calibration
@@ -557,6 +569,9 @@ sbgcCommandStatus_t SBGC32_CalibEncodersFldOffset (sbgcGeneral_t *gSBGC
  *	@pre	Before performing the calibration, review the
  *			instructions provided in the Encoders Manual:
  *			https://www.basecamelectronics.com/files/SimpleBGC_32bit_Encoders.pdf
+ *
+ *	@pre	Board requirements:\n
+ *			ENCODERS = (1 << 2)
  *
  *	@code
 
@@ -661,6 +676,9 @@ sbgcCommandStatus_t SBGC32_CalibOffset (sbgcGeneral_t *gSBGC
  *
  *	@pre	The gimbal must receive power from
  *			the external power supply
+ *
+ *	@pre	Board requirements:\n
+ *			BAT_MONITORING = (1 << 1)
  *
  *	@code
 

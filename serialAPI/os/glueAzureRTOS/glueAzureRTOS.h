@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		glueAzureRTOS.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -69,7 +69,8 @@ typedef		TX_MUTEX				sbgcMutex_t;
  */
 #define		SBGC_USES_OS_SUPPORT	sbgcON
 
-#define		sbgcThreadDestroy(pH)	tx_thread_delete(pH)
+#define		sbgcThreadDestroy(pH)	tx_thread_terminate(pH);\
+									tx_thread_delete(pH);
 #define		sbgcThreadSuspend(pH)	tx_thread_suspend(pH)
 #define		sbgcThreadResume(pH)	tx_thread_resume(pH)
 
@@ -80,6 +81,8 @@ typedef		TX_MUTEX				sbgcMutex_t;
 
 #define		sbgcDelay(tick)			tx_thread_sleep(tick)
 #define		sbgcGetTick()			tx_time_get()
+#define		sbgcTickToMs(tick)		((tick) * (1000.0 / TX_TIMER_TICKS_PER_SECOND))
+#define		sbgcMsToTick(ms)		(((ms) / 1000.0) * TX_TIMER_TICKS_PER_SECOND)
 
 #define		sbgcYield()				tx_thread_relinquish()
 
@@ -118,8 +121,8 @@ typedef		TX_MUTEX				sbgcMutex_t;
  *								 Function Prototypes
  */
 void SystemSBGC32_Init (void *gSBGC);
+void SystemSBGC32_Deinit (void *gSBGC);
 void *SystemSBGC32_Malloc (ui32 size);
-void SystemSBGC32_DestroyThreadItself (void);
 void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle);
 void SystemSBGC32_ResumeThread (sbgcThread_t *threadHandle);
 void SystemSBGC32_Yield (void);

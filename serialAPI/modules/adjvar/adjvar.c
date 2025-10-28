@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		adjvar.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -159,6 +159,17 @@
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SHAKE_FREQ_SHIFT_TILT),		-127,		127				// Frw. ver. 2.73+
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SHAKE_FREQ_SHIFT_PAN),		-127,		127				// Frw. ver. 2.73+
 	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SHAKE_MASTER_GAIN),			0,			255				// Frw. ver. 2.73+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_OUTER_P_ROLL),				0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_OUTER_P_PITCH),				0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_OUTER_P_YAW),				0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_LPF_FREQ_ROLL),			0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_LPF_FREQ_PITCH),			0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_D_LPF_FREQ_YAW),				0,			255				// Frw. ver. 2.73.7+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_IMU_ANGLE_CORR_ROLL),		-1000,		1000			// Frw. ver. 2.73.8+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_IMU_ANGLE_CORR_PITCH),		-1000,		1000			// Frw. ver. 2.73.8+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_WIDTH_ROLL),			0,			255				// Frw. ver. 2.73.8+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_WIDTH_PITCH),			0,			255				// Frw. ver. 2.73.8+
+	},{	ADJ_VAR_BLOCK_(ADJ_VAR_SW_LIM_WIDTH_YAW),			0,			255				// Frw. ver. 2.73.8+
 
 	}};
 	/**	@}
@@ -352,7 +363,7 @@
 	static sbgcCommandStatus_t SerialAPI_AssertAdjVar (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral)
 	{
 		/* Fast checking */
-		if ((gSBGC->_api->baseFirmwareVersion >= 2730) || (adjVarGeneral->ID < ADJ_VAR_MAV_CTRL_MODE))
+		if ((gSBGC->_api->baseFirmwareVersion >= 2738) || (adjVarGeneral->ID < ADJ_VAR_MAV_CTRL_MODE))
 			return sbgcCOMMAND_OK;
 
 		/* Check the firmware limitations */
@@ -362,7 +373,9 @@
 			((gSBGC->_api->baseFirmwareVersion < 2693) && (adjVarGeneral->ID >= ADJ_VAR_RC_MODE_ROLL)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2704) && (adjVarGeneral->ID >= ADJ_VAR_FOLLOW_IN_DBAND)) ||
 			((gSBGC->_api->baseFirmwareVersion < 2720) && (adjVarGeneral->ID >= ADJ_VAR_RC_LIMIT_MIN_ROLL)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2730) && (adjVarGeneral->ID >= ADJ_VAR_SHAKE_AMP_ROLL)))
+			((gSBGC->_api->baseFirmwareVersion < 2730) && (adjVarGeneral->ID >= ADJ_VAR_SHAKE_AMP_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2737) && (adjVarGeneral->ID >= ADJ_VAR_OUTER_P_ROLL)) ||
+			((gSBGC->_api->baseFirmwareVersion < 2738) && (adjVarGeneral->ID >= ADJ_VAR_IMU_ANGLE_CORR_ROLL)))
 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
 
 		/* Check that this board supports the shake generator option */
@@ -462,7 +475,7 @@ sbgcAdjVarGeneral_t *SerialAPI_FindAdjVarByID (sbgcGeneral_t *gSBGC, sbgcAdjVarG
 /**	@addtogroup	Adjvar_Values
  *	@{
  */
-/**	@brief	Changes the value of adjustable variable
+/**	@brief	Changes the value of adjustable variable as int32
  *
  *	@pre	sbgcAdjVarGeneral_t.ID field must be filled
  *
@@ -516,6 +529,63 @@ void SerialAPI_EditAdjVarValue (sbgcAdjVarGeneral_t *adjVarGeneral, i32 value)
 }
 
 
+/**	@brief	Changes the value of adjustable variable as float
+ *
+ *	@pre	sbgcAdjVarGeneral_t.ID field must be filled
+ *
+ *	@note	Only use this function to change
+ *			the adjustable variable values
+ *
+ *	@code
+
+			#define ADJ_VAR_P_ROLL_INIT_VALUE 1.61F
+			#define ADJ_VAR_P_ROLL_NEW_VALUE 1.75F
+
+			sbgcAdjVarGeneral_t AdjVarP_Roll = { 0 };
+
+			#if (SBGC_ADJ_VARS_REF_INFO)
+				SerialAPI_InitAdjVar(&AdjVarP_Roll, ADJ_VAR_P_ROLL);
+
+			#else
+
+				// Method to manually initialize an adjustable variable
+				AdjVarP_Roll.ID = ADJ_VAR_P_ROLL;
+				AdjVarP_Roll.minValue = 0;
+				AdjVarP_Roll.maxValue = 255;
+
+			#endif
+
+			SerialAPI_EditAdjVarValueFloat(&AdjVarP_Roll, ADJ_VAR_P_ROLL_INIT_VALUE);
+
+			// ...
+			// Further edit adjustable variable value
+			SerialAPI_EditAdjVarValueFloat(&AdjVarP_Roll, ADJ_VAR_P_ROLL_NEW_VALUE);
+
+ *	@endcode
+ *
+ *	@param	*adjVarGeneral - general adjustable variables structure
+ *	@param	value - new value of adjustable variable
+ */
+void SerialAPI_EditAdjVarValueFloat (sbgcAdjVarGeneral_t *adjVarGeneral, float value)
+{
+	#if (SBGC_NEED_ASSERTS)
+
+		if (adjVarGeneral->value_f == value)
+			return;
+
+		/* Values' borders checking */
+		float minValue = adjVarGeneral->minValue;
+		float maxValue = adjVarGeneral->maxValue;
+
+		value = constrain_(value, minValue, maxValue);
+
+	#endif
+
+	adjVarGeneral->value_f = value;
+	adjVarGeneral->syncFlag = AV_NOT_SYNCHRONIZED;
+}
+
+
 /**	@brief	SerialAPI event
  *
  *	@note	Private function.
@@ -525,7 +595,7 @@ void SerialAPI_EditAdjVarValue (sbgcAdjVarGeneral_t *adjVarGeneral, i32 value)
  */
 static void PostSetAdjVarValue (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
 	adjVarGeneral->syncFlag = AV_SYNCHRONIZED;
 	adjVarGeneral->saveFlag = AV_NOT_SAVED;
@@ -565,7 +635,7 @@ static void PostSetAdjVarValue (sbgcGeneral_t *gSBGC)
 
 			SBGC32_SetAdjVarValue(&SBGC32_Device, &AdjVarP_Roll, SBGC_NO_CONFIRM);
 
-			// And save the adjustable variable to EEPROM
+			// And save the adjustable variable to EEPROM if needed
 			SBGC32_SaveAdjVarToEEPROM(&SBGC32_Device, &AdjVarP_Roll, SBGC_NO_CONFIRM);
 
  *	@endcode
@@ -602,6 +672,79 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGener
 }
 
 
+/**	@brief	Sets a new float value for the adjustable variable
+ *
+ *	####	TX —> CMD_SET_ADJ_VARS_VAL :	6 bytes
+ *	####	RX <— CMD_CONFIRM :				1-6 bytes
+ *
+ *	@pre	sbgcAdjVarGeneral_t.ID and sbgcAdjVarGeneral_t.value
+ *			fields must be filled
+ *
+ *	@attention	Firmware: 2.73.4+
+ *
+ *	@code
+
+			#define ADJ_VAR_P_ROLL_INIT_VALUE 1.61F
+			#define ADJ_VAR_P_ROLL_NEW_VALUE 1.75F
+
+			sbgcAdjVarGeneral_t AdjVarP_Roll = { 0 };
+
+			// Initialize adjustable variable
+			#if (SBGC_ADJ_VARS_REF_INFO)
+				SerialAPI_InitAdjVar(&AdjVarP_Roll, ADJ_VAR_P_ROLL);
+			#else
+				AdjVarP_Roll.ID = ADJ_VAR_P_ROLL;
+			#endif
+
+			SerialAPI_EditAdjVarValueFloat(&AdjVarP_Roll, ADJ_VAR_P_ROLL_INIT_VALUE);
+
+			// Set initial value
+			SBGC32_SetAdjVarValueFloat(&SBGC32_Device, &AdjVarP_Roll, SBGC_NO_CONFIRM);
+
+			// ...
+			// Edit and set a new value
+			SerialAPI_EditAdjVarValueFloat(&AdjVarP_Roll, ADJ_VAR_P_ROLL_NEW_VALUE);
+
+			SBGC32_SetAdjVarValueFloat(&SBGC32_Device, &AdjVarP_Roll, SBGC_NO_CONFIRM);
+
+			// And save the adjustable variable to EEPROM if needed
+			SBGC32_SaveAdjVarToEEPROM(&SBGC32_Device, &AdjVarP_Roll, SBGC_NO_CONFIRM);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*adjVarGeneral - general adjustable variables structure
+ *	@param	*confirm - confirmation result storage structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_SetAdjVarValueFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, sbgcConfirm_t *confirm
+												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2734)
+	sbgcAssertAdjVar(adjVarGeneral)
+
+	#if (SBGC_NEED_ASSERTS)
+		if (adjVarGeneral->syncFlag == AV_SYNCHRONIZED) return sbgcCOMMAND_NOTHING_TO_CHANGE;
+	#endif
+
+	gSBGC->_api->startWrite(gSBGC, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, 1);
+	gSBGC->_api->writeByte(gSBGC, adjVarGeneral->ID);
+	gSBGC->_api->writeLong(gSBGC, adjVarGeneral->value_f);
+	gSBGC->_api->assignEvent(gSBGC, PostSetAdjVarValue, adjVarGeneral, sizeof(sbgcAdjVarGeneral_t));
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
 /**	@brief	SerialAPI event
  *
  *	@note	Private function.
@@ -611,11 +754,11 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGener
  */
 static void PostSetAdjVarValues (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
 	ui8 adjVarQuan = gSBGC->_api->readByte(gSBGC);
 
-	if (serialAPI_CurCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
+	if (curCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
 		SerialAPI_FatalErrorHandler();
 
 	for (ui8 i = 0; i < adjVarQuan; i++)
@@ -666,7 +809,7 @@ static void PostSetAdjVarValues (sbgcGeneral_t *gSBGC)
 			// The function will skip AdjVarGeneral[1]. Update only [0] and [2] variables' value
 			SBGC32_SetAdjVarValues(&SBGC32_Device, AdjVarGeneral, 3, SBGC_NO_CONFIRM);
 
-			// And save the adjustable variables to EEPROM
+			// And save the adjustable variables to EEPROM if needed
 			// Only the changed variables will be saved
 			SBGC32_SaveAdjVarsToEEPROM(&SBGC32_Device, AdjVarGeneral, ADJ_VARS_NUMBER, SBGC_NO_CONFIRM);
 
@@ -691,7 +834,7 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertAdjVars(adjVarGeneral, adjVarQuan)
-	sbgcAssertParam(adjVarQuan, 1 , SBGC_ADJ_VARS_MAX_NUM_PACKET)
+	sbgcAssertParam(adjVarQuan, 1, SBGC_ADJ_VARS_MAX_NUM_PACKET)
 
 	ui8 numParams = 0;
 
@@ -725,17 +868,126 @@ sbgcCommandStatus_t SBGC32_SetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
 	return gSBGC->_api->exit(gSBGC);
 }
 
+/**	@brief	Sets new float values for a set of adjustable variables
+ *
+ *	####	TX —> CMD_SET_ADJ_VARS_VAL :	1 + (adjVarQuan * 5) bytes
+ *	####	RX <— CMD_CONFIRM :				1-6 bytes
+ *
+ *	@pre	sbgcAdjVarGeneral_t.ID and sbgcAdjVarGeneral_t.value
+ *			fields must be filled
+ *
+ *	@attention	Firmware: 2.73.4+
+ *
+ *	@attention	adjVarQuan should not exceed
+ *				SBGC_ADJ_VARS_MAX_NUM_PACKET (40)
+ *
+ *	@code
+
+			#define	ADJ_VARS_NUMBER	9
+			#define ADJ_VARS_EXAMPLE_INIT_VALUE 1.61F
+			#define ADJ_VAR_EXAMPLE_NEW_VALUE 1.75F
+
+			sbgcAdjVarGeneral_t AdjVarGeneral [ADJ_VARS_NUMBER];
+
+			for (ui8 i = 0; i < ADJ_VARS_NUMBER; i++)
+			// Initialize adjustable variables
+			{
+				#if (SBGC_ADJ_VARS_REF_INFO)
+					SerialAPI_InitAdjVar(&AdjVarGeneral[i], (sbgcAdjVarID_t)i);
+				#else
+					AdjVarGeneral[i].ID = (sbgcAdjVarID_t)i;
+				#endif
+
+				SerialAPI_EditAdjVarValueFloat(&AdjVarGeneral[i], ADJ_VARS_EXAMPLE_INIT_VALUE);
+			}
+
+			// Set initial values
+			SBGC32_SetAdjVarValuesFloat(&SBGC32_Device, AdjVarGeneral, ADJ_VARS_NUMBER, SBGC_NO_CONFIRM);
+
+			SerialAPI_EditAdjVarValueFloat(&AdjVarGeneral[0], ADJ_VAR_EXAMPLE_NEW_VALUE);
+			AdjVarGeneral[1].value = ADJ_VAR_EXAMPLE_NEW_VALUE;  // Incorrect assignment
+			SerialAPI_EditAdjVarValueFloat(&AdjVarGeneral[2], ADJ_VAR_EXAMPLE_NEW_VALUE);
+
+			// The function will skip AdjVarGeneral[1]. Update only [0] and [2] variables' value
+			SBGC32_SetAdjVarValuesFloat(&SBGC32_Device, AdjVarGeneral, 3, SBGC_NO_CONFIRM);
+
+			// And save the adjustable variables to EEPROM if needed
+			// Only the changed variables will be saved
+			SBGC32_SaveAdjVarsToEEPROM(&SBGC32_Device, AdjVarGeneral, ADJ_VARS_NUMBER, SBGC_NO_CONFIRM);
+
+			// Or use this function to automatically save the active adjustable variables
+			if (SBGC32_SaveAllActiveAdjVarsToEEPROM(&SBGC32_Device, SBGC_NO_CONFIRM) == sbgcCOMMAND_OK)
+			{
+				// Manual setting of the save flag
+				for (ui8 i = 0; i < ADJ_VARS_NUMBER; i++)
+					AdjVarGeneral[i].saveFlag = AV_SAVED;
+			}
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*adjVarGeneral - general adjustable variables structure
+ *	@param	adjVarQuan - number of adjustable variables
+ *	@param	*confirm - confirmation result storage structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_SetAdjVarValuesFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan, sbgcConfirm_t *confirm
+												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2734)
+	sbgcAssertAdjVars(adjVarGeneral, adjVarQuan)
+	sbgcAssertParam(adjVarQuan, 1, SBGC_ADJ_VARS_MAX_NUM_PACKET)
+
+	ui8 numParams = 0;
+
+	for (ui8 i = 0; i < adjVarQuan; i++)
+		if (adjVarGeneral[i].syncFlag == AV_NOT_SYNCHRONIZED)
+			numParams++;
+
+	#if (SBGC_NEED_ASSERTS)
+        if (numParams == 0) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	#endif
+
+	gSBGC->_api->startWrite(gSBGC, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, numParams);
+
+	for (ui8 i = 0; i < adjVarQuan; i++)
+		if (adjVarGeneral[i].syncFlag == AV_NOT_SYNCHRONIZED)
+		{
+			ui32 float_;
+
+			memcpy(&float_, &adjVarGeneral[i].value_f, sizeof(float_));
+
+			gSBGC->_api->writeByte(gSBGC, adjVarGeneral[i].ID);
+			gSBGC->_api->writeLong(gSBGC, float_);
+		}
+
+	gSBGC->_api->assignEvent(gSBGC, PostSetAdjVarValues, adjVarGeneral, sizeof(sbgcAdjVarGeneral_t) * adjVarQuan);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
 
 /**	@brief	SerialAPI event
  *
  *	@note	Private function.
- *			See @ref SBGC32_GetAdjVarValue function
+ *			See @ref SBGC32_GetAdjVarValue and
+ *			@ref SBGC32_GetAdjVarValueFloat
+ *			functions
  *
  *	@param	*gSBGC - serial connection descriptor
  */
 static void PostGetAdjVarValue (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
 	(void)gSBGC->_api->readByte(gSBGC);
 
@@ -745,7 +997,15 @@ static void PostGetAdjVarValue (sbgcGeneral_t *gSBGC)
 		(void)gSBGC->_api->readByte(gSBGC);
 	#endif
 
-	adjVarGeneral->value = (i32)gSBGC->_api->readLong(gSBGC);
+	if (curCmd_->_commandID == CMD_SET_ADJ_VARS_VAL)
+		adjVarGeneral->value = (i32)gSBGC->_api->readLong(gSBGC);
+
+	else
+	{
+		ui32 float_ = gSBGC->_api->readLong(gSBGC);
+		memcpy(&adjVarGeneral->value, &float_, sizeof(float_));
+	}
+
 	adjVarGeneral->syncFlag = AV_SYNCHRONIZED;
 }
 
@@ -798,20 +1058,74 @@ sbgcCommandStatus_t SBGC32_GetAdjVarValue (sbgcGeneral_t *gSBGC, sbgcAdjVarGener
 }
 
 
+/**	@brief	Queries the actual value of selected variable in float
+ *
+ *	####	TX —> CMD_GET_ADJ_VARS_VAL :	2 bytes
+ *	####	RX <— CMD_SET_ADJ_VARS_VAL :	6 bytes
+ *
+ *	@pre	sbgcAdjVarGeneral_t.ID field must be filled
+ *
+ *	@attention	Firmware: 2.73.4+
+ *
+ *	@code
+
+			sbgcAdjVarGeneral_t AdjVarP_Roll = { 0 };
+
+			// Initialize adjustable variable
+			#if (SBGC_ADJ_VARS_REF_INFO)
+				SerialAPI_InitAdjVar(&AdjVarP_Roll, ADJ_VAR_P_ROLL);
+			#else
+				AdjVarP_Roll.ID = ADJ_VAR_P_ROLL;
+			#endif
+
+			SBGC32_GetAdjVarValueFloat(&SBGC32_Device, &AdjVarP_Roll);
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*adjVarGeneral - general adjustable variables structure
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_GetAdjVarValueFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral
+												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2734)
+	sbgcAssertAdjVar(adjVarGeneral)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_GET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, 1);
+	gSBGC->_api->writeByte(gSBGC, adjVarGeneral->ID);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->startRead(gSBGC, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->assignEvent(gSBGC, PostGetAdjVarValue, adjVarGeneral, sizeof(sbgcAdjVarGeneral_t));
+	gSBGC->_api->finishRead(gSBGC);
+
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
 /**	@brief	SerialAPI event
  *
  *	@note	Private function.
- *			See @ref SBGC32_GetAdjVarValues function
+ *			See @ref SBGC32_GetAdjVarValues and
+ *			@ref SBGC32_GetAdjVarValuesFloat
+ *			functions
  *
  *	@param	*gSBGC - serial connection descriptor
  */
 static void PostGetAdjVarValues (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
 	ui8 adjVarQuan = gSBGC->_api->readByte(gSBGC);
 
-	if (serialAPI_CurCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
+	if (curCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
 		SerialAPI_FatalErrorHandler();
 
 	for (ui8 i = 0; i < adjVarQuan; i++)
@@ -828,7 +1142,15 @@ static void PostGetAdjVarValues (sbgcGeneral_t *gSBGC)
 			(void)gSBGC->_api->readByte(gSBGC);
 		#endif
 
-		adjVarGeneral[i].value = (i32)gSBGC->_api->readLong(gSBGC);
+		if (curCmd_->_commandID == CMD_SET_ADJ_VARS_VAL)
+			adjVarGeneral[i].value = (i32)gSBGC->_api->readLong(gSBGC);
+
+		else
+		{
+			ui32 float_ = gSBGC->_api->readLong(gSBGC);
+			memcpy(&adjVarGeneral[i].value, &float_, sizeof(float_));
+		}
+
 		adjVarGeneral[i].syncFlag = AV_SYNCHRONIZED;
 	}
 }
@@ -860,6 +1182,13 @@ static void PostGetAdjVarValues (sbgcGeneral_t *gSBGC)
 			}
 
 			SBGC32_GetAdjVarValues(&SBGC32_Device, AdjVarGeneral, ADJ_VARS_NUMBER);
+
+			#if (SBGC_NEED_DEBUG && SBGC_ADJ_VARS_REF_INFO && SBGC_ADJ_VARS_NAMES)
+
+				for (ui8 i = 0; i < ADJ_VARS_NUMBER; i++)
+					DebugSBGC32_PrintStructElement(&SBGC32_Device, &AdjVarGeneral[i].value, AdjVarGeneral[i].name, sbgcUCHAR);
+
+			#endif
 
  *	@endcode
  *
@@ -895,6 +1224,78 @@ sbgcCommandStatus_t SBGC32_GetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
 	return gSBGC->_api->exit(gSBGC);
 }
 
+/**	@brief	Requires the value of adjustable variables in float
+ *
+ *	####	TX —> CMD_GET_ADJ_VARS_VAL :	1 + adjVarQuan bytes
+ *	####	RX <— CMD_SET_ADJ_VARS_VAL :	1 + (adjVarQuan * 5) bytes
+ *
+ *	@pre	sbgcAdjVarGeneral_t.ID fields must be filled
+ *
+ *	@attention	Firmware: 2.73.4+
+ *
+ *	@attention	adjVarQuan should not exceed
+ *				SBGC_ADJ_VARS_MAX_NUM_PACKET (40)
+ *
+ *	@code
+
+			#define	ADJ_VARS_NUMBER	9
+
+			sbgcAdjVarGeneral_t AdjVarGeneral [ADJ_VARS_NUMBER];
+
+			for (ui8 i = 0; i < ADJ_VARS_NUMBER; i++)
+			// Initialize adjustable variables
+			{
+				#if (SBGC_ADJ_VARS_REF_INFO)
+					SerialAPI_InitAdjVar(&AdjVarGeneral[i], (sbgcAdjVarID_t)i);
+				#else
+					AdjVarGeneral[i].ID = (sbgcAdjVarID_t)i;
+				#endif
+			}
+
+			SBGC32_GetAdjVarValuesFloat(&SBGC32_Device, AdjVarGeneral, ADJ_VARS_NUMBER);
+
+			#if (SBGC_NEED_DEBUG && SBGC_ADJ_VARS_REF_INFO && SBGC_ADJ_VARS_NAMES)
+
+				for (ui8 i = 0; i < ADJ_VARS_NUMBER; i++)
+					DebugSBGC32_PrintStructElement(&SBGC32_Device, &AdjVarGeneral[i].value, AdjVarGeneral[i].name, sbgcFLOAT);
+
+			#endif
+
+ *	@endcode
+ *
+ *	@param	*gSBGC - serial connection descriptor
+ *	@param	*adjVarGeneral - general adjustable variables structure
+ *	@param	adjVarQuan - number of adjustable variables
+ *
+ *	@return	Communication status. See @ref Readme_S2
+ */
+sbgcCommandStatus_t SBGC32_GetAdjVarValuesFloat (sbgcGeneral_t *gSBGC, sbgcAdjVarGeneral_t *adjVarGeneral, ui8 adjVarQuan
+												 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	sbgcAssertFrwVer(2734)
+	sbgcAssertAdjVars(adjVarGeneral, adjVarQuan)
+	sbgcAssertParam(adjVarQuan, 1, SBGC_ADJ_VARS_MAX_NUM_PACKET)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_GET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, adjVarQuan);
+
+	for (ui8 i = 0; i < adjVarQuan; i++)
+		gSBGC->_api->writeByte(gSBGC, adjVarGeneral[i].ID);
+
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->startRead(gSBGC, CMD_SET_ADJ_VARS_VAL_F SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->assignEvent(gSBGC, PostGetAdjVarValues, adjVarGeneral, sizeof(sbgcAdjVarGeneral_t) * adjVarQuan);
+	gSBGC->_api->definePayload(gSBGC, (adjVarQuan * (4 + 1)) + 1);
+	gSBGC->_api->finishRead(gSBGC);
+
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
 
 /**	@brief	SerialAPI event
  *
@@ -905,7 +1306,7 @@ sbgcCommandStatus_t SBGC32_GetAdjVarValues (sbgcGeneral_t *gSBGC, sbgcAdjVarGene
  */
 static void PostSaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
 	adjVarGeneral->saveFlag = AV_SAVED;
 }
@@ -957,11 +1358,11 @@ sbgcCommandStatus_t SBGC32_SaveAdjVarToEEPROM (sbgcGeneral_t *gSBGC, sbgcAdjVarG
  */
 static void PostSaveAdjVarsToEEPROM (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
-	ui8 adjVarQuan = serialAPI_CurCmd_->_payloadSize;
+	ui8 adjVarQuan = curCmd_->_payloadSize;
 
-	if (serialAPI_CurCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
+	if (curCmd_->_destinationSize < (sizeof(sbgcAdjVarGeneral_t) * adjVarQuan))
 		SerialAPI_FatalErrorHandler();
 
 	ui8 i = 0;
@@ -1191,7 +1592,7 @@ sbgcCommandStatus_t SBGC32_ReadAdjVarsCfg (sbgcGeneral_t *gSBGC, sbgcAdjVarsCfg_
  */
 static void PostRequestAdjVarsState (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarsState_t *adjVarsState = (sbgcAdjVarsState_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarsState_t *adjVarsState = (sbgcAdjVarsState_t*)curCmdDest_;
 
 	if (gSBGC->_api->baseFirmwareVersion < 2625)
 	{
@@ -1231,6 +1632,9 @@ static void PostRequestAdjVarsState (sbgcGeneral_t *gSBGC)
  *			sbgcAdjVarsState_t.lutSrcID \n
  *			sbgcAdjVarsState_t.lutVarID
  *
+ *	@pre	Board requirements:\n
+ *			STATE_VARS = (1 << 18) (ext.)
+ *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
  *			function with PM_AV_STATE_OLD_RX or
  *			PM_AV_STATE_RX to print received data
@@ -1261,8 +1665,10 @@ static void PostRequestAdjVarsState (sbgcGeneral_t *gSBGC)
 			else  // Firmware ver. 2.62b5+
 			{
 				AdjVarsState.triggerSlot = ADJ_VAR_TRIGGER_SLOT;
+
 				AdjVarsState.analogSrcID = ADJ_VAR_ANALOG_SRC;
 				AdjVarsState.analogVarID = ADJ_VAR_RC_SPEED_YAW;
+
 				AdjVarsState.lutSrcID = ADJ_VAR_LUT_SRC;
 				AdjVarsState.lutSrcValue = ADJ_VAR_RC_SPEED_PITCH;
 
@@ -1285,27 +1691,22 @@ sbgcCommandStatus_t SBGC32_RequestAdjVarsState (sbgcGeneral_t *gSBGC, sbgcAdjVar
 												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFeature(BF_STATE_VARS)
+	sbgcAssertParam(adjVarsState->triggerSlot__old, 0, SBGC_ADJ_VAR_TRIGGER_SLOTS_NUM - 1)
+	sbgcAssertParam(adjVarsState->analogSlot, 0, SBGC_ADJ_VAR_ANALOG_SLOTS_NUM - 1)
+	sbgcAssertParam(adjVarsState->triggerSlot, 0, SBGC_ADJ_VAR_TRIGGER_SLOTS_NUM - 1)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_ADJ_VARS_STATE SBGC_ADVANCED_ARGS__);
 
 	if (gSBGC->_api->baseFirmwareVersion < 2625)
-	{
 		gSBGC->_api->writeBuff(gSBGC, adjVarsState, 2);
-		gSBGC->_api->finishWrite(gSBGC);
-
-		gSBGC->_api->startRead(gSBGC, CMD_ADJ_VARS_STATE SBGC_ADVANCED_ARGS__);
-		gSBGC->_api->assignEvent(gSBGC, PostRequestAdjVarsState, adjVarsState, sizeof(sbgcAdjVarsState_t));
-	}
 
 	else  // Firmware ver. 2.62b5+
-	{
 		gSBGC->_api->writeBuff(gSBGC, &adjVarsState->triggerSlot, 7);
-		gSBGC->_api->finishWrite(gSBGC);
 
-		gSBGC->_api->startRead(gSBGC, CMD_ADJ_VARS_STATE SBGC_ADVANCED_ARGS__);
-		gSBGC->_api->assignEvent(gSBGC, PostRequestAdjVarsState, adjVarsState, sizeof(sbgcAdjVarsState_t));
-	}
+	gSBGC->_api->finishWrite(gSBGC);
 
+	gSBGC->_api->startRead(gSBGC, CMD_ADJ_VARS_STATE SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->assignEvent(gSBGC, PostRequestAdjVarsState, adjVarsState, sizeof(sbgcAdjVarsState_t));
 	gSBGC->_api->finishRead(gSBGC);
 
 	gSBGC->_api->link(gSBGC);
@@ -1330,9 +1731,9 @@ sbgcCommandStatus_t SBGC32_RequestAdjVarsState (sbgcGeneral_t *gSBGC, sbgcAdjVar
  */
 static void PostRequestAdjVarsInfo (sbgcGeneral_t *gSBGC)
 {
-	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)serialAPI_CurCmdDest_;
+	sbgcAdjVarGeneral_t *adjVarGeneral = (sbgcAdjVarGeneral_t*)curCmdDest_;
 
-	ui8 payloadSize = serialAPI_CurCmd_->_payloadSize - 1;
+	ui8 payloadSize = curCmd_->_payloadSize - 1;
 	ui8 nameLenght;
 
 	gSBGC->_api->skipBytes(gSBGC, sizeof(ui8));

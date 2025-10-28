@@ -63,6 +63,7 @@ serialAPI/core/debug \
 serialAPI/core/highLayer \
 serialAPI/core/parser \
 serialAPI/drivers/driverArduino \
+serialAPI/drivers/driverESP32 \
 serialAPI/drivers/driverLinux \
 serialAPI/drivers/driverSTM32 \
 serialAPI/modules/adjvar \
@@ -75,6 +76,6 @@ serialAPI/modules/realtime \
 serialAPI/modules/service \
 serialAPI/os/glueAzureRTOS \
 serialAPI/os/glueFreeRTOS \
-serialAPI/os/glueLinuxOS \
+serialAPI/os/gluePThread \
 serialAPI \
 

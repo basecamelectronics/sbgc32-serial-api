@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		service.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -154,10 +154,16 @@ extern		"C" {
 	See @ref SBGC32_SetServoOut */
 #define		SBGC_SERVO_OUTS_NUM				4
 
-/** Value to disable controller's servo signal out.
+/** Value to configure servo pins as output
+	and set it to 'Low' state
 	See @ref SBGC32_SetServoOut and
 	@ref SBGC32_SetServoOutExt */
 #define		SBGC_SERVO_OUT_DISABLED			(-1)
+
+ /** Value to disable controller's servo signal out.
+ 	See @ref SBGC32_SetServoOut and
+ 	@ref SBGC32_SetServoOutExt */
+#define		SBGC_SERVO_OUT_LOW_STATE		0
 
 /** Minimum value for standard servo motor.
 	See @ref SBGC32_SetServoOut and
@@ -257,6 +263,16 @@ typedef enum
 }	sbgcAutoPID2_Action_t;
 
 
+/**	@note	sbgcAutoPID2_t.cmdFlags
+ */
+typedef enum
+{
+	APID2_CMD_FLAG_NO					= 0,
+	APID2_CMD_FLAG_SEND_PARAMS			= BIT_0_SET
+
+}	sbgcAutoPID2_CmdFlags_t;
+
+
 /**	@note	sbgcAxisAPID2_t.axisFlag \n
  *			Part of sbgcAutoPID2_t \n
  *
@@ -316,6 +332,19 @@ typedef enum
 									= BIT_15_SET	// Tune gain only
 
 }	sbgcAutoPID2_GeneralFlag_t;
+
+
+/**	@note	sbgcAutoPID2_t.multiPosFlag
+ */
+typedef enum
+{
+	APID2MPF_NO						= 0,
+	APID2MPF_ENABLE_POSITION_1		= BIT_0_SET,
+	APID2MPF_ENABLE_POSITION_2		= BIT_1_SET,
+	APID2MPF_ENABLE_POSITION_3		= BIT_2_SET,
+	APID2MPF_ENABLE_POSITION_4		= BIT_3_SET
+
+}	sbgcAutoPID2_MultiPosFlag_t;
 /**	@}
  */
 
@@ -530,6 +559,17 @@ typedef enum
 	sbgcPIN_STATE_FLOATING			= 2
 
 }	sbgcPinState_t;
+
+
+/**	@note	@ref SBGC32_ExecuteMenuExt, 3 arg
+ */
+typedef enum
+{
+	MC_FLAG_NO						= 0,
+	MC_FLAG_CONFIRM					= BIT_0_SET,
+	MC_FLAG_CONFIRM_ON_FINISH		= BIT_1_SET
+
+}	sbgcMenuCmdFlag_t;
 
 
 /**	@note	@ref SBGC32_SetServoOutExt, 2 arg
@@ -786,7 +826,8 @@ typedef struct PACKED__
 typedef struct PACKED__
 {
 	ui8		action;									/*!<  See @ref sbgcAutoPID2_Action_t enumeration									*/
-	ui8		reserved1 [10];
+	ui16	cmgFlags;								/*!<  See @ref sbgcAutoPID2_CmdFlags_t enumeration									*/
+	ui8		reserved1 [8];
 
 	/* The following data is required only for
 	   APID2_ACTION_START, APID2_ACTION_SAVE,
@@ -801,7 +842,10 @@ typedef struct PACKED__
 	ui8		testFreqFrom,							/*!<  Units: 0.1 Hz. Test signal start frequency 									*/
 			testFreqTo;								/*!<  Units: 1 Hz. Test signal start frequency 										*/
 
-	ui8		reserved4 [17];
+	ui8		multiPosFlag;							/*!<  See @ref sbgcAutoPID2_MultiPosFlag_t enumeration								*/
+	i8		multiPosAngle [4];						/*!<  Units: 3 degree. Angle of the inner motor for multi-position tuning			*/
+
+	ui8		reserved4 [12];
 
 }	sbgcAutoPID2_t;
 
@@ -1196,6 +1240,8 @@ sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs S
 sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID_t pinID, sbgcPinState_t state, sbgcConfirm_t *confirm
 										  SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCmdID, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_ExecuteMenuExt (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t menuCmdID, sbgcMenuCmdFlag_t flags, sbgcConfirm_t *confirm
+										   SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSettings_t *beeperSettings SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, const char *txMessage, char *rxMessage SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceScan_t *CAN_DeviceScan SBGC_ADVANCED_PARAMS__);

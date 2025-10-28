@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		imu.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -154,6 +154,9 @@
  *	####	TX —> CMD_EXT_IMU_DEBUG_INFO :	with no payload
  *	####	RX <— CMD_EXT_IMU_DEBUG_INFO :	74 bytes
  *
+ *	@pre	Board requirements:\n
+ *			EXT_IMU = (1 << 16) (ext.)
+ *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
  *			function with PM_EXT_IMU_DEBUG_INFO to print
  *			received data
@@ -213,13 +216,13 @@ sbgcCommandStatus_t SBGC32_RequestExtIMU_DebugInfo (sbgcGeneral_t *gSBGC, sbgcEx
  */
 static void PostSendCmdToExtIMU (sbgcGeneral_t *gSBGC)
 {
-	serialAPI_Command_t *cmdFromIMU = (serialAPI_Command_t*)serialAPI_CurCmdDest_;
+	serialAPI_Command_t *cmdFromIMU = (serialAPI_Command_t*)curCmdDest_;
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - 1))
 		SerialAPI_FatalErrorHandler();
 
 	cmdFromIMU->_commandID = gSBGC->_api->readByte(gSBGC);
-	gSBGC->_api->readBuff(gSBGC, cmdFromIMU->_payload, serialAPI_CurCmd_->_payloadSize - 1);
+	gSBGC->_api->readBuff(gSBGC, cmdFromIMU->_payload, curCmd_->_payloadSize - 1);
 
 	/* Later it'll be advanced external IMU command parser */
 }
@@ -238,6 +241,9 @@ static void PostSendCmdToExtIMU (sbgcGeneral_t *gSBGC)
  *	@pre	sbgcExtIMU_Command_t.payloadSize must be filled
  *			to prevent payload buffer overflow when
  *			receiving the serial command
+ *
+ *	@pre	Board requirements:\n
+ *			EXT_IMU = (1 << 16) (ext.)
  *
  *	@code
 
@@ -314,13 +320,13 @@ sbgcCommandStatus_t SBGC32_SendCmdToExtIMU (sbgcGeneral_t *gSBGC, sbgcExtIMU_Com
  */
 static void PostSendCmdToExtSens (sbgcGeneral_t *gSBGC)
 {
-	serialAPI_Command_t *cmdFromSens = (serialAPI_Command_t*)serialAPI_CurCmdDest_;
+	serialAPI_Command_t *cmdFromSens = (serialAPI_Command_t*)curCmdDest_;
 
-	if (serialAPI_CurCmd_->_destinationSize < (serialAPI_CurCmd_->_payloadSize - 1))
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize - 1))
 		SerialAPI_FatalErrorHandler();
 
 	cmdFromSens->_commandID = gSBGC->_api->readByte(gSBGC);
-	gSBGC->_api->readBuff(gSBGC, cmdFromSens->_payload, serialAPI_CurCmd_->_payloadSize - 1);
+	gSBGC->_api->readBuff(gSBGC, cmdFromSens->_payload, curCmd_->_payloadSize - 1);
 
 	/* Later it'll be advanced external sensor command parser */
 }
@@ -340,6 +346,9 @@ static void PostSendCmdToExtSens (sbgcGeneral_t *gSBGC)
  *	@pre	sbgcExtIMU_Command_t.payloadSize must be filled
  *			to prevent payload buffer overflow when
  *			receiving the serial command
+ *
+ *	@pre	Board requirements:\n
+ *			EXT_IMU = (1 << 16) (ext.)
  *
  *	@note	This function is similar to
  *			@ref SBGC32_SendCmdToExtIMU. Refer to its
@@ -456,7 +465,7 @@ sbgcCommandStatus_t SBGC32_CorrectionGyro (sbgcGeneral_t *gSBGC, const sbgcGyroC
  */
 static void PostCallAHRS_Helper (sbgcGeneral_t *gSBGC)
 {
-	sbgcAHRS_Helper_t *AHRS_Helper = (sbgcAHRS_Helper_t*)serialAPI_CurCmdDest_;
+	sbgcAHRS_Helper_t *AHRS_Helper = (sbgcAHRS_Helper_t*)curCmdDest_;
 
 	AHRS_Helper->Z_Vector[SBGC_X] = (float)gSBGC->_api->readLong(gSBGC);
 	AHRS_Helper->Z_Vector[SBGC_Y] = (float)gSBGC->_api->readLong(gSBGC);
@@ -547,7 +556,7 @@ sbgcCommandStatus_t SBGC32_CallAHRS_Helper (sbgcGeneral_t *gSBGC, sbgcAHRS_Helpe
  *	@code
 
 			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) >= 2600)
-				(void)(1);  // Use the SBGC32_ProvideHelperDataExt function
+				donothing_;  // Use the SBGC32_ProvideHelperDataExt function
 
 			sbgcHelperData_t HelperData = { 0 };
 
@@ -596,7 +605,7 @@ sbgcCommandStatus_t SBGC32_ProvideHelperData (sbgcGeneral_t *gSBGC, sbgcHelperDa
  *	@code
 
 			if (SerialAPI_GetFirmwareVersion(&SBGC32_Device) < 2600)
-				(void)(1);  // Use the SBGC32_ProvideHelperData function
+				donothing_;  // Use the SBGC32_ProvideHelperData function
 
 			sbgcHelperDataExt_t HelperDataExt = { 0 };
 

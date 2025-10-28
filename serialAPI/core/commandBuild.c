@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		commandBuild.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -73,8 +73,8 @@ static void SerialAPI_WriteByte (sbgcGeneral_t *gSBGC, ui8 byte)
 	if (calculateFreeTx_() < sizeof(ui8))
 		serialAPI_Abort()
 
-	serialAPI_CurCmd_->_payload[serialAPI_CurCmd_->_payloadSize] = byte;
-	serialAPI_CurCmd_->_payloadSize += sizeof(ui8);
+	curCmd_->_payload[curCmd_->_payloadSize] = byte;
+	curCmd_->_payloadSize += sizeof(ui8);
 	gSBGC->_api->txCommandBuffHead += sizeof(ui8);
 }
 
@@ -90,13 +90,13 @@ static void SerialAPI_WriteByte (sbgcGeneral_t *gSBGC, ui8 byte)
  */
 static ui8 SerialAPI_ReadByte (sbgcGeneral_t *gSBGC)
 {
-	ui8 byte = (ui8)*serialAPI_CurCmd_->_payload;
+	ui8 byte = (ui8)*curCmd_->_payload;
 
-	if (((uintptr_t)serialAPI_CurCmd_->_payload) != calculateEndRx_())
-		serialAPI_CurCmd_->_payload++;
+	if (((uintptr_t)curCmd_->_payload) != calculateEndRx_())
+		curCmd_->_payload++;
 
 	else
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
 
 	return byte;
 }
@@ -116,8 +116,8 @@ static void SerialAPI_WriteWord (sbgcGeneral_t *gSBGC, ui16 word)
 	if (calculateFreeTx_() < sizeof(ui16))
 		serialAPI_Abort()
 
-	gSBGC->_api->toLE(&word, &serialAPI_CurCmd_->_payload[serialAPI_CurCmd_->_payloadSize], sizeof(ui16));
-	serialAPI_CurCmd_->_payloadSize += sizeof(ui16);
+	gSBGC->_api->toLE(&word, &curCmd_->_payload[curCmd_->_payloadSize], sizeof(ui16));
+	curCmd_->_payloadSize += sizeof(ui16);
 	gSBGC->_api->txCommandBuffHead += sizeof(ui16);
 }
 
@@ -135,25 +135,25 @@ static ui16 SerialAPI_ReadWord (sbgcGeneral_t *gSBGC)
 {
 	ui16 word;
 
-	if (calculateEndRx_() < (((uintptr_t)serialAPI_CurCmd_->_payload) + (sizeof(ui16) - 1)))
+	if (calculateEndRx_() < (((uintptr_t)curCmd_->_payload) + (sizeof(ui16) - 1)))
 	{
 		ui8 wordBuff [2];
 
-		wordBuff[0] = *serialAPI_CurCmd_->_payload;
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
-		wordBuff[1] = *serialAPI_CurCmd_->_payload;
-		serialAPI_CurCmd_->_payload += sizeof(ui8);
+		wordBuff[0] = *curCmd_->_payload;
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
+		wordBuff[1] = *curCmd_->_payload;
+		curCmd_->_payload += sizeof(ui8);
 		gSBGC->_api->fromLE(&word, wordBuff, sizeof(ui16));
 	}
 
 	else
 	{
-		gSBGC->_api->fromLE(&word, serialAPI_CurCmd_->_payload, sizeof(ui16));
-		serialAPI_CurCmd_->_payload += sizeof(ui16);
+		gSBGC->_api->fromLE(&word, curCmd_->_payload, sizeof(ui16));
+		curCmd_->_payload += sizeof(ui16);
 	}
 
-	if (((uintptr_t)serialAPI_CurCmd_->_payload) > calculateEndRx_())
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
+	if (((uintptr_t)curCmd_->_payload) > calculateEndRx_())
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
 
 	return word;
 }
@@ -173,8 +173,8 @@ static void SerialAPI_WriteLong (sbgcGeneral_t *gSBGC, ui32 dword)
 	if (calculateFreeTx_() < sizeof(ui32))
 		serialAPI_Abort()
 
-	gSBGC->_api->toLE(&dword, &serialAPI_CurCmd_->_payload[serialAPI_CurCmd_->_payloadSize], 4);
-	serialAPI_CurCmd_->_payloadSize += sizeof(ui32);
+	gSBGC->_api->toLE(&dword, &curCmd_->_payload[curCmd_->_payloadSize], 4);
+	curCmd_->_payloadSize += sizeof(ui32);
 	gSBGC->_api->txCommandBuffHead += sizeof(ui32);
 }
 
@@ -192,26 +192,26 @@ static ui32 SerialAPI_ReadLong (sbgcGeneral_t *gSBGC)
 {
 	ui32 dword;
 
-	if (calculateEndRx_() < (((uintptr_t)serialAPI_CurCmd_->_payload) + (sizeof(ui32) - 1)))
+	if (calculateEndRx_() < (((uintptr_t)curCmd_->_payload) + (sizeof(ui32) - 1)))
 	{
 		ui8 longBuff [4];
-		ui8 cutSize = (calculateEndRx_() - ((uintptr_t)serialAPI_CurCmd_->_payload)) + 1;
+		ui8 cutSize = (calculateEndRx_() - ((uintptr_t)curCmd_->_payload)) + 1;
 
-		memcpy(longBuff, serialAPI_CurCmd_->_payload, cutSize);
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
-		memcpy(&longBuff[cutSize], serialAPI_CurCmd_->_payload, sizeof(ui32) - cutSize);
-		serialAPI_CurCmd_->_payload += sizeof(ui32) - cutSize;
+		memcpy(longBuff, curCmd_->_payload, cutSize);
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
+		memcpy(&longBuff[cutSize], curCmd_->_payload, sizeof(ui32) - cutSize);
+		curCmd_->_payload += sizeof(ui32) - cutSize;
 		gSBGC->_api->fromLE(&dword, longBuff, sizeof(ui32));
 	}
 
 	else
 	{
-		gSBGC->_api->fromLE(&dword, serialAPI_CurCmd_->_payload, sizeof(ui32));
-		serialAPI_CurCmd_->_payload += 4;
+		gSBGC->_api->fromLE(&dword, curCmd_->_payload, sizeof(ui32));
+		curCmd_->_payload += 4;
 	}
 
-	if (((uintptr_t)serialAPI_CurCmd_->_payload) > calculateEndRx_())
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
+	if (((uintptr_t)curCmd_->_payload) > calculateEndRx_())
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
 
 	return dword;
 }
@@ -235,13 +235,13 @@ static void SerialAPI_WriteBuff (sbgcGeneral_t *gSBGC, const void *buff, ui8 siz
 		serialAPI_Abort()
 
 	#if (SBGC_SYS_BIG_ENDIAN)
-		sbgcParserMap_t parserMap = gSBGC->_api->getCmdPM(serialAPI_CurCmd_);
+		sbgcParserMap_t parserMap = gSBGC->_api->getCmdPM(curCmd_);
 	#else
 		sbgcParserMap_t parserMap = PM_DEFAULT_8BIT;
 	#endif
 
-	serialAPI_CurCmd_->_payloadSize +=
-			gSBGC->_api->convWithPM(&serialAPI_CurCmd_->_payload[serialAPI_CurCmd_->_payloadSize], buff, size, parserMap);
+	curCmd_->_payloadSize +=
+			gSBGC->_api->convWithPM(&curCmd_->_payload[curCmd_->_payloadSize], buff, size, parserMap);
 
 	gSBGC->_api->txCommandBuffHead += size;
 }
@@ -257,22 +257,22 @@ static void SerialAPI_WriteBuff (sbgcGeneral_t *gSBGC, const void *buff, ui8 siz
  */
 static void SerialAPI_ReadBuff (sbgcGeneral_t *gSBGC, void *buff, ui8 size)
 {
-	sbgcParserMap_t parserMap = gSBGC->_api->getCmdPM(serialAPI_CurCmd_);
+	sbgcParserMap_t parserMap = gSBGC->_api->getCmdPM(curCmd_);
 
-	if (calculateEndRx_() < (((uintptr_t)serialAPI_CurCmd_->_payload) + (size - 1)))
+	if (calculateEndRx_() < (((uintptr_t)curCmd_->_payload) + (size - 1)))
 	{
 		ui8 buffTemp [size];
-		ui8 cutSize = (calculateEndRx_() - ((uintptr_t)serialAPI_CurCmd_->_payload)) + 1;
+		ui8 cutSize = (calculateEndRx_() - ((uintptr_t)curCmd_->_payload)) + 1;
 
-		memcpy(buffTemp, serialAPI_CurCmd_->_payload, cutSize);
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff;
-		memcpy(&buffTemp[cutSize], serialAPI_CurCmd_->_payload, size - cutSize);
-		serialAPI_CurCmd_->_payload += size - cutSize;
+		memcpy(buffTemp, curCmd_->_payload, cutSize);
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff;
+		memcpy(&buffTemp[cutSize], curCmd_->_payload, size - cutSize);
+		curCmd_->_payload += size - cutSize;
 		gSBGC->_api->convWithPM(buff, buffTemp, size, parserMap);
 	}
 
 	else
-		serialAPI_CurCmd_->_payload += gSBGC->_api->convWithPM(buff, serialAPI_CurCmd_->_payload, size, parserMap);
+		curCmd_->_payload += gSBGC->_api->convWithPM(buff, curCmd_->_payload, size, parserMap);
 }
 
 
@@ -290,8 +290,8 @@ static void SerialAPI_WriteEmptyBuff (sbgcGeneral_t *gSBGC, ui8 size)
 	if (calculateFreeTx_() < size)
 		serialAPI_Abort()
 
-	memset(&serialAPI_CurCmd_->_payload[serialAPI_CurCmd_->_payloadSize], 0, size);
-	serialAPI_CurCmd_->_payloadSize += size;
+	memset(&curCmd_->_payload[curCmd_->_payloadSize], 0, size);
+	curCmd_->_payloadSize += size;
 	gSBGC->_api->txCommandBuffHead += size;
 }
 
@@ -305,15 +305,15 @@ static void SerialAPI_WriteEmptyBuff (sbgcGeneral_t *gSBGC, ui8 size)
  */
 static void SerialAPI_SkipBytes (sbgcGeneral_t *gSBGC, ui8 size)
 {
-	if (calculateEndRx_() < (((uintptr_t)serialAPI_CurCmd_->_payload) + size))
+	if (calculateEndRx_() < (((uintptr_t)curCmd_->_payload) + size))
 	{
-		ui8 restSize = size - ((calculateEndRx_() - ((uintptr_t)serialAPI_CurCmd_->_payload)) + 1);
+		ui8 restSize = size - ((calculateEndRx_() - ((uintptr_t)curCmd_->_payload)) + 1);
 
-		serialAPI_CurCmd_->_payload = gSBGC->_api->rxCommandBuff + restSize;
+		curCmd_->_payload = gSBGC->_api->rxCommandBuff + restSize;
 	}
 
 	else
-		serialAPI_CurCmd_->_payload += size;
+		curCmd_->_payload += size;
 }
 
 
@@ -344,24 +344,24 @@ static void SerialAPI_RegisterCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID
 						continue;
 				#endif
 
-				serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[i];
+				curCmd_ = &gSBGC->_api->commandBuff[i];
 
-				serialAPI_CurCmd_->parameters = (serialAPI_CommandParam_t)parameters;
+				curCmd_->parameters = (serialAPI_CommandParam_t)parameters;
 
 				if (thisCommandRx)
-					serialAPI_CurCmd_->parameters |= SCParam_RX;
+					curCmd_->parameters |= SCParam_RX;
 
-				serialAPI_CurCmd_->priority = priority;
-				serialAPI_CurCmd_->timeout = timeout;
+				curCmd_->priority = priority;
+				curCmd_->timeout = timeout;
 
 				#if (SBGC_USES_CALLBACKS)
 
-					serialAPI_CurCmd_->callback = callback;
-					serialAPI_CurCmd_->callbackArg = callbackArg;
+					curCmd_->callback = callback;
+					curCmd_->callbackArg = callbackArg;
 
 				#endif
 
-				serialAPI_CurCmd_->_state = SCState_FORMING;
+				curCmd_->_state = SCState_FORMING;
 
 				gSBGC->_api->retainedCommandNumber--;
 
@@ -414,28 +414,28 @@ static void SerialAPI_RegisterCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID
 
 	#endif
 
-	serialAPI_CurCmd_ = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber];
+	curCmd_ = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber];
 	gSBGC->_api->commandNumber++;
 
-	clearCmd_(serialAPI_CurCmd_);
+	clearCmd_(curCmd_);
 
-	serialAPI_CurCmd_->_CID = ++gSBGC->_api->commandTotalCount;
-	serialAPI_CurCmd_->_state = SCState_FORMING;
-	serialAPI_CurCmd_->_commandID = cmdID;
+	curCmd_->_CID = ++gSBGC->_api->commandTotalCount;
+	curCmd_->_state = SCState_FORMING;
+	curCmd_->_commandID = cmdID;
 
 	#if (SBGC_NON_BLOCKING_MODE)
 
-		serialAPI_CurCmd_->parameters = parameters;
-		serialAPI_CurCmd_->priority = priority;
-		serialAPI_CurCmd_->timeout = timeout;
+		curCmd_->parameters = parameters;
+		curCmd_->priority = priority;
+		curCmd_->timeout = timeout;
 
-		if (serialAPI_CurCmd_->parameters & SCParam_RETAIN)
+		if (curCmd_->parameters & SCParam_RETAIN)
 			gSBGC->_api->retainedCommandNumber++;
 
 		#if (SBGC_USES_CALLBACKS)
 
-			serialAPI_CurCmd_->callback = callback;
-			serialAPI_CurCmd_->callbackArg = callbackArg;
+			curCmd_->callback = callback;
+			curCmd_->callbackArg = callbackArg;
 
 		#endif
 
@@ -461,7 +461,7 @@ static void SerialAPI_StartWrite (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cm
 	/* Begin to registration for a new command */
 	SerialAPI_RegisterCommand(gSBGC, cmdID, sbgcFALSE SBGC_ADVANCED_ARGS__);
 
-	serialAPI_CurCmd_->_payload = &gSBGC->_api->txCommandBuff[gSBGC->_api->txCommandBuffHead];
+	curCmd_->_payload = &gSBGC->_api->txCommandBuff[gSBGC->_api->txCommandBuffHead];
 }
 
 
@@ -482,7 +482,7 @@ static void SerialAPI_StartRead (sbgcGeneral_t *gSBGC, serialAPI_CommandID_t cmd
 	/* Begin to registration for a new command */
 	SerialAPI_RegisterCommand(gSBGC, cmdID, sbgcTRUE SBGC_ADVANCED_ARGS__);
 
-	serialAPI_CurCmd_->parameters |= SCParam_RX;
+	curCmd_->parameters |= SCParam_RX;
 }
 
 
@@ -517,10 +517,10 @@ static void SerialAPI_FinishWrite (sbgcGeneral_t *gSBGC)
 	#endif
 
 	#if (SBGC_USES_TOKENS)
-		gSBGC->_api->lastCommandToken = ((sbgcCommandToken_t)serialAPI_CurCmd_->_CID) & 0x000000FF;
+		gSBGC->_api->lastCommandToken = ((sbgcCommandToken_t)curCmd_->_CID) & 0x000000FF;
 	#endif
 
-	serialAPI_CurCmd_->_state = SCState_PREPARED;
+	curCmd_->_state = SCState_PREPARED;
 }
 
 
@@ -552,11 +552,11 @@ static void SerialAPI_FinishRead (sbgcGeneral_t *gSBGC)
 	#if (SBGC_USES_TOKENS)
 
 		gSBGC->_api->lastCommandToken &= 0x00FF;
-		gSBGC->_api->lastCommandToken |= (((sbgcCommandToken_t)serialAPI_CurCmd_->_CID) << 8) & 0x0000FF00;
+		gSBGC->_api->lastCommandToken |= (((sbgcCommandToken_t)curCmd_->_CID) << 8) & 0x0000FF00;
 
 	#endif
 
-	serialAPI_CurCmd_->_state = SCState_PREPARED;
+	curCmd_->_state = SCState_PREPARED;
 }
 
 
@@ -596,16 +596,16 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 	 */
 	static void PostCheckConfirmation (sbgcGeneral_t *gSBGC)
 	{
-		sbgcConfirm_t *confirm = (sbgcConfirm_t*)serialAPI_CurCmdDest_;
+		sbgcConfirm_t *confirm = (sbgcConfirm_t*)curCmdDest_;
 
 		SerialAPI_SkipBytes(gSBGC, 1);  // Skip commandID
 
-		if (serialAPI_CurCmd_->_commandID == CMD_CONFIRM)
+		if (curCmd_->_commandID == CMD_CONFIRM)
 		{
-			if (serialAPI_CurCmd_->_payloadSize == 2)
+			if (curCmd_->_payloadSize == 2)
 				confirm->cmdData = SerialAPI_ReadByte(gSBGC);
 
-			else if (serialAPI_CurCmd_->_payloadSize == 3)
+			else if (curCmd_->_payloadSize == 3)
 				confirm->cmdData = SerialAPI_ReadWord(gSBGC);
 
 			confirm->status = sbgcCONFIRM_RECEIVED;
@@ -614,20 +614,20 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 
 				if (confirm->cmdData)
 				{
-					char cmdData [24];
+					char cmdData [32] = { 0 };
 
-					gSBGC->_ll->debugSprintf(cmdData, "Command Data: %d\n", confirm->cmdData);
+					gSBGC->_ll->debugSprintf(cmdData, "CMD ID: %d; CMD Data: %d\n", confirm->commandID, confirm->cmdData);
 					DebugSBGC32_PrintMessage(gSBGC, cmdData);
 				}
 
 			#endif
 		}
 
-		else if (serialAPI_CurCmd_->_commandID == CMD_ERROR)
+		else if (curCmd_->_commandID == CMD_ERROR)
 		{
 			confirm->errorCode = SerialAPI_ReadByte(gSBGC);
 
-			if (serialAPI_CurCmd_->_payloadSize > 1)
+			if (curCmd_->_payloadSize > 1)
 				SerialAPI_ReadBuff(gSBGC, confirm->errorData, 4);
 
 			confirm->status = sbgcCONFIRM_ERROR;
@@ -639,8 +639,8 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 					char errorCode [64] = { 0 };
 					ui8 pointer;
 
-					pointer = gSBGC->_ll->debugSprintf(errorCode, "Error Code: #%d (x%02X x%02X x%02X x%02X): ", confirm->errorCode,
-							confirm->errorData[0], confirm->errorData[1], confirm->errorData[2], confirm->errorData[3]);
+					pointer = gSBGC->_ll->debugSprintf(errorCode, "CMD ID: %d; Error Code: #%d (x%02X x%02X x%02X x%02X): ", confirm->commandID,
+							confirm->errorCode, confirm->errorData[0], confirm->errorData[1], confirm->errorData[2], confirm->errorData[3]);
 
 					pointer += ParserSBGC32_ConvertErrorCodeToString(confirm, &errorCode[pointer], sizeof(errorCode) - pointer);
 					errorCode[pointer] = '\n';
@@ -677,9 +677,9 @@ static void SerialAPI_AssignSystemEvent (sbgcGeneral_t *gSBGC, serialAPI_Event_t
 
 	#endif
 
-	serialAPI_CurCmd_->_serialAPI_Event = serialAPI_Event;
-	serialAPI_CurCmd_->_pDestination = pDestination;
-	serialAPI_CurCmd_->_destinationSize = size;
+	curCmd_->_serialAPI_Event = serialAPI_Event;
+	curCmd_->_pDestination = pDestination;
+	curCmd_->_destinationSize = size;
 }
 
 
@@ -703,8 +703,8 @@ static void SerialAPI_AddConfirmationCommand (sbgcGeneral_t *gSBGC, sbgcConfirm_
 
 		#if (SBGC_NON_BLOCKING_MODE)
 
-			if (serialAPI_CurCmd_ != NULL)
-				if (serialAPI_CurCmd_->_state != SCState_PREPARED)
+			if (curCmd_ != NULL)
+				if (curCmd_->_state != SCState_PREPARED)
 				/* Break, if depended Tx command is faulted */
 					return;
 
@@ -738,7 +738,7 @@ static void SerialAPI_DefinePayloadSize (sbgcGeneral_t *gSBGC, ui8 payloadSize)
 {
 	serialAPI_Assert()
 
-	serialAPI_CurCmd_->_payloadSize = payloadSize;
+	curCmd_->_payloadSize = payloadSize;
 }
 
 
@@ -756,7 +756,7 @@ static void SerialAPI_LinkCommands (sbgcGeneral_t *gSBGC)
 
 		/* Link commands if everything is OK */
 		serialAPI_Command_t *TxCmd = &gSBGC->_api->commandBuff[gSBGC->_api->commandNumber - 2];
-		serialAPI_Command_t *RxCmd = serialAPI_CurCmd_;
+		serialAPI_Command_t *RxCmd = curCmd_;
 
 		/* ID exchange */
 		TxCmd->_chainedCommandID = RxCmd->_CID;

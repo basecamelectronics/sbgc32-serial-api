@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		realtime.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -175,11 +175,11 @@ typedef enum
 	DSC_CMD_REALTIME_DATA_4			= CMD_REALTIME_DATA_4,
 	DSC_CMD_REALTIME_DATA_CUSTOM	= CMD_REALTIME_DATA_CUSTOM,
 	DSC_CMD_AHRS_HELPER				= CMD_AHRS_HELPER,
-	/* frw.ver. 2.65b7+ */
+	/* frw. ver. 2.65b7+ */
 	DSC_CMD_EVENT					= CMD_EVENT,
-	/* frw.ver. 2.72b0+ ("Extended" family only) */
+	/* frw. ver. 2.72b0+ ("Extended" family only) */
 	DSC_CMD_CAN_DRV_TELEMETRY		= CMD_CAN_DRV_TELEMETRY,
-	/* frw.ver. 2.73+ */
+	/* frw. ver. 2.73+ */
 	DSC_CMD_EXT_MOTORS_STATE		= CMD_EXT_MOTORS_STATE
 
 }	sbgcDataStreamCommand_t;
@@ -333,7 +333,11 @@ typedef enum
 	RTDCF_SYSTEM_STATE				= BIT_20_SET,
 	RTDCF_IMU_QUAT					= BIT_21_SET,
 	RTDCF_TARGET_QUAT				= BIT_22_SET,
-	RTDCF_IMU_TO_FRAME_QUAT			= BIT_23_SET
+	RTDCF_IMU_TO_FRAME_QUAT			= BIT_23_SET,
+	RTDCF_ADC_CH_RAW				= BIT_24_SET,
+	RTDCF_SW_LIMITS_DIST			= BIT_25_SET,
+	RTDCF_FOLLOW_DIST				= BIT_26_SET,
+	RTDCF_EXT_TARGET_LIMIT			= BIT_27_SET
 
 }	sbgcRealTimeDataCustomFlag_t;
 /**	@}
@@ -463,43 +467,44 @@ typedef enum
 {
 	/* If not 0, calibration or automatic
 	   task is performed: */
-	CalibM_CALIB_MODE_EXT_GAIN		= 1,
-	CalibM_CALIB_MODE_SET_ANGLE_AND_SAVE
-									= 2,
-	CalibM_CALIB_MODE_POLES			= 3,
-	CalibM_CALIB_MODE_ACC			= 4,
-	CalibM_CALIB_MODE_GYRO			= 5,
-	CalibM_CALIB_MODE_ENCODER_OFFSET
-									= 6,
-	CalibM_CALIB_MODE_ENCODER_FLD_OFFSET
-									= 7,
-	CalibM_CALIB_MODE_AUTO_PID		= 8,
-	CalibM_CALIB_MODE_BODE_TEST		= 9,
-	CalibM_CALIB_MODE_GYRO_TEMP		= 10,
-	CalibM_CALIB_MODE_ACC_TEMP		= 11,
-	CalibM_CALIB_MODE_MAG			= 12,
-	CalibM_CALIB_MODE_SET_ANGLE		= 13,
-	CalibM_CALIB_MODE_SYSTEM_IDENT	= 14,
-	CalibM_CALIB_MODE_MOTOR_MAG_LINK
-									= 15,
-	CalibM_CALIB_MODE_SEARCH_LIMITS	= 16,
-	CalibM_CALIB_MODE_SET_OPERATION_POS
-									= 17,
-	CalibM_CALIB_MODE_IMU_ORIENTATION_CORR
-									= 18,
-	CalibM_CALIB_MODE_TIMELAPSE		= 19,
-	CalibM_CALIB_MODE_MOMENTUM		= 20,
-	CalibM_CALIB_MODE_MOMENTUM_AUTO	= 21,
-	CalibM_CALIB_MODE_COGGING		= 22,
-	CalibM_CALIB_MODE_ACC_EXT_REF	= 23,
-	CalibM_CALIB_MODE_SAFE_STOP		= 24,
-	CalibM_CALIB_MODE_ACC_SPHERE	= 25,
-	CalibM_CALIB_MODE_GYRO_AXES_ALIGNMENT
-									= 26,
-	CalibM_CALIB_MODE_EXT_IMU_GYRO	= 27,
-	CalibM_CALIB_MODE_EXT_IMU_ALIGN	= 28,
-	CalibM_CALIB_MODE_ACC_GYRO_MULTIPOINT
-									= 34
+	CALIB_MODE_EXT_GAIN				= 1,
+	CALIB_MODE_SET_ANGLE_AND_SAVE	= 2,
+	CALIB_MODE_POLES				= 3,
+	CALIB_MODE_ACC					= 4,
+	CALIB_MODE_GYRO					= 5,
+	CALIB_MODE_ENCODER_OFFSET		= 6,
+	CALIB_MODE_ENCODER_FLD_OFFSET	= 7,
+	CALIB_MODE_AUTO_PID				= 8,
+	CALIB_MODE_BODE_TEST			= 9,
+	CALIB_MODE_GYRO_TEMP			= 10,
+	CALIB_MODE_ACC_TEMP				= 11,
+	CALIB_MODE_MAG					= 12,
+	CALIB_MODE_SET_ANGLE			= 13,
+	CALIB_MODE_SYSTEM_IDENT			= 14,
+	CALIB_MODE_MOTOR_MAG_LINK		= 15,
+	CALIB_MODE_SEARCH_LIMITS		= 16,
+	CALIB_MODE_SET_OPERATION_POS	= 17,
+	CALIB_MODE_IMU_ORIENTATION_CORR	= 18,
+	CALIB_MODE_TIMELAPSE			= 19,
+	CALIB_MODE_MOMENTUM				= 20,
+	CALIB_MODE_MOMENTUM_AUTO		= 21,
+	CALIB_MODE_COGGING				= 22,
+	CALIB_MODE_ACC_EXT_REF			= 23,
+	CALIB_MODE_SAFE_STOP			= 24,
+	CALIB_MODE_ACC_SPHERE			= 25,
+	CALIB_MODE_GYRO_AXES_ALIGNMENT	= 26,
+	CALIB_MODE_EXT_IMU_GYRO			= 27,
+	CALIB_MODE_EXT_IMU_ALIGN		= 28,
+	CALIB_MODE_ACC_GYRO_MULTIPOINT	= 34,
+	CALIB_MODE_ENCODER_LUT			= 35,
+	CALIB_MODE_WRITE_PARAMS			= 36,
+	CALIB_MODE_CUR_SENS				= 37,
+	CALIB_MODE_MOVE_HOME_MOTORS		= 38,
+	CALIB_MODE_ENCODER_INT			= 39,
+	CALIB_MODE_VIBRATION_TEST		= 40,
+	CALIB_MODE_RETRACTED_POSITION	= 41,
+	CALIB_MODE_RETRACTED_POSITION_RC_CONTROL
+									= 42
 
 }	sbgcCalibMode_t;
 /**	@}
@@ -871,6 +876,29 @@ typedef struct
 														  See the sbgcQuatPackedReference_t structure type. Frw. ver. 2.73+				*/
 			IMU_ToFrameQuat [8];					/*!<  Relative rotation from IMU to frame as a compressed quaternion. See
 														  the sbgcQuatPackedReference_t structure type. Frw. ver. 2.73+					*/
+
+	ui16	ADC_ChRaw [4];							/*!<  ADC1..4 inputs raw value in range 0...4096, averaged at 8 ms intervals.
+														  Frw. ver. 2.73+																*/
+	i16		swLimitsDist [3][2];					/*!<  Units:  0.02197265625 degree. Distance from the actual stabilized angle to the
+														  configured software limits [MIN, MAX], mapped to Euler axes (or motor axes in
+														  "servo" mode). A positive value indicates that the actual angle is inside the
+														  allowed range, a negative value indicates that the limit is violated.
+														  NOTES:
+															- the distance in Euler space is not precise for big angles.
+															- special value 32767 is used if limits are not set or distance is unknown.
+														  Frw. ver. 2.73.8																*/
+	i16		followDist [3];							/*!<  Units:  0.02197265625 degree. Distance from the actual IMU angle to the
+														  "follow neutral point" angle in "Follow" mode for all axes. The gimbal
+														  rotates until FOLLOW_DIST falls to zero. If the follow mode is not
+														  active (FLAGS[bit 10..12] are not set), the value is zero. Frw. ver. 2.73.8	*/
+
+	i32		extTargetLimitMin [3],					/*!<  ...																			*/
+			extTargetLimitMax [3];					/*!<  ...Units:  0.02197265625 degree. ROLL : PITCH : YAW. Min. and max. software
+														  constraints mapped to the externally-provided target angle (for example, in
+														  CMD_CONTROL MODE = ANGLE), with the "follow mode" correctly handled. Can be
+														  used on a remote side to constrain the commanded angle, preventing it to
+														  change when the gimbal doesn't actually move. If MIN = MAX = 0, the
+														  constraints are not enabled. Frw. ver. 2.73.8									*/
 
 }	sbgcRealTimeDataCustomReference_t;
 /**	@}

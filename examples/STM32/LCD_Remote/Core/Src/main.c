@@ -85,14 +85,14 @@ static		LCD_RemoteGeneral_t		LCD_RemoteGeneral;
    may be a problem with the low memory of boards */
 static sbgcAdjVarGeneral_t AdjVarGeneral [] =
 {
-	  {	ADJ_VAR_RC_TRIM_YAW, (char*)"RC Trim YAW", -127, 127, 0, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_RC_SPEED_PITCH, (char*)"RC Speed PITCH", 0, 255, 100, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_RC_SPEED_YAW, (char*)"RC Speed YAW", 0, 255, 100, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_FOLLOW_SPEED_PITCH, (char*)"Follow Speed PITCH", 0, 255, 50, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_FOLLOW_SPEED_YAW, (char*)"Follow Speed YAW", 0, 255, 50, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_FOLLOW_LPF_PITCH, (char*)"Follow LPF PITCH", 0, 15, 5, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_FOLLOW_LPF_YAW, (char*)"Follow LPF YAW", 0, 15, 5, AV_NOT_SYNCHRONIZED, AV_SAVED
-	},{	ADJ_VAR_FOLLOW_DEADBAND, (char*)"Follow Deadband", 0, 255, 0, AV_NOT_SYNCHRONIZED, AV_SAVED
+	  {	ADJ_VAR_RC_TRIM_YAW, (char*)"RC Trim YAW", -127, 127, .value = 0, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_RC_SPEED_PITCH, (char*)"RC Speed PITCH", 0, 255, .value = 100, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_RC_SPEED_YAW, (char*)"RC Speed YAW", 0, 255, .value = 100, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_FOLLOW_SPEED_PITCH, (char*)"Follow Speed PITCH", 0, 255, .value = 50, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_FOLLOW_SPEED_YAW, (char*)"Follow Speed YAW", 0, 255, .value = 50, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_FOLLOW_LPF_PITCH, (char*)"Follow LPF PITCH", 0, 15, .value = 5, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_FOLLOW_LPF_YAW, (char*)"Follow LPF YAW", 0, 15, .value = 5, AV_NOT_SYNCHRONIZED, AV_SAVED
+	},{	ADJ_VAR_FOLLOW_DEADBAND, (char*)"Follow Deadband", 0, 255, .value = 0, AV_NOT_SYNCHRONIZED, AV_SAVED
 
 }};
 
@@ -204,6 +204,7 @@ int main(void)
 		/* Getting current time */
 		LCD_RemoteGeneral.currentTimeMs = sbgcGetTick();
 
+
 		/*  - - - - - - - - - Controllers Handler - - - - - - - - - - */
 
 		if ((LCD_RemoteGeneral.currentTimeMs - LCD_RemoteGeneral.controlPause > MOTORS_ON_CONTROL_PAUSE) &&
@@ -275,6 +276,7 @@ int main(void)
 			#endif
 		}
 
+
 		/* - - - - - - - - - - Knob Encoder Handler - - - - - - - - - */
 
 		if (InputsInfo.KE_CurrentValue != 0)
@@ -336,7 +338,9 @@ int main(void)
 			LCD_RemoteGeneral.updateDisplayFlag = DISPLAY_NOT_UPDATED;
 		}
 
+
 		/*  - - - - - - - - - - Buttons Handling - - - - - - - - - - */
+
 		/* Menu Button */
 		if (ReadButtonState(MENU_BTN_PORT, MENU_BTN_PIN))
 		{

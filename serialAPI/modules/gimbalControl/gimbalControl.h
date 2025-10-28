@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		gimbalControl.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -146,8 +146,8 @@ typedef enum
  */
 typedef enum
 {
-	CtrlFLAG_MIX_FOLLOW				= BIT_4_SET,	/*!<  Applicable for CtrlMODE_SPEED, CtrlMODE_ANGLE of CtrlMODE_ANGLE_SHORTEST.
-														  Frw. ver. 2.70b5+																*/
+	CtrlFLAG_MIX_FOLLOW				= BIT_4_SET,	/*!<  Applicable for CtrlMODE_RC, CtrlMODE_SPEED, CtrlMODE_ANGLE
+														  or CtrlMODE_ANGLE_SHORTEST. Frw. ver. 2.70b5+									*/
 	CtrlFLAG_TARGET_PRECISE			= BIT_5_SET,	/*!<  Applicable for CtrlMODE_ANGLE or CtrlMODE_ANGLE_REL_FRAME. Frw. ver. 2.70b1+	*/
 	CtrlFLAG_AUTO_TASK				= BIT_6_SET,	/*!<  Applicable for CtrlMODE_ANGLE or CtrlMODE_ANGLE_REL_FRAME. Frw. ver. 2.62b7+	*/
 	CtrlFLAG_FORCE_RC_SPEED			= BIT_6_SET,	/*!<  Applicable for CtrlMODE_RC. Frw. ver. 2.62b7+									*/
@@ -257,11 +257,13 @@ typedef enum
 {
 	CtrlCONFIG_FLAG_NEED_CONFIRM	= 0,
 	CtrlCONFIG_FLAG_NO_CONFIRM		= BIT_0_SET,
-	/* frw. ver. 2.70+ */
+	/* frw. ver. 2.72b0+ */
 	CtrlCONFIG_FLAG_SERVO_MODE_ENABLE
 									= BIT_1_SET,
 	CtrlCONFIG_FLAG_SERVO_MODE_DISABLE
-									= BIT_2_SET
+									= BIT_2_SET,
+	/* frw. ver. 2.72b3+ */
+	CtrlCONFIG_FLAG_LPF_EXT_RANGE	= BIT_3_SET
 
 }	sbgcControlConfigFlag_t;
 
@@ -516,10 +518,13 @@ typedef struct PACKED__
 			ch2_Priority,							/*!<  ...																			*/
 			ch3_Priority,							/*!<  ...																			*/
 			ch4_Priority,							/*!<  ...																			*/
-			thisChPriority;							/*!<  ...0 - do not change the priority; 1 --> 255 - set the priority of a given
-														  channel. In case of concurrent CMD_CONTROL commands, they will be accepted
-														  only on a channel that has higher or equal priority than others.
-														  Default value is 0 for all channels after startup								*/
+			thisChPriority;							/*!<  ...0 --> 255. Channels are counted in order: UART1, RC_SERIAL, UART2,
+														  USB_VCP/UART3 (how they are named in the User Manual). THIS_CH means
+														  current port, where command is sent. Values: 0 - do not change the priority.
+														  1..255 - set the priority of a given channel. In case of concurrent
+														  CMD_CONTROL commands, they will be accepted only on a channel that
+														  has higher or equal priority than others. Default value is 0 for
+														  all channels after startup													*/
 
 	sbgcAxisCCtrl_t	AxisCCtrl [3];					/*!<  ROLL : PITCH : YAW															*/
 

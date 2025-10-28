@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		driverArduino.cpp
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -42,12 +42,14 @@
  */
 /**	@cond
  */
-sbgcArduinoInit_t DriverSBGC32_InitFuncTemp = &DriverSBGC32_Init;
-sbgcTx_t DriverSBGC32_TxFuncTemp = &DriverSBGC32_UartTransmitData;
-sbgcRx_t DriverSBGC32_RxFuncTemp = &DriverSBGC32_UartReceiveByte;
-sbgcTxDebug_t DriverSBGC32_TxDebugFuncTemp = &DriverSBGC32_UartTransmitDebugData;
-sbgcAvailableBytes_t DriverSBGC32_AvailableBytesFuncTemp = &DriverSBGC32_GetAvailableBytes;
-sbgcGetTime_t DriverSBGC32_GetTimeFuncTemp = &DriverSBGC32_GetTimeMs;
+/* Coating C++ driver functions into variables to use them in C */
+sbgcArduinoInit_t DriverSBGC32_Init = &DriverSBGC32_Init__;
+sbgcArduinoDeinit_t DriverSBGC32_Deinit = &DriverSBGC32_Deinit__;
+sbgcGetTime_t DriverSBGC32_GetTimeMs = &DriverSBGC32_GetTimeMs__;
+sbgcTx_t DriverSBGC32_TransmitData = &DriverSBGC32_TransmitData__;
+sbgcAvailableBytes_t DriverSBGC32_GetAvailableBytes = &DriverSBGC32_GetAvailableBytes__;
+sbgcRx_t DriverSBGC32_ReceiveByte = &DriverSBGC32_ReceiveByte__;
+sbgcTxDebug_t DriverSBGC32_PrintDebugData = &DriverSBGC32_PrintDebugData__;
 /**	@endcond
  */
 
@@ -55,24 +57,54 @@ sbgcGetTime_t DriverSBGC32_GetTimeFuncTemp = &DriverSBGC32_GetTimeMs;
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													Executable Functions
  */
-/**	@brief	Initialize the periphery
+/**	@brief	Initializes the periphery
  */
-void DriverSBGC32_Init (void)
+void DriverSBGC32_Init__ (void **driver, void *serial, unsigned long serialSpeed)
 {
-	SBGC_SERIAL_PORT.begin(SBGC_SERIAL_SPEED);
-	SBGC_DEBUG_SERIAL_PORT.begin(SBGC_DEBUG_SERIAL_SPEED);
+	unused_(driver);
+	unused_(serial);
+
+	#if defined (ARDUINO_ARCH_ESP32)
+		/* Configure buffers first */
+		SBGC_SERIAL_PORT.setRxBufferSize(SBGC_ESP32_RX_BUFFER);
+		SBGC_SERIAL_PORT.setTxBufferSize(SBGC_ESP32_TX_BUFFER);
+	#endif
+
+	/* Begin hardware serial; allow explicit pins or defaults (-1) */
+	SBGC_SERIAL_PORT.begin(
+		serialSpeed,
+		SBGC_SERIAL_CONFIG
+	);
+
+	/* Start debug port if available */
+	#if (SBGC_NEED_DEBUG)
+		SBGC_DEBUG_SERIAL_PORT.begin(SBGC_DEBUG_SERIAL_SPEED);
+	#endif
 }
 
-/**	@brief	Gets current system time in milliseconds
+
+/**	@brief	Deinitializes the periphery
  *
- *	@param	*driver - main hardware driver object (here is just a stub)
- *
- *	@return	Current time
+ *	@param	**driver - main hardware driver object
  */
-ui32 DriverSBGC32_GetTimeMs (void *driver)
+void DriverSBGC32_Deinit__ (void **driver)
 {
 	unused_(driver);
 
+	SBGC_SERIAL_PORT.end();
+
+	#if (SBGC_NEED_DEBUG)
+		SBGC_DEBUG_SERIAL_PORT.end();
+	#endif
+}
+
+
+/**	@brief	Gets current system time in milliseconds
+ *
+ *	@return	Current time
+ */
+sbgcTicks_t DriverSBGC32_GetTimeMs__ (void)
+{
 	return millis();
 }
 
@@ -85,14 +117,14 @@ ui32 DriverSBGC32_GetTimeMs (void *driver)
  *
  *	@return Tx status
  */
-ui8 DriverSBGC32_UartTransmitData (void *driver, ui8 *data, ui16 size)
+ui8 DriverSBGC32_TransmitData__ (void *driver, ui8 *data, ui16 size)
 {
 	unused_(driver);
 
 	if ((ui16)SBGC_SERIAL_PORT.availableForWrite() < size)
 		return SBGC_DRV_TX_BUFF_OVERFLOW_FLAG;
 
-    SBGC_SERIAL_PORT.write(data, size);
+	SBGC_SERIAL_PORT.write(data, size);
 
 	return SBGC_DRV_TX_OK_FLAG;
 }
@@ -104,7 +136,7 @@ ui8 DriverSBGC32_UartTransmitData (void *driver, ui8 *data, ui16 size)
  *
  *	@return	Number of available bytes (0xFFFF - overflow error)
  */
-ui16 DriverSBGC32_GetAvailableBytes (void *driver)
+ui16 DriverSBGC32_GetAvailableBytes__ (void *driver)
 {
 	unused_(driver);
 
@@ -119,7 +151,7 @@ ui16 DriverSBGC32_GetAvailableBytes (void *driver)
  *
  *	@return	Rx status
  */
-ui8 DriverSBGC32_UartReceiveByte (void *driver, ui8 *data)
+ui8 DriverSBGC32_ReceiveByte__ (void *driver, ui8 *data)
 {
 	unused_(driver);
 
@@ -137,7 +169,7 @@ ui8 DriverSBGC32_UartReceiveByte (void *driver, ui8 *data)
  *	@param	*data - debug data
  *	@param	length - size of debug data
  */
-void DriverSBGC32_UartTransmitDebugData (char *data, ui16 length)
+void DriverSBGC32_PrintDebugData__ (char *data, ui16 length)
 {
 	SBGC_DEBUG_SERIAL_PORT.write(data, length);
 
@@ -145,6 +177,7 @@ void DriverSBGC32_UartTransmitDebugData (char *data, ui16 length)
 }
 /**	@}
  */
+
 
 #endif /* SBGC_USE_ARDUINO_DRIVER */
 

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		glueAzureRTOS.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -82,8 +82,6 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 {
 	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)threadArg;
 
-	gSBGC->_api->busyFlag = sbgcFALSE;
-
 	PrivateSBGC32_EnterInit(gSBGC);
 
 	#if (SBGC_NEED_ASSERTS)
@@ -91,7 +89,7 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 		if (gSBGC->_api->serialAPI_Status != serialAPI_OK)
 		{
 			/*  - - - - - - User Init Error Handler - - - - - - - */
-			(void)(1);
+			donothing_;
 			/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
 		}
 
@@ -110,8 +108,6 @@ static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
 		}
 
 	#endif
-
-	SystemSBGC32_DestroyThreadItself();
 }
 
 
@@ -139,6 +135,21 @@ void SystemSBGC32_Init (void *gSBGC)
 }
 
 
+/**	@brief	Removes the SBGC32 handler thread
+ *
+ *	@param	*gSBGC - pointer to sbgcGeneral_t object
+ */
+void SystemSBGC32_Deinit (void *gSBGC)
+{
+	sbgcGeneral_t *sbgcGeneral = (sbgcGeneral_t*)gSBGC;
+
+	tx_byte_pool_delete(&SBGC32_GeneralBytePool);
+
+	sbgcThreadDestroy(&SystemSBGC32_InitThread);
+	sbgcThreadDestroy(&sbgcGeneral->_api->threadHandle);
+}
+
+
 /**	@brief	Specialized malloc() for OS
  *
  *	@param	size - size of new memory block
@@ -155,14 +166,6 @@ void *SystemSBGC32_Malloc (ui32 size)
 		SerialAPI_FatalErrorHandler();
 
 	return memoryPointer;
-}
-
-
-/**	@brief	Destroys current thread
- */
-void SystemSBGC32_DestroyThreadItself (void)
-{
-	sbgcThreadDestroy(tx_thread_identify());
 }
 
 

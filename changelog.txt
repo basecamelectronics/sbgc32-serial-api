@@ -3,6 +3,23 @@
                                 Releases
 ________________________________________________________________________
 
+### Release 2.2  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+- serialAPI_ConfigTemplate transferred part of the STM32 settings to driverSTM32_ConfigTemplate.h
+- A new setting block added:
+	* SBGC_USE_ESPIDF_DRIVER
+- SBGC_DRV_USE_CUBEMX renamed to SBGC_DRV_CONFIGURED
+- SBGC_USE_LINUX_OS renamed to SBGC_USE_PTHREAD_OS
+- The next functions added:
+	* SerialAPI_EditAdjVarValueFloat
+	* SBGC32_SetAdjVarValueFloat
+	* SBGC32_SetAdjVarValuesFloat
+	* SBGC32_GetAdjVarValueFloat
+	* SBGC32_GetAdjVarValuesFloat
+- ESP-IDF driver added
+- Minor changes in driver structures
+- Minor code optimizations
+
 ### Release 2.1  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 - MiniRemote v1.3 - major GUI improvements, minor optimizations

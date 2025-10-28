@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		driverSTM32.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -105,12 +105,15 @@ extern		"C" {
 /**	@}
  */
 
-#if (SBGC_DRV_USE_CUBEMX)
+#if (SBGC_DRV_CONFIGURED)
 	#if (SBGC_USE_FREE_RTOS == sbgcOFF)
 		#include	"tim.h"
 	#endif
 
 	#include		"usart.h"
+
+#elif (SBGC_SEVERAL_DEVICES == sbgcOFF)
+	#include		"driverSTM32_Config.h"
 #endif
 
 
@@ -121,8 +124,8 @@ extern		"C" {
 	#define	SBGC_USE_FREE_RTOS		sbgcOFF
 #endif
 
-#ifndef SBGC_DRV_USE_CUBEMX
-	#define	SBGC_DRV_USE_CUBEMX		sbgcOFF
+#ifndef SBGC_DRV_CONFIGURED
+	#define	SBGC_DRV_CONFIGURED		sbgcOFF
 #endif
 
 #if (!(SBGC_USE_FREE_RTOS || SBGC_USE_AZURE_RTOS))
@@ -163,7 +166,7 @@ extern		"C" {
 #endif
 
 /* Define configuration way */
-#if ((SBGC_SEVERAL_DEVICES == sbgcOFF) && (SBGC_DRV_USE_CUBEMX == sbgcOFF))
+#if ((SBGC_SEVERAL_DEVICES == sbgcOFF) && (SBGC_DRV_CONFIGURED == sbgcOFF))
 	#define	SBGC_STM32_CUSTOM_DRV	sbgcON
 #else
 	#define	SBGC_STM32_CUSTOM_DRV	sbgcOFF
@@ -174,7 +177,7 @@ extern		"C" {
  *						  Timer Macros and Constants
  */
 /* Timer settings with CubeMX */
-#if (SBGC_DRV_USE_CUBEMX)
+#if (SBGC_DRV_CONFIGURED)
 	#if ((SBGC_DRV_HAL_TIMER == sbgcOFF) && (SBGC_DRV_LL_TIMER == sbgcOFF))
 		#define	SBGC_DRV_TIMER_TYPE_DEF__	void
 	#endif
@@ -208,7 +211,7 @@ extern		"C" {
 /* Timer settings without CubeMX */
 #if (SBGC_STM32_CUSTOM_DRV && (SBGC_DRV_HAL_TIMER || SBGC_DRV_LL_TIMER))
 	#if (SBGC_DRV_HAL_TIMER)
-		#define	SBGC_REFERENCE_TIMER		(SBGC_TIMER_NAME)
+		#define	SBGC_REFERENCE_TIMER		(&SBGC_TIMER_NAME)
 
 		#define	SBGC_TIMER_DCLR		SBGC_DRV_TIMER_TYPE_DEF__ SBGC_TIMER_NAME
 
@@ -239,11 +242,9 @@ extern		"C" {
 	#endif
 
 #elif (SBGC_DRV_HAL_DMA_UART)
-	#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
-		#define	sbgcUART_IRQ_Handler(gSBGC)	{ if (__HAL_UART_GET_FLAG(SBGC_SERIAL_PORT, UART_FLAG_TC) &&\
+	#define	sbgcUART_IRQ_Handler(gSBGC)		{ if (__HAL_UART_GET_FLAG(SBGC_SERIAL_PORT, UART_FLAG_TC) &&\
 												  __HAL_UART_GET_IT_SOURCE(SBGC_SERIAL_PORT, UART_IT_TC))\
 												  DriverSBGC32_UART_TxCallBack((gSBGC)->_ll->drv); }
-	#endif
 
 	#define	SBGC_DRV_UART_TYPE_DEF__		UART_HandleTypeDef
 	#define	SBGC_DRV_DMA_TYPE_DEF__			DMA_HandleTypeDef
@@ -251,8 +252,7 @@ extern		"C" {
 #elif (SBGC_DRV_LL_NVIC_UART)
 	#define	SBGC_DRV_UART_TYPE_DEF__		USART_TypeDef
 
-	#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
-		#define	sbgcUART_IRQ_Handler(gSBGC)	{ if (LL_USART_IsActiveFlag_TC(SBGC_SERIAL_PORT) &&\
+	#define	sbgcUART_IRQ_Handler(gSBGC)		{ if (LL_USART_IsActiveFlag_TC(SBGC_SERIAL_PORT) &&\
 												  LL_USART_IsEnabledIT_TC(SBGC_SERIAL_PORT))\
 												  DriverSBGC32_UART_TxCallBack((gSBGC)->_ll->drv);\
 											  if (LL_USART_IsActiveFlag_RXNE(SBGC_SERIAL_PORT) &&\
@@ -260,19 +260,14 @@ extern		"C" {
 												  DriverSBGC32_UART_RxCallBack((gSBGC)->_ll->drv);\
 											  if (LL_USART_IsActiveFlag_ORE(SBGC_SERIAL_PORT))\
 												  LL_USART_ClearFlag_ORE(SBGC_SERIAL_PORT); }
-	#endif
 
 #elif (SBGC_DRV_LL_DMA_UART)
 	#define	SBGC_DRV_UART_TYPE_DEF__		USART_TypeDef
 	#define	SBGC_DRV_DMA_TYPE_DEF__			DMA_TypeDef
 
-	#if (SBGC_SEVERAL_DEVICES == sbgcOFF)
-		#define	sbgcUART_DMA_TX_IRQ_Handler(gSBGC)	{ if (SBGC_GET_FLAG_DMA_ISR_TC_TX)\
-													  SBGC_CLEAR_DMA_TC_TX;\
-													  DriverSBGC32_UART_TxCallBack((gSBGC)->_ll->drv); }
-		#define	sbgcUART_DMA_RX_IRQ_Handler(gSBGC)	{ if (SBGC_GET_FLAG_DMA_ISR_TC_RX)\
-													  SBGC_CLEAR_DMA_TC_RX; }
-	#endif
+	#define	sbgcUART_DMA_TX_IRQ_Handler(gSBGC)	{ DriverSBGC32_UART_DMA_TxClearTC();\
+												  DriverSBGC32_UART_TxCallBack((gSBGC)->_ll->drv); }
+	#define	sbgcUART_DMA_RX_IRQ_Handler(gSBGC)	{ DriverSBGC32_UART_DMA_RxClearTC(); }
 #endif
 
 /* UART settings without CubeMX */
@@ -298,7 +293,7 @@ extern		"C" {
 	/* Debug UART service settings */
 	#if (SBGC_DRV_USE_UART_DEBUG)
 		#if (SBGC_DRV_HAL_DMA_UART || SBGC_DRV_HAL_NVIC_UART)
-			#define SBGC_DEBUG_SERIAL_PORT	(SBGC_DEBUG_UART_NAME)
+			#define SBGC_DEBUG_SERIAL_PORT	(&SBGC_DEBUG_UART_NAME)
 
 			#define	SBGC_DEBUG_UART_DCLR	SBGC_DRV_UART_TYPE_DEF__ SBGC_DEBUG_UART_NAME
 
@@ -310,6 +305,19 @@ extern		"C" {
 			#define SBGC_DEBUG_SERIAL_PORT	(SBGC_DEBUG_UART_NAME)
 		#endif
 	#endif
+#endif
+
+/* Other */
+#ifndef SBGC_SERIAL_PORT
+	#define	SBGC_SERIAL_PORT	NULL
+#endif
+
+#ifndef SBGC_SERIAL_SPEED
+	#define	SBGC_SERIAL_SPEED	0
+#endif
+
+#ifndef SBGC_REFERENCE_TIMER
+	#define	SBGC_REFERENCE_TIMER	NULL
 #endif
 
 #ifndef sbgcTimerIRQ_Handler
@@ -329,19 +337,11 @@ extern		"C" {
 #endif
 
 #ifndef sbgcDelay
-	#if (SBGC_DRV_HAL_TIMER)
-		#define	sbgcDelay(ms)		HAL_Delay(ms)
-	#elif (SBGC_DRV_LL_TIMER)
-		#define	sbgcDelay(ms)		LL_mDelay(ms)
-	#endif
+	#define	sbgcDelay(ms)			DriverSBGC32_DelayMs(ms)
 #endif
 
 #ifndef sbgcGetTick
-	#if (SBGC_DRV_HAL_TIMER)
-		#define	sbgcGetTick()		HAL_GetTick()
-	#elif (SBGC_DRV_LL_TIMER)
-		#define	sbgcGetTick()		getTick()
-	#endif
+	#define	sbgcGetTick()			DriverSBGC32_GetTimeMs()
 #endif
 
 
@@ -405,8 +405,6 @@ typedef struct
 
 	#endif
 
-	ui32	timCount;								/*!<  Current system time variable. Units: milliseconds								*/
-
 	/* UART */
 	SBGC_DRV_UART_TYPE_DEF__
 							*uart;					/*!<  SBGC UART communication object												*/
@@ -444,7 +442,7 @@ typedef struct
 
 			ui32			debugSerialSpeed;		/*!<  Debug UART port serial speed													*/
 
-			sbgcDriver_UART_GPIO_t
+			sbgcDriver_GPIO_t
 							DebugUART_GPIO;			/*!<  Debug UART GPIO object														*/
 
 			SBGC_DRV_UART_TYPE_DEF__
@@ -459,25 +457,30 @@ typedef struct
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-void DriverSBGC32_MX_Init (void);
-void DriverSBGC32_Init (void **driver, SBGC_DRV_UART_TYPE_DEF__ *uart, SBGC_DRV_TIMER_TYPE_DEF__ *tim);
+#if (SBGC_STM32_CUSTOM_DRV == sbgcOFF)
+	void DriverSBGC32_MX_Init (void);
+#endif
+void DriverSBGC32_Init (void **driver, void *serial, unsigned long serialSpeed);
 void DriverSBGC32_Deinit (void **driver);
 
-sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver);
+sbgcTicks_t DriverSBGC32_GetTimeMs (void);
+void DriverSBGC32_DelayMs (sbgcTicks_t delay);
 void DriverSBGC32_TimerCallBack (void *driver);
 
-ui8 DriverSBGC32_UartTransmitData (void *driver, ui8 *data, ui16 size);
+ui8 DriverSBGC32_TransmitData (void *driver, ui8 *data, ui16 size);
+void DriverSBGC32_UART_DMA_TxClearTC (void);
+void DriverSBGC32_UART_DMA_RxClearTC (void);
 void DriverSBGC32_UART_TxCallBack (void *driver);
 void DriverSBGC32_ClearTxBuff (void *driver);
 
 ui16 DriverSBGC32_GetAvailableBytes (void *Driver);
-ui8 DriverSBGC32_UartReceiveByte (void *driver, ui8 *data);
+ui8 DriverSBGC32_ReceiveByte (void *driver, ui8 *data);
 #if (SBGC_DRV_HAL_NVIC_UART || SBGC_DRV_LL_NVIC_UART)
 	void DriverSBGC32_UART_RxCallBack (void *driver);
 #endif
 void DriverSBGC32_ClearRxBuff (void *driver);
 
-void DriverSBGC32_UartTransmitDebugData (char *data, ui16 length);
+void DriverSBGC32_PrintDebugData (char *data, ui16 length);
 /**	@}
  */
 

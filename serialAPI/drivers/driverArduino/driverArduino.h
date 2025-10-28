@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		driverArduino.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -53,7 +53,7 @@
 
 	SERIAL_TX_BUFFER_SIZE and SERIAL_RX_BUFFER_SIZE
 	in the "HardwareSerial.h" library must be
-	fixed to 256 value
+	fixed to 256 value working with Arduino boards
 
 	@endverbatim
  */
@@ -82,6 +82,13 @@
 	#define	SBGC_DEBUG_SERIAL_SPEED	115200
 #endif
 
+#define		SBGC_SERIAL_CONFIG		SERIAL_8N1
+
+#if defined (ARDUINO_ARCH_ESP32)
+	#define	SERIAL_TX_BUFFER_SIZE	256
+	#define	SERIAL_RX_BUFFER_SIZE	256
+#endif
+
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *											  Macros
@@ -93,7 +100,8 @@
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *					   Function Prototypes and Links
  */
-typedef		void		(*sbgcArduinoInit_t)(void);
+typedef		void			(*sbgcArduinoInit_t)(void**, void*, unsigned long);
+typedef		void			(*sbgcArduinoDeinit_t)(void**);
 
 
 /**	@addtogroup	Arduino_Driver
@@ -101,23 +109,26 @@ typedef		void		(*sbgcArduinoInit_t)(void);
  */
 /**	@cond
  */
-extern sbgcArduinoInit_t DriverSBGC32_InitFuncTemp;
-void DriverSBGC32_Init (void);
+extern sbgcArduinoInit_t DriverSBGC32_Init;
+void DriverSBGC32_Init__ (void **driver, void *serial, unsigned long serialSpeed);
 
-extern sbgcGetTime_t DriverSBGC32_GetTimeFuncTemp;
-ui32 DriverSBGC32_GetTimeMs (void *driver);
+extern sbgcArduinoDeinit_t DriverSBGC32_Deinit;
+void DriverSBGC32_Deinit__ (void **driver);
 
-extern sbgcTx_t DriverSBGC32_TxFuncTemp;
-ui8 DriverSBGC32_UartTransmitData (void *driver, ui8 *data, ui16 size);
+extern sbgcGetTime_t DriverSBGC32_GetTimeMs;
+sbgcTicks_t DriverSBGC32_GetTimeMs__ (void);
 
-extern sbgcAvailableBytes_t DriverSBGC32_AvailableBytesFuncTemp;
-ui16 DriverSBGC32_GetAvailableBytes (void *driver);
+extern sbgcTx_t DriverSBGC32_TransmitData;
+ui8 DriverSBGC32_TransmitData__ (void *driver, ui8 *data, ui16 size);
 
-extern sbgcRx_t DriverSBGC32_RxFuncTemp;
-ui8 DriverSBGC32_UartReceiveByte (void *driver, ui8 *data);
+extern sbgcAvailableBytes_t DriverSBGC32_GetAvailableBytes;
+ui16 DriverSBGC32_GetAvailableBytes__ (void *driver);
 
-extern sbgcTxDebug_t DriverSBGC32_TxDebugFuncTemp;
-void DriverSBGC32_UartTransmitDebugData (char *data, ui16 length);
+extern sbgcRx_t DriverSBGC32_ReceiveByte;
+ui8 DriverSBGC32_ReceiveByte__ (void *driver, ui8 *data);
+
+extern sbgcTxDebug_t DriverSBGC32_PrintDebugData;
+void DriverSBGC32_PrintDebugData__ (char *data, ui16 length);
 /**	@endcond
  */
 /**	@}

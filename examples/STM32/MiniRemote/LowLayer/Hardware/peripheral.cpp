@@ -13,6 +13,8 @@
 #include "peripheral.h"
 
 
+JoystickDetermineState_t joystickDetermineState = JDS_PROCESS;
+
 /*	This array provide hardware driver with low layer inputs mapping
  *	to peripheral layer for correct GPIO initialization
  */

@@ -365,7 +365,10 @@ static inline void AverageValue (AverageValue_t *averageValue, i32 value)
 static inline void FormatMiniRemoteFirmwareVersion (ui32 firmwareVer, char* pBuff)
 {
 	ui8 majorVer = firmwareVer / 100000;
-	ui8 minorVer = (firmwareVer % 100000) / 10000;
+	ui8 minorVer = (firmwareVer % 100000) / 1000;
+
+	if (!(minorVer % 10))
+		minorVer /= 10;
 
 	sprintf_(pBuff, "v.%u.%u", majorVer, minorVer);
 }

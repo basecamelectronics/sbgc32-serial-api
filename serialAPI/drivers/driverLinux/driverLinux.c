@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		driverLinux.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -49,7 +49,7 @@
  *	@param	*dev - path to a connected SBGC32 device
  *	@param	serialSpeed - speed of the COM port
  */
-void DriverSBGC32_Init (void **driver, const char *dev, ui32 serialSpeed)
+void DriverSBGC32_Init (void **driver, const char *dev, unsigned long serialSpeed)
 {
 	*driver = sbgcMalloc(sizeof(sbgcDriver_t));
 
@@ -88,16 +88,22 @@ void DriverSBGC32_Init (void **driver, const char *dev, ui32 serialSpeed)
 }
 
 
-/**	@brief	Gets current system time in milliseconds
+/**	@brief	Deinitializes the periphery
  *
- *	@param	*driver - main hardware driver object
+ *	@param	**driver - main hardware driver object
+ */
+void DriverSBGC32_Deinit (void **driver)
+{
+	unused_(driver);
+}
+
+
+/**	@brief	Gets current system time in milliseconds
  *
  *	@return	Current time
  */
-sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver)
+sbgcTicks_t DriverSBGC32_GetTimeMs (void)
 {
-	unused_(driver);
-
 	struct timespec spec;
 
 	clock_gettime(CLOCK_REALTIME, &spec);
@@ -114,7 +120,7 @@ sbgcTicks_t DriverSBGC32_GetTimeMs (void *driver)
  *
  *	@return	Tx status
  */
-ui8 DriverSBGC32_PortTransmitData (void *driver, ui8 *data, ui16 size)
+ui8 DriverSBGC32_TransmitData (void *driver, ui8 *data, ui16 size)
 {
 	sbgcDriver_t *drv = (sbgcDriver_t*)driver;
 
@@ -156,7 +162,7 @@ ui16 DriverSBGC32_GetAvailableBytes (void *driver)
  *
  *	@return	Rx status
  */
-ui8 DriverSBGC32_PortReceiveByte (void *driver, ui8 *data)
+ui8 DriverSBGC32_ReceiveByte (void *driver, ui8 *data)
 {
 	sbgcDriver_t *drv = (sbgcDriver_t*)driver;
 

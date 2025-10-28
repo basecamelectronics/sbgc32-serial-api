@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
  *	@file		highLayer.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -531,6 +531,9 @@ typedef enum
 	MENU_CMD_RETRACTED_POSITION		= 76,
 	MENU_CMD_SHAKE_GENERATOR_OFF	= 77,
 	MENU_CMD_SHAKE_GENERATOR_ON		= 78,
+	MENU_CMD_SERVO_MODE_ON			= 79,
+	MENU_CMD_SERVO_MODE_OFF			= 80,
+	MENU_CMD_SERVO_MODE_TOGGLE		= 81,
 
 	/* only for sbgcMainParamsExt2_t.startupAction */
 	sbgcMENU_BUTTON_IS_PRESSED		= BIT_7_SET
@@ -722,6 +725,9 @@ typedef enum
 	sbgcRCMap_ADC_2					= (sbgcRCMap_ANALOG_TYPE + 2),
 	sbgcRCMap_ADC_3					= (sbgcRCMap_ANALOG_TYPE + 3),
 
+	/* ADC_4 is available on some boards */
+	sbgcRCMap_ADC_4					= (sbgcRCMap_ANALOG_TYPE + 4),
+
 	sbgcRCMap_SERIAL_VIRT_CH_1		= (sbgcRCMap_RC_SERIAL_TYPE + 1),
 	/* ... */
 	sbgcRCMap_SERIAL_VIRT_CH_32		= (sbgcRCMap_RC_SERIAL_TYPE + 32),
@@ -879,19 +885,24 @@ static inline sbgcExtIMU_Status_t ParserSBGC32_GetExtIMU_Status (ui8 value)
 typedef enum
 {
 	SF_DEBUG_MODE					= BIT_0_SET,	// Internal use only
-	/* Starting from frw.ver. 2.66 */
 	SF_IS_FRAME_INVERTED			= BIT_1_SET,	// System is re-configured for frame inversion over the middle motor
+
+	/* The following flags are updated
+	   at the system initialization */
 	SF_INIT_STEP1_DONE				= BIT_2_SET,
 	SF_INIT_STEP2_DONE				= BIT_3_SET,
 	SF_STARTUP_AUTO_ROUTINE_DONE	= BIT_4_SET,
 	SF_POWER_MANAGER_ENABLED		= BIT_5_SET,	// For CAN_MCU board only
-	/* For real-time data custom only.
-	   Frw.ver. 2.73+ */
-	SF_SHAKE_GENERATOR_ENABLED		= BIT_8_SET,
+	/* For real-time data custom only */
+	SF_SHAKE_GENERATOR_ENABLED		= BIT_8_SET,	// Shake Generator is active
 	SF_SERVO_MODE_IS_ACTIVE			= BIT_9_SET,	// "Servo mode" is active (gimbal is controlled in motor coordinates)
 	SF_FOLLOW_MODE_ROLL_IS_ACTIVE	= BIT_10_SET,
 	SF_FOLLOW_MODE_PITCH_IS_ACTIVE	= BIT_11_SET,
-	SF_FOLLOW_MODE_YAW_IS_ACTIVE	= BIT_12_SET
+	SF_FOLLOW_MODE_YAW_IS_ACTIVE	= BIT_12_SET,
+	/* frw. ver. 2.73.9+ */
+	SF_TRIPOD_MODE_ENABLED			= BIT_13_SET,	// "Tripod mode" is active
+	/* frw. ver. 2.74+ */
+	SF_RETRACTED_POSITION			= BIT_14_SET,	// "Retracted position" is active
 
 }	sbgcStateFlag_t;
 
@@ -982,16 +993,22 @@ typedef enum
 	/* For sbgcControlConfig_t.EulerOrder only */
 	EO_DONT_CHANGE					= 0,
 
-	/* Common parameters. Reduce them by 1 using
-	   in the sbgcMainParams3_t.EulerOrder */
-	EO_PITCH_ROLL_YAW				= 1,
-	EO_ROLL_PITCH_YAW				= 2,
-	EO_LOCAL_ROLL					= 3,
-	EO_ROLL_LOCAL					= 4,
-	EO_YAW_ROLL_PITCH				= 5,
+	EO_PITCH_ROLL_YAW				= 0,
+	EO_ROLL_PITCH_YAW				= 1,
 
-	/* For sbgcControlConfig_t.EulerOrder only */
-	EO_SCREEN_RELATED				= 10
+	/* PITCH and YAW are motor-related axes,
+	   ROLL is global Euler axis */
+	EO_PITCHm_ROLL_YAWm				= 2,
+	EO_ROLL_PITCHm_YAWm				= 3,
+
+	EO_YAW_ROLL_PITCH				= 4,
+
+	/* Next modes are not compatible
+	   with orders 2 and 3 */
+	EO_CTRL_IN_LOCAL_XYZ			= BIT_4_SET,
+
+	/* Frw.ver. 2.74+ */
+	EO_STAB_CTRL_IN_LOCAL_XYZ		= BIT_5_SET
 
 }	sbgcEulerOrder_t;
 
@@ -1377,6 +1394,7 @@ static inline sbgcBoolean_t SerialAPI_IsRxEmpty (sbgcGeneral_t *gSBGC)
 	void SBGC32_AutoPingCallback (void *gSBGC);
 #endif
 sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC);
+void SerialAPI_ResetLibrary (sbgcGeneral_t *gSBGC);
 #if (SBGC_NEED_CONFIRM_CMD)
 	sbgcCommandStatus_t SBGC32_CheckConfirmation (sbgcGeneral_t *gSBGC, sbgcConfirm_t *confirm, serialAPI_CommandID_t cmdID SBGC_ADVANCED_PARAMS__);
 #endif

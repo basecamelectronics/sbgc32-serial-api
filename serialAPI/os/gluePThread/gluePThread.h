@@ -1,14 +1,14 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.1
+ *	SBGC32 Serial API Library v2.2
  *
- *	@file		glueLinuxOS.h
+ *	@file		gluePThread.h
  *
  *	@brief		Header OS glue file
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2024 BaseCam Electronics™.<br>
+ *				Copyright © 2025 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -30,14 +30,14 @@
  */
 /**	____________________________________________________________________
  *
- *	@defgroup	LinuxOS_Glue Linux OS Glue
+ *	@defgroup	PThread_Glue POSIX Thread Glue
  *	@ingroup	OS
- *		@brief	Linux OS Glue Module
+ *		@brief	POSIX Thread Glue Module
  *	____________________________________________________________________
  */
 
-#ifndef		OS_GLUE_LINUX_OS_H_
-#define		OS_GLUE_LINUX_OS_H_
+#ifndef		OS_GLUE_PTHREAD_H_
+#define		OS_GLUE_PTHREAD_H_
 
 #ifdef		__cplusplus
 extern		"C" {
@@ -47,7 +47,7 @@ extern		"C" {
 #include	"../../sbgc32.h"
 
 
-#if (SBGC_USE_LINUX_OS)
+#if (SBGC_USE_PTHREAD_OS)
 
 #include	<sys/types.h>
 #include	<stdlib.h>
@@ -56,7 +56,7 @@ extern		"C" {
 #include	<time.h>
 
 
-/**	@addtogroup	LinuxOS_Glue
+/**	@addtogroup	PThread_Glue
  *	@{
  */
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -113,7 +113,7 @@ void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newP
 /**	@}
  */
 
-#endif		/* SBGC_USE_LINUX_OS */
+#endif		/* SBGC_USE_PTHREAD_OS */
 
 
 /*  = = = = = = = = = = = = = = = = = = = = = = = */
@@ -121,4 +121,4 @@ void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newP
 }
 #endif
 
-#endif		/* OS_GLUE_LINUX_OS_H_ */
+#endif		/* OS_GLUE_PTHREAD_H_ */

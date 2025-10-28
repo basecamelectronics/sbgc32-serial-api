@@ -692,7 +692,7 @@ void CGWIN_Menu::Draw (GWidgetObject *gw, void *param)
 		scrollingMarginTemp = DISPLAY_WIDTH - gdispGetStringWidth(psSelectedItem->value, MiniRemote.GetMediumFont()) -
 				MENU_ITEM_VALUE_MIN_SPACING - 16 - gdispGetStringWidth(psSelectedItem->pTitle, MiniRemote.GetMediumFont());
 
-		if (scrollingMarginTemp < 0)
+		if (scrollingMarginTemp < STRING_SCROLLING_DEADBAND)
 		/* We need to calculate the shifting */
 		{
 			if (selectedItemTemp != psSelectedItem)

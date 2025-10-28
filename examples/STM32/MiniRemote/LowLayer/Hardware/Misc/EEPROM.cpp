@@ -59,6 +59,8 @@ void ExternalEEPROM::Init (void)
 
 	if (HAL_I2C_Init(&hi2c) != HAL_OK)
 		HardwareErrorHandler();
+
+	osDelay(10);
 }
 
 
