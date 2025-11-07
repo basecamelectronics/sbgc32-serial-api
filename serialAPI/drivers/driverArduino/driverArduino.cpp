@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		driverArduino.cpp
  *
@@ -65,16 +65,17 @@ void DriverSBGC32_Init__ (void **driver, void *serial, unsigned long serialSpeed
 	unused_(serial);
 
 	#if defined (ARDUINO_ARCH_ESP32)
+	
 		/* Configure buffers first */
-		SBGC_SERIAL_PORT.setRxBufferSize(SBGC_ESP32_RX_BUFFER);
-		SBGC_SERIAL_PORT.setTxBufferSize(SBGC_ESP32_TX_BUFFER);
+		SBGC_SERIAL_PORT.setRxBufferSize(SERIAL_RX_BUFFER_SIZE);
+		SBGC_SERIAL_PORT.setTxBufferSize(SERIAL_TX_BUFFER_SIZE);
+
+		SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG, SBGC_SERIAL_RX_PIN, SBGC_SERIAL_TX_PIN);
+
 	#endif
 
 	/* Begin hardware serial; allow explicit pins or defaults (-1) */
-	SBGC_SERIAL_PORT.begin(
-		serialSpeed,
-		SBGC_SERIAL_CONFIG
-	);
+	SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG);
 
 	/* Start debug port if available */
 	#if (SBGC_NEED_DEBUG)

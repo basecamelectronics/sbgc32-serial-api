@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		sbgc32.h
  *
@@ -822,6 +822,12 @@
  *		serialAPI_Config.h file to the build directory:
  *		.pio/libdeps/ArduinoXX/serialAPI;*\n
  *
+ *		*- If the make system in your IDE cannot find files in nested
+ *		folders and only searches in the root directory
+ *		(as in ArduinoIDE), enable the SBGC_NEED_SOURCES_MAKE option,
+ *		which will "relocate" all library source files to the top
+ *		level of the serialAPI folder;*\n
+ *
  *		*- Starting to work with the gimbal using Arduino don't forget
  *		to check the **SERIAL_TX_BUFFER_SIZE** and
  *		**SERIAL_RX_BUFFER_SIZE** constants in the "HardwareSerial.h"
@@ -871,7 +877,6 @@
  *		with a FreeRTOS layer. To avoid compilation issues, enable the
  *		sdkconfig option: Component config -> FreeRTOS ->
  *		Run the Amazon SMP FreeRTOS kernel instead.*\n
- *
  *
  *		*- It is possible to use the* @ref sbgcMalloc *macro to
  *		allocate memory space, but be careful when using AzureRTOS
@@ -934,6 +939,10 @@ extern		"C" {
 
 /* Configuration Protection ------------------------
  */
+#ifndef	SBGC_NEED_SOURCES_MAKE
+	#define	SBGC_NEED_SOURCES_MAKE	sbgcOFF
+#endif
+
 #ifndef	SBGC_ADJVAR_MODULE
 	#define	SBGC_ADJVAR_MODULE		sbgcOFF
 #endif
@@ -1193,14 +1202,6 @@ extern		"C" {
 #if ((SBGC_USE_ARDUINO_DRIVER + SBGC_USE_ESPIDF_DRIVER +\
 	SBGC_USE_LINUX_DRIVER + SBGC_USE_STM32_DRIVER) < sbgcON)
 	#error "Error! Select the one driver supply"
-#endif
-
-#if (SBGC_USE_AZURE_RTOS && (SBGC_THREAD_PRIOR > SBGC_THREAD_QUIET_PRIOR))
-	#error "Error! The lowered priority must not be less than the normal"
-#endif
-
-#if (SBGC_USE_FREE_RTOS && (SBGC_THREAD_PRIOR < SBGC_THREAD_QUIET_PRIOR))
-	#error "Error! The lowered priority must not be higher than the normal"
 #endif
 
 

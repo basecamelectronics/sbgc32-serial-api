@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		calib.h
  *

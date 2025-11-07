@@ -1,10 +1,10 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		gluePThread.c
  *
- *	@brief		Source OS glue file
+ *	@brief		PThread glue source file
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>

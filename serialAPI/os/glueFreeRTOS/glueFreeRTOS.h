@@ -1,10 +1,10 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		glueFreeRTOS.h
  *
- *	@brief		Header OS glue file
+ *	@brief		FreeRTOS glue header file
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
@@ -103,6 +103,14 @@ typedef		xSemaphoreHandle		sbgcMutex_t;
 #define		SBGC_THREAD_PRIOR_LOW			0
 #define		SBGC_THREAD_PRIOR_NORMAL		(configMAX_PRIORITIES / 2)
 #define		SBGC_THREAD_PRIOR_HIGH			(configMAX_PRIORITIES - 1)
+
+
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *											Warnings
+ */
+#if (SBGC_USE_FREE_RTOS && (SBGC_THREAD_PRIOR < SBGC_THREAD_QUIET_PRIOR))
+	#error "Error! The lowered priority must not be higher than the normal"
+#endif
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾

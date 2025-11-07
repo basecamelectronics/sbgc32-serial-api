@@ -99,3 +99,4 @@
 "./serialAPI/os/glueFreeRTOS/glueFreeRTOS.o"
 "./serialAPI/os/gluePThread/gluePThread.o"
 "./serialAPI/sbgc32.o"
+"./serialAPI/serialAPI_MakeCpp.o"

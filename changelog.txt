@@ -3,6 +3,12 @@
                                 Releases
 ________________________________________________________________________
 
+### Release 2.2.1  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+- A new setting added:
+	* SBGC_NEED_SOURCES_MAKE
+- driverArduino.cpp build bugfix
+
 ### Release 2.2  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 - serialAPI_ConfigTemplate transferred part of the STM32 settings to driverSTM32_ConfigTemplate.h

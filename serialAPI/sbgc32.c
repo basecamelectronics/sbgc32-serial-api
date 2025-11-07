@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		sbgc32.c
  *
@@ -30,6 +30,33 @@
  */
 
 #include "sbgc32.h"
+
+#if (SBGC_NEED_SOURCES_MAKE)
+	
+	#include "core/debug/debug.c"
+	#include "core/highLayer/highLayer.c"
+	#include "core/parser/parser.c"
+	#include "core/commandBuild.c"
+	#include "core/lowLayer.c"
+
+	#include "drivers/driverESP32/driverESP32.c"
+	#include "drivers/driverLinux/driverLinux.c"
+	#include "drivers/driverSTM32/driverSTM32.c"
+
+	#include "modules/adjvar/adjvar.c"
+	#include "modules/calib/calib.c"
+	#include "modules/eeprom/eeprom.c"
+	#include "modules/gimbalControl/gimbalControl.c"
+	#include "modules/imu/imu.c"
+	#include "modules/profiles/profiles.c"
+	#include "modules/realtime/realtime.c"
+	#include "modules/service/service.c"
+
+	#include "os/glueAzureRTOS/glueAzureRTOS.c"
+	#include "os/glueFreeRTOS/glueFreeRTOS.c"
+	#include "os/gluePThread/gluePThread.c"
+	
+#endif
 
 
 /**	@addtogroup	Common

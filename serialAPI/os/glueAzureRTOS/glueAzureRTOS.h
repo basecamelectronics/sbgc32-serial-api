@@ -1,10 +1,10 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		glueAzureRTOS.h
  *
- *	@brief		Header OS glue file
+ *	@brief		AzureRTOS glue header file
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
@@ -114,6 +114,10 @@ typedef		TX_MUTEX				sbgcMutex_t;
  */
 #if (SBGC_THREAD_STACK_SIZE < TX_MINIMUM_STACK)
 	#error "Error! SBGC_THREAD_STACK_SIZE must be greater than TX_MINIMUM_STACK"
+#endif
+
+#if (SBGC_USE_AZURE_RTOS && (SBGC_THREAD_PRIOR > SBGC_THREAD_QUIET_PRIOR))
+	#error "Error! The lowered priority must not be less than the normal"
 #endif
 
 

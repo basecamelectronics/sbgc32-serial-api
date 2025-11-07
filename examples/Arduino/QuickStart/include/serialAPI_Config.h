@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2
+ *	SBGC32 Serial API Library v2.2.1
  *
  *	@file		serialAPI_ConfigTemplate.h
  *
@@ -52,6 +52,13 @@ extern		"C" {
 /**	@addtogroup	Configurations
  *	@{
  */
+/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+ *									   Build Options
+ */
+#define		SBGC_NEED_SOURCES_MAKE	sbgcOFF			/*!<  Collects all nested source files into the library's top level. Uses the
+														  serialAPI_MakeCpp.cpp file to collect and compile C++ sources					*/
+
+
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								Module Configuration
  */
@@ -201,8 +208,9 @@ extern		"C" {
 		#define	SBGC_DEBUG_SERIAL_SPEED		115200	/*!<  Debug UART serial speed														*/
 	#endif
 
-	#define	SBGC_SERIAL_TX_PIN		21				/*!<  SBGCs UART serial Tx pin														*/
-	#define	SBGC_SERIAL_RX_PIN		20				/*!<  SBGCs UART serial Rx pin														*/
+	/* Not used on Arduino boards */
+	#define	SBGC_SERIAL_TX_PIN		21				/*!<  ESP32 UART serial Tx pin for communication with SBGC32						*/
+	#define	SBGC_SERIAL_RX_PIN		20				/*!<  ESP32 UART serial Rx pin for communication with SBGC32						*/
 	/**	@endcond
 	 */
 	/**	@}
@@ -234,8 +242,8 @@ extern		"C" {
 		#define	SBGC_DEBUG_SERIAL_SPEED		115200	/*!<  Debug UART serial speed														*/
 	#endif
 
-	#define	SBGC_SERIAL_TX_PIN		21				/*!<  SBGCs UART serial Tx pin														*/
-	#define	SBGC_SERIAL_RX_PIN		20				/*!<  SBGCs UART serial Rx pin														*/
+	#define	SBGC_SERIAL_TX_PIN		21				/*!<  ESP32 UART serial Tx pin for communication with SBGC32						*/
+	#define	SBGC_SERIAL_RX_PIN		20				/*!<  ESP32 UART serial Rx pin for communication with SBGC32						*/
 	/**	@endcond
 	 */
 	/**	@}

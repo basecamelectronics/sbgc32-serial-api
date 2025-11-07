@@ -29,7 +29,9 @@
  *
  *	[sbgc32.c](../../../serialAPI/sbgc32.c) and [sbgc32.h](serialAPI/sbgc32.h) - assembly files of the library;
  *
- *	[serialAPI_ConfigTemplate.h](../../../serialAPI/serialAPI_ConfigTemplate.h) - configurations template header file of the library.
+ *	[serialAPI_ConfigTemplate.h](../../../serialAPI/serialAPI_ConfigTemplate.h) - configurations template header file of the library;
+ *
+ *	[serialAPI_MakeCpp.cpp](../../../serialAPI/serialAPI_MakeCpp.cpp) - link all C++ source files of the library.
  *
  *	Requirements
  *	------------
