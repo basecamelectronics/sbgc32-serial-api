@@ -107,7 +107,7 @@
 	{
 		i32 totalSum = 0;
 
-		while (--length)
+		while (length--)
 			totalSum += *(data++);
 
 		return totalSum % 256;
