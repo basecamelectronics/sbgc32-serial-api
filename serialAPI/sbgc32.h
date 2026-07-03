@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		sbgc32.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -113,7 +113,7 @@
 			#endif
 
 			// Declare a general SBGC32 object
-			sbgcGeneral_t SBGC32_Device;
+			sbgcGeneral_t SBGC32_Device = { 0 };
 			
 			#if (SBGC_USES_CUSTOM_DRIVER)
 
@@ -613,6 +613,8 @@
  *			+ @ref SerialAPI_FatalErrorHandler (WEAK) - Will be executed upon any error occurrence		\n
  *			+ @ref SerialAPI_CommandWaitingHandler (WEAK) - Called every time while waiting
  *			for sending/receiving a command																\n
+ *			+ @ref SerialAPI_HandlerReadyCallback (WEAK) - Called immediately after SBGC32
+ *			initialization in OS mode																	\n
  *
  *		- @ref High_Layer
  *
@@ -621,6 +623,7 @@
  *			+ @ref SBGC32_TransmitAllCommands - Transmits all ready serial commands						\n
  *			+ @ref SBGC32_ReceiveAllCommands - Receives all expected serial commands					\n
  *			+ @ref SBGC32_ProcessAllCommands - Transmits and receives all prepared serial commands		\n
+ *			+ @ref SBGC32_GetBoardData - Gets initial board data to configure the library				\n
  *			+ @ref SBGC32_SetupLibrary - Sets custom values of library variables for communication		\n
  *			+ @ref SBGC32_CheckConfirmation - Manually expects the CMD_CONFIRM or CMD_ERROR
  *			serial commands from the controller															\n
@@ -683,6 +686,8 @@
  *			(0.001 degree/sec)																			\n
  *			+ @ref sbgcAngleToDegree - Converts angle value to system degree value
  *			(0.02197265625 degree)																		\n
+ *			+ @ref sbgcAngleToDegreeHR - Converts angle value to system degree value in high resolution
+ *			(0.00034332275390625 degree)																\n
  *			+ @ref sbgcDegreeToAngle - Converts system degree value (0.02197265625 degree) to angle		\n
  *			+ @ref sbgcRadiansToDegree - Converts radians to degree										\n
  *			+ @ref sbgcDegreeToRadians - Converts degree to radians										\n
@@ -1031,6 +1036,22 @@ extern		"C" {
 	#define	SBGC_NEED_DEBUG			sbgcOFF
 #endif
 
+#ifndef SBGC_LOG_PROLOGUE
+	#define	SBGC_LOG_PROLOGUE		"SBGC32: "
+#endif
+
+#ifndef SBGC_LOG_CODE_ERRORS
+	#define	SBGC_LOG_CODE_ERRORS	sbgcOFF
+#endif
+
+#ifndef SBGC_LOG_CODE_WARNINGS
+	#define	SBGC_LOG_CODE_WARNINGS	sbgcOFF
+#endif
+
+#ifndef SBGC_LOG_CODE_NOTES
+	#define	SBGC_LOG_CODE_NOTES		sbgcOFF
+#endif
+
 #ifndef SBGC_LOG_COMMAND_TIME
 	#define	SBGC_LOG_COMMAND_TIME	sbgcOFF
 #endif
@@ -1097,6 +1118,26 @@ extern		"C" {
 
 #ifndef	YAW
 	#define	YAW						2
+#endif
+
+#ifndef	SBGC_ADJ_VARS_REF_INFO
+	#define	SBGC_ADJ_VARS_REF_INFO	sbgcOFF
+#endif
+
+#ifndef	SBGC_ADJ_VARS_NAMES
+	#define	SBGC_ADJ_VARS_NAMES		sbgcOFF
+#endif
+
+#ifndef	SBGC_ADJ_VARS_ADD_FLAG
+	#define	SBGC_ADJ_VARS_ADD_FLAG	sbgcOFF
+#endif
+
+#ifndef	SBGC_DETAILED_CONFIRM
+	#define	SBGC_DETAILED_CONFIRM	sbgcOFF
+#endif
+
+#ifndef SBGC_DRV_ALREADY_INIT
+	#define	SBGC_DRV_ALREADY_INIT	sbgcOFF
 #endif
 
 #ifndef	SBGC_USE_AZURE_RTOS
@@ -1168,7 +1209,7 @@ extern		"C" {
 	#error "Error! The protocol version must be 1 or 2"
 #endif
 
-#if ((!defined SBGC_USES_OS_SUPPORT) && SBGC_NEED_TOKEN)
+#if ((defined SBGC_USES_OS_SUPPORT) && SBGC_NEED_TOKENS)
 	#warning "Warning! The tokens system is useless with OS support"
 #endif
 
@@ -1243,7 +1284,7 @@ extern		"C" {
 	typedef ui32					sbgcTicks_t;
 
 	#define	sbgcMalloc(size)		malloc(size)
-	#define	sbgcFree(ptr)			free(ptr)
+	#define	sbgcFree(ptr)			free(ptr); ptr = NULL
 #endif
 
 /* Kernel code -------------------------------------
@@ -1310,6 +1351,7 @@ sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *sbgcGeneral);
 void SBGC32_Deinit (sbgcGeneral_t *gSBGC);
 void SerialAPI_FatalErrorHandler (void);
 void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC);
+void SerialAPI_HandlerReadyCallback (sbgcGeneral_t *gSBGC);
 /**	@}
  */
 /**	@endcond

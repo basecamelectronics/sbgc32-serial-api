@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		profiles.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -209,7 +209,7 @@ typedef enum
  */
 static inline sbgcRC_Mode_t ParserSBGC32_GetRC_Mode (ui8 value)
 {
-	return (sbgcRC_Mode_t)(value & 0b00000111);  // 0..2 bits – mode
+	return (sbgcRC_Mode_t)(value & 0x07);  // 0..2 bits – mode
 }
 
 /**	@brief	Used as a mask to extract the
@@ -221,7 +221,7 @@ static inline sbgcRC_Mode_t ParserSBGC32_GetRC_Mode (ui8 value)
  */
 static inline sbgcRC_ModeControl_t ParserSBGC32_GetRC_ModeControl (ui8 value)
 {
-	return (sbgcRC_ModeControl_t)((value & 0b00001000) >> 3);
+	return (sbgcRC_ModeControl_t)((value & 0x08) >> 3);
 }
 
 
@@ -275,7 +275,7 @@ typedef enum
  */
 static inline ui8 ParserSBGC32_GetRC_MixFC_Rate (ui8 value)
 {
-	return value & 0b00111111;
+	return value & 0x3F;
 }
 
 /**	@brief	Used as a mask to extract the
@@ -290,7 +290,7 @@ static inline ui8 ParserSBGC32_GetRC_MixFC_Rate (ui8 value)
  */
 static inline sbgcRC_MixFC_Target_t ParserSBGC32_GetRC_MixFC_Target (ui8 value)
 {
-	return (sbgcRC_MixFC_Target_t)((value & 0b11000000) >> 6);
+	return (sbgcRC_MixFC_Target_t)((value & 0xC0) >> 6);
 }
 
 /**	@brief	Used as a function of joining
@@ -304,7 +304,7 @@ static inline sbgcRC_MixFC_Target_t ParserSBGC32_GetRC_MixFC_Target (ui8 value)
  */
 static inline ui8 ParserSBGC32_PackRC_MixFC (ui8 rate, sbgcRC_MixFC_Target_t target)
 {
-	return constrainmax_(rate, 63) | ((target << 6) & 0b11000000);
+	return constrainmin_(rate, 63) | ((target << 6) & 0xC0);
 }
 
 
@@ -542,7 +542,7 @@ typedef enum
  */
 static inline sbgcEncoderType_t ParserSBGC32_GetEncoderType (ui8 value)
 {
-	return (sbgcEncoderType_t)(value & 0b00001111);
+	return (sbgcEncoderType_t)(value & 0x0F);
 }
 
 
@@ -691,7 +691,7 @@ typedef enum
  */
 static inline sbgcStabAxis_t ParserSBGC32_GetStabAxis (ui8 value)
 {
-	return (sbgcStabAxis_t)(value & 0b00000011);
+	return (sbgcStabAxis_t)(value & 0x03);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -704,7 +704,7 @@ static inline sbgcStabAxis_t ParserSBGC32_GetStabAxis (ui8 value)
  */
 static inline sbgcStabAxisSelection_t ParserSBGC32_GetStabAxisSelection (ui8 value)
 {
-	return (sbgcStabAxisSelection_t)((value & 0b00011100) >> 2);
+	return (sbgcStabAxisSelection_t)((value & 0x1C) >> 2);
 }
 
 
@@ -748,7 +748,7 @@ typedef enum
  */
 static inline sbgcForcePositionCfgSnap_t ParserSBGC32_GetForcePositionCfgSnap (ui8 value)
 {
-	return (sbgcForcePositionCfgSnap_t)(value & 0b00000111);  // bits 0..2: snap angle
+	return (sbgcForcePositionCfgSnap_t)(value & 0x07);  // bits 0..2: snap angle
 }
 
 /**	@brief	Used as a mask to extract the
@@ -761,7 +761,7 @@ static inline sbgcForcePositionCfgSnap_t ParserSBGC32_GetForcePositionCfgSnap (u
  */
 static inline sbgcForcePositionCfgFlag_t ParserSBGC32_GetForcePositionCfgFlags (ui8 value)
 {
-	return (sbgcForcePositionCfgFlag_t)(value & 0b11110000);
+	return (sbgcForcePositionCfgFlag_t)(value & 0xF0);
 }
 
 
@@ -818,7 +818,7 @@ typedef enum
  */
 static inline sbgcStepSignalCfgNumber_t ParserSBGC32_GetStepSignalCfgNumber (ui8 value)
 {
-	return (sbgcStepSignalCfgNumber_t)(value & 0b00000111);
+	return (sbgcStepSignalCfgNumber_t)(value & 0x07);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -831,7 +831,7 @@ static inline sbgcStepSignalCfgNumber_t ParserSBGC32_GetStepSignalCfgNumber (ui8
  */
 static inline sbgcStepSignalCfgMode_t ParserSBGC32_GetStepSignalCfgMode (ui8 value)
 {
-	return (sbgcStepSignalCfgMode_t)((value & 0b11000000) >> 6);
+	return (sbgcStepSignalCfgMode_t)((value & 0xC0) >> 6);
 }
 
 /**	@brief	Used as a function of joining
@@ -848,7 +848,7 @@ static inline sbgcStepSignalCfgMode_t ParserSBGC32_GetStepSignalCfgMode (ui8 val
 static inline ui8 ParserSBGC32_PackStepSignalCfg (sbgcStepSignalCfgNumber_t num, sbgcStepSignalCfgMode_t mode,
 												  sbgcStepSignalCfgAdd_t add)
 {
-	return (num & 0b00000111) | ((mode << 6) & 0b11000000) | add;
+	return (num & 0x07) | ((mode << 6) & 0xC0) | add;
 }
 
 
@@ -893,7 +893,7 @@ typedef enum
  */
 static inline sbgcInterruptCfg_t ParserSBGC32_GetInterruptCfg (ui8 value)
 {
-	return (sbgcInterruptCfg_t)(value & 0b01100000);
+	return (sbgcInterruptCfg_t)(value & 0x60);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -906,7 +906,7 @@ static inline sbgcInterruptCfg_t ParserSBGC32_GetInterruptCfg (ui8 value)
  */
 static inline sbgcTriggerPinID_t ParserSBGC32_GetInterruptPinID (ui8 value)
 {
-	return (sbgcTriggerPinID_t)(value & 0b00011111);
+	return (sbgcTriggerPinID_t)(value & 0x0F);
 }
 
 
@@ -1027,7 +1027,7 @@ typedef enum
  */
 static inline sbgcExtraBtnCfg_t ParserSBGC32_GetExtraBtnCfg (ui8 value)
 {
-	return (sbgcExtraBtnCfg_t)(value & 0b11000000);
+	return (sbgcExtraBtnCfg_t)(value & 0xC0);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -1040,7 +1040,7 @@ static inline sbgcExtraBtnCfg_t ParserSBGC32_GetExtraBtnCfg (ui8 value)
  */
 static inline sbgcTriggerPinID_t ParserSBGC32_GetExtraBtnPinID (ui8 value)
 {
-	return (sbgcTriggerPinID_t)(value & 0b00011111);
+	return (sbgcTriggerPinID_t)(value & 0x1F);
 }
 
 

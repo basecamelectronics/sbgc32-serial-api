@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverArduino.cpp
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -63,23 +63,32 @@ void DriverSBGC32_Init__ (void **driver, void *serial, unsigned long serialSpeed
 {
 	unused_(driver);
 	unused_(serial);
-
-	#if defined (ARDUINO_ARCH_ESP32)
 	
-		/* Configure buffers first */
-		SBGC_SERIAL_PORT.setRxBufferSize(SERIAL_RX_BUFFER_SIZE);
-		SBGC_SERIAL_PORT.setTxBufferSize(SERIAL_TX_BUFFER_SIZE);
+	#if (SBGC_DRV_ALREADY_INIT)
+		unused_(serialSpeed);
+	#else
 
-		SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG, SBGC_SERIAL_RX_PIN, SBGC_SERIAL_TX_PIN);
+		#if defined (ARDUINO_ARCH_ESP32)
 
-	#endif
+			/* Configure buffers first */
+			SBGC_SERIAL_PORT.setRxBufferSize(SERIAL_RX_BUFFER_SIZE);
+			SBGC_SERIAL_PORT.setTxBufferSize(SERIAL_TX_BUFFER_SIZE);
 
-	/* Begin hardware serial; allow explicit pins or defaults (-1) */
-	SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG);
+			/* Begin hardware serial with dedicated serial pins */
+			SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG, SBGC_SERIAL_RX_PIN, SBGC_SERIAL_TX_PIN);
 
-	/* Start debug port if available */
-	#if (SBGC_NEED_DEBUG)
-		SBGC_DEBUG_SERIAL_PORT.begin(SBGC_DEBUG_SERIAL_SPEED);
+		#else
+
+			/* Begin hardware serial with default serial pins */
+			SBGC_SERIAL_PORT.begin(serialSpeed, SBGC_SERIAL_CONFIG);
+
+		#endif
+
+		/* Start debug port if available */
+		#if (SBGC_NEED_DEBUG)
+			SBGC_DEBUG_SERIAL_PORT.begin(SBGC_DEBUG_SERIAL_SPEED);
+		#endif
+
 	#endif
 }
 

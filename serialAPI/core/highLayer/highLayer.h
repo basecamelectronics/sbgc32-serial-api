@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		highLayer.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -226,6 +226,19 @@ extern		"C" {
  *	@return	System degree value
  */
 #define		sbgcAngleToDegree(a)	((a) * SBGC_ANGLE_SCALE)
+
+/** @brief	Converts angle value to system degree
+ *			value in high resolution
+ *			(0.00034332275390625 degree)
+ *
+ *	@note	Useful for TX commands with the next fields:\n
+ *			sbgcAxisCE_t.speed
+ *
+ *	@param	a - angle value
+ *
+ *	@return	System degree value
+ */
+#define		sbgcAngleToDegreeHR(a)	((a) * SBGC_ANGLE_SCALE_HI_RES)
 
 /** @brief	Converts system degree value
  *			(0.02197265625 degree) to angle
@@ -751,7 +764,7 @@ typedef enum
  */
 static inline sbgcRC_MapSourceType_t ParserSBGC32_GetRC_SourceType (sbgcRC_MapSource_t RC_Src)
 {
-	return (sbgcRC_MapSourceType_t)(RC_Src & 0b11100000);
+	return (sbgcRC_MapSourceType_t)(RC_Src & 0xE0);
 }
 
 
@@ -817,7 +830,7 @@ typedef enum
  */
 static inline sbgcAHRS_RefSrc_t ParserSBGC32_GetAttitudeRefSrc (ui8 value)
 {
-	return (sbgcAHRS_RefSrc_t)(value & 0b00000111);
+	return (sbgcAHRS_RefSrc_t)(value & 0x07);
 }
 
 /**@brief	Used as a mask to extract the
@@ -832,7 +845,7 @@ static inline sbgcAHRS_RefSrc_t ParserSBGC32_GetAttitudeRefSrc (ui8 value)
  */
 static inline sbgcAHRS_RefSrc_t ParserSBGC32_GetHeaderRefSrc (ui8 value)
 {
-	return (sbgcAHRS_RefSrc_t)((value & 0b00111000) >> 3);
+	return (sbgcAHRS_RefSrc_t)((value & 0x38) >> 3);
 }
 
 
@@ -874,7 +887,7 @@ typedef enum
  */
 static inline sbgcExtIMU_Status_t ParserSBGC32_GetExtIMU_Status (ui8 value)
 {
-	return (sbgcExtIMU_Status_t)(value & 0b00000111);
+	return (sbgcExtIMU_Status_t)(value & 0x07);
 }
 
 
@@ -1338,7 +1351,7 @@ static inline ui8 SerialAPI_GetQueueCommandNumber (sbgcGeneral_t *gSBGC)
  *
  *	@return	serialAPI_General_t.commandTotalCount
  */
-static inline ui8 SerialAPI_GetTotalCommandNumber (sbgcGeneral_t *gSBGC)
+static inline ui32 SerialAPI_GetTotalCommandNumber (sbgcGeneral_t *gSBGC)
 {
 	return gSBGC->_api->commandTotalCount;
 }
@@ -1393,6 +1406,7 @@ static inline sbgcBoolean_t SerialAPI_IsRxEmpty (sbgcGeneral_t *gSBGC)
 #if (SBGC_USES_OS_SUPPORT && SBGC_AUTO_PING_CALLBACK)
 	void SBGC32_AutoPingCallback (void *gSBGC);
 #endif
+sbgcCommandStatus_t SBGC32_GetBoardData (sbgcGeneral_t *gSBGC);
 sbgcCommandStatus_t SBGC32_SetupLibrary (sbgcGeneral_t *gSBGC);
 void SerialAPI_ResetLibrary (sbgcGeneral_t *gSBGC);
 #if (SBGC_NEED_CONFIRM_CMD)

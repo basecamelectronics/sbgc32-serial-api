@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		glueAzureRTOS.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -69,8 +69,8 @@ typedef		TX_MUTEX				sbgcMutex_t;
  */
 #define		SBGC_USES_OS_SUPPORT	sbgcON
 
-#define		sbgcThreadDestroy(pH)	tx_thread_terminate(pH);\
-									tx_thread_delete(pH);
+#define		sbgcThreadDestroy(pH)	do { tx_thread_terminate(pH);\
+									tx_thread_delete(pH); } while (0)
 #define		sbgcThreadSuspend(pH)	tx_thread_suspend(pH)
 #define		sbgcThreadResume(pH)	tx_thread_resume(pH)
 
@@ -100,15 +100,6 @@ typedef		TX_MUTEX				sbgcMutex_t;
 #define		SBGC_THREAD_PRIOR_NORMAL		((int)(TX_MAX_PRIORITIES / 2))
 #define		SBGC_THREAD_PRIOR_HIGH			((int)(TX_MAX_PRIORITIES / 4))
 
-#if (TX_MINIMUM_STACK > 512)
-	#define	SBGC_INIT_THREAD_STACK	TX_MINIMUM_STACK
-#else
-	#define	SBGC_INIT_THREAD_STACK	512
-#endif
-
-#define		SBGC_HANDLER_THREAD_PRIOR		(SBGC_THREAD_PRIOR_NORMAL + 1)
-
-
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *											Warnings
  */
@@ -124,8 +115,13 @@ typedef		TX_MUTEX				sbgcMutex_t;
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-void SystemSBGC32_Init (void *gSBGC);
-void SystemSBGC32_Deinit (void *gSBGC);
+void SystemSBGC32_Init (void *sbgcGeneral);
+void SystemSBGC32_Deinit (void *sbgcGeneral);
+UINT SystemSBGC32_CreateThread (void (*threadEntry)(ULONG), const char * const threadName,
+								ULONG stackSize,
+								ULONG threadArg,
+								UINT priority,
+								TX_THREAD * const createdThread);
 void *SystemSBGC32_Malloc (ui32 size);
 void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle);
 void SystemSBGC32_ResumeThread (sbgcThread_t *threadHandle);

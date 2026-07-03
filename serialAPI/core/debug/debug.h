@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		debug.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -52,6 +52,18 @@ extern		"C" {
 	/**	@addtogroup	Debug
 	 *	@{
 	 */
+	#if (SBGC_LOG_CODE_ERRORS || SBGC_LOG_CODE_WARNINGS || SBGC_LOG_CODE_NOTES)
+	
+		typedef enum
+		{
+			DMT_ERROR					= 0,
+			DMT_WARNING					= 1,
+			DMT_NOTE					= 2
+			
+		}	sbgcDebugMessageType_t;
+
+		void DebugSBGC32_PrintErrorLocation (sbgcGeneral_t *gSBGC, sbgcDebugMessageType_t type, const char *file, ui32 line, const char *str);
+	#endif
 	void DebugSBGC32_PrintMessage (sbgcGeneral_t *gSBGC, const char *str);
 	void DebugSBGC32_PrintBuffer (sbgcGeneral_t *gSBGC, char *data, ui16 length);
 	void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const char *str, sbgcVarType_t vType);

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		glueAzureRTOS.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -50,7 +50,7 @@ extern NORETURN__ sbgcThreadRetval_t SBGC32_HandlerThread (sbgcThreadArg_t threa
 												sizeof(serialAPI_General_t) +\
 												(sizeof(serialAPI_Command_t) * SBGC_MAX_COMMAND_NUM) +\
 												SBGC_TX_BUFF_TOTAL_SIZE + SBGC_RX_BUFF_TOTAL_SIZE +\
-												SBGC_INIT_THREAD_STACK + SBGC_THREAD_STACK_SIZE + 256)
+												SBGC_THREAD_STACK_SIZE + 256)
 												/* May be expanded by user */
 
 
@@ -63,90 +63,141 @@ __ALIGN_BEGIN static UCHAR SBGC32_GeneralBytePoolBuffer [SBGC_AZURE_TX_MEM_POOL_
 /** Static SerialAPI's byte pool handle object */
 static TX_BYTE_POOL SBGC32_GeneralBytePool;
 
-/** SerialAPI's initialization thread handler */
-static TX_THREAD SystemSBGC32_InitThread;
+/** Shows that SerialAPI's byte pool has already been created */
+static sbgcBoolean_t SBGC32_GeneralBytePoolCreated = sbgcFALSE;
+
+/** Shows that SBGC32 handler thread is alive */
+static sbgcBoolean_t SBGC32_HandlerThreadCreated = sbgcFALSE;
+
+/** Stack memory of SBGC32 handler thread */
+static void *SBGC32_HandlerThreadStack = NULL;
+
+/** Shows that SerialAPI's mutex has already been created */
+static sbgcBoolean_t SBGC32_MutexCreated = sbgcFALSE;
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *													Executable Functions
  */
-/**	@brief	SerialAPI initialization thread
+/**	@brief	Prepares and starts handler thread
  *
- *	@note	Private function
- *
- *	@param	threadArg - pointer to sbgcGeneral_t object
- *
- *  @return Initialization finish status
+ *	@param	*sbgcGeneral - pointer to sbgcGeneral_t object
  */
-static sbgcThreadRetval_t SBGC32_InitThread (sbgcThreadArg_t threadArg)
+void SystemSBGC32_Init (void *sbgcGeneral)
 {
-	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)threadArg;
+	retifnull_(sbgcGeneral);
+
+	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)sbgcGeneral;
+
+	if (SBGC32_GeneralBytePoolCreated == sbgcFALSE)
+	{
+		if (tx_byte_pool_create(&SBGC32_GeneralBytePool, "SBGC32 Memory Pool", SBGC32_GeneralBytePoolBuffer,
+								SBGC_AZURE_TX_MEM_POOL_SIZE) != TX_SUCCESS)
+			SerialAPI_FatalErrorHandler();
+
+		SBGC32_GeneralBytePoolCreated = sbgcTRUE;
+	}
 
 	PrivateSBGC32_EnterInit(gSBGC);
+
+	retifnull_(gSBGC->_api);
 
 	#if (SBGC_NEED_ASSERTS)
 
 		if (gSBGC->_api->serialAPI_Status != serialAPI_OK)
 		{
 			/*  - - - - - - User Init Error Handler - - - - - - - */
-			donothing_;
+			SerialAPI_FatalErrorHandler();
 			/*  - - - - - - - - - - - - - - - - - - - - - - - - - */
 		}
 
 		else
-		{
-			/* Starting handler thread */
-			TX_BYTE_POOL *systemSBGC32_HandlerBytePool = (TX_BYTE_POOL*)SystemSBGC32_Malloc(SBGC_THREAD_STACK_SIZE);
-
-			if (systemSBGC32_HandlerBytePool == NULL)
-				SerialAPI_FatalErrorHandler();
-
-			if (tx_thread_create(&gSBGC->_api->threadHandle, "SBGC32 Handler", SBGC32_HandlerThread,
-								 (ui32)(gSBGC), systemSBGC32_HandlerBytePool, SBGC_THREAD_STACK_SIZE,
-								 SBGC_HANDLER_THREAD_PRIOR, 1, TX_NO_TIME_SLICE, TX_AUTO_START) != TX_SUCCESS)
-				SerialAPI_FatalErrorHandler();
-		}
 
 	#endif
-}
 
+		{
+			SystemSBGC32_CreateMutex(&gSBGC->_api->mutexSerialAPI);
 
-/**	@brief	Initializes SerialAPI's byte pool.
- *			Creates initialization thread
- *
- *	@param	*gSBGC - pointer to sbgcGeneral_t object
- */
-void SystemSBGC32_Init (void *gSBGC)
-{
-	if (tx_byte_pool_create(&SBGC32_GeneralBytePool, "SBGC32 Memory Pool", SBGC32_GeneralBytePoolBuffer,
-							SBGC_AZURE_TX_MEM_POOL_SIZE) != TX_SUCCESS)
-		SerialAPI_FatalErrorHandler();
+			api_->busyFlag = sbgcFALSE;
+			api_->threadState = SATS_NORMAL;
 
-	/* Starting init thread */
-	TX_BYTE_POOL *systemSBGC32_InitBytePool = (TX_BYTE_POOL*)SystemSBGC32_Malloc(SBGC_INIT_THREAD_STACK);
+			if (SystemSBGC32_CreateThread(SBGC32_HandlerThread, "SBGC32 Handler", SBGC_THREAD_STACK_SIZE,
+										  (ULONG)gSBGC, SBGC_THREAD_PRIOR, &gSBGC->_api->threadHandle) != TX_SUCCESS)
+				SerialAPI_FatalErrorHandler();
 
-	if (systemSBGC32_InitBytePool == NULL)
-		SerialAPI_FatalErrorHandler();
-
-	if (tx_thread_create(&SystemSBGC32_InitThread, "SBGC32 Init", SBGC32_InitThread,
-						 (ui32)gSBGC, systemSBGC32_InitBytePool, SBGC_INIT_THREAD_STACK,
-						 SBGC_THREAD_PRIOR_HIGH, 1, TX_NO_TIME_SLICE, TX_AUTO_START) != TX_SUCCESS)
-		SerialAPI_FatalErrorHandler();
+			SBGC32_HandlerThreadCreated = sbgcTRUE;
+		}
 }
 
 
 /**	@brief	Removes the SBGC32 handler thread
  *
- *	@param	*gSBGC - pointer to sbgcGeneral_t object
+ *	@param	*sbgcGeneral - pointer to sbgcGeneral_t object
  */
-void SystemSBGC32_Deinit (void *gSBGC)
+void SystemSBGC32_Deinit (void *sbgcGeneral)
 {
-	sbgcGeneral_t *sbgcGeneral = (sbgcGeneral_t*)gSBGC;
+	retifnull_(sbgcGeneral);
 
-	tx_byte_pool_delete(&SBGC32_GeneralBytePool);
+	sbgcGeneral_t *gSBGC = (sbgcGeneral_t*)sbgcGeneral;
 
-	sbgcThreadDestroy(&SystemSBGC32_InitThread);
-	sbgcThreadDestroy(&sbgcGeneral->_api->threadHandle);
+	retifnull_(gSBGC->_api);
+
+	if (SBGC32_HandlerThreadCreated)
+	{
+		sbgcThreadDestroy(&gSBGC->_api->threadHandle);
+		SBGC32_HandlerThreadCreated = sbgcFALSE;
+	}
+
+	if (SBGC32_HandlerThreadStack)
+	{
+		sbgcFree(SBGC32_HandlerThreadStack);
+		SBGC32_HandlerThreadStack = NULL;
+	}
+
+	if (SBGC32_MutexCreated)
+	{
+		sbgcDestroyMutex(&gSBGC->_api->mutexSerialAPI);
+		SBGC32_MutexCreated = sbgcFALSE;
+	}
+}
+
+
+/**	@brief	Creates new SBGC32 thread
+ *
+ *	@param	threadEntry - pointer to the task entry function
+ *	@param	*threadName - a descriptive name for the task
+ *	@param	stackSize - size of the task stack
+ *	@param	threadArg - parameter for the task
+ *	@param	priority - priority at which the task should run
+ *	@param	*createdThread - reference handle for created task
+ *
+ *	@return	Thread creation status
+ */
+UINT SystemSBGC32_CreateThread (void (*threadEntry)(ULONG), const char * const threadName,
+								ULONG stackSize,
+								ULONG threadArg,
+								UINT priority,
+								TX_THREAD * const createdThread)
+{
+	if ((threadEntry == NULL) || (createdThread == NULL) || (stackSize == 0))
+		return TX_PTR_ERROR;
+
+	SBGC32_HandlerThreadStack = SystemSBGC32_Malloc(stackSize);
+
+	if (SBGC32_HandlerThreadStack == NULL)
+		return TX_PTR_ERROR;
+
+	UINT threadCreateStatus = tx_thread_create(createdThread, (CHAR*)threadName, threadEntry,
+											  threadArg, SBGC32_HandlerThreadStack, stackSize,
+											  priority, priority, TX_NO_TIME_SLICE, TX_AUTO_START);
+
+	if (threadCreateStatus != TX_SUCCESS)
+	{
+		sbgcFree(SBGC32_HandlerThreadStack);
+		SBGC32_HandlerThreadStack = NULL;
+	}
+
+	return threadCreateStatus;
 }
 
 
@@ -175,6 +226,8 @@ void *SystemSBGC32_Malloc (ui32 size)
  */
 void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle)
 {
+	retifnull_(threadHandle)
+
 	sbgcThreadSuspend(threadHandle);
 }
 
@@ -185,8 +238,9 @@ void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle)
  */
 void SystemSBGC32_ResumeThread (sbgcThread_t *threadHandle)
 {
+	retifnull_(threadHandle)
+
 	sbgcThreadResume(threadHandle);
-	sbgcYield();
 }
 
 
@@ -204,7 +258,12 @@ void SystemSBGC32_Yield (void)
  */
 void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex)
 {
-	sbgcCreateMutex(mutex);
+	retifnull_(mutex)
+
+	if (sbgcCreateMutex(mutex) != TX_SUCCESS)
+		SerialAPI_FatalErrorHandler();
+
+	SBGC32_MutexCreated = sbgcTRUE;
 }
 
 
@@ -214,6 +273,8 @@ void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex)
  */
 void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex)
 {
+	retifnull_(mutex)
+
 	sbgcDestroyMutex(mutex);
 }
 
@@ -224,6 +285,8 @@ void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex)
  */
 void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex)
 {
+	retifnull_(mutex)
+
 	sbgcTakeMutex(mutex, TX_WAIT_FOREVER);
 }
 
@@ -234,6 +297,8 @@ void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex)
  */
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex)
 {
+	retifnull_(mutex)
+
 	sbgcGiveMutex(mutex);
 }
 
@@ -245,7 +310,11 @@ void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex)
  */
 void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior)
 {
-	sbgcSetPrior(threadHandle, newPrior, &threadHandle->tx_thread_user_priority);
+	retifnull_(threadHandle)
+
+	UINT oldPriority;
+
+	sbgcSetPrior(threadHandle, newPrior, &oldPriority);
 }
 /**	@}
  */

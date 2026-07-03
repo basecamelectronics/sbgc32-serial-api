@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverLinux.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -61,30 +61,36 @@ void DriverSBGC32_Init (void **driver, const char *dev, unsigned long serialSpee
 
 	drv->devFD = open(drv->device, O_RDWR | O_NOCTTY | O_NDELAY);
 
-	if (drv->devFD == -1)
-	{
-		char errorStr [] = "Device not found!\n";
-		DriverSBGC32_PrintDebugData(errorStr, strlen(errorStr));
-		SerialAPI_FatalErrorHandler();
-	}
+	#if (SBGC_DRV_ALREADY_INIT)
+		unused_(serialSpeed);
+	#else
 
-	struct termios portConfigurations;
+		if (drv->devFD == -1)
+		{
+			char errorStr [] = "Device not found!\n";
+			DriverSBGC32_PrintDebugData(errorStr, strlen(errorStr));
+			SerialAPI_FatalErrorHandler();
+		}
 
-	tcgetattr(drv->devFD, &portConfigurations);
+		struct termios portConfigurations;
 
-	cfsetispeed(&portConfigurations, serialSpeed);
-	cfsetospeed(&portConfigurations, serialSpeed);
+		tcgetattr(drv->devFD, &portConfigurations);
 
-	portConfigurations.c_cflag &= ~(PARENB | PARODD | CSTOPB | CRTSCTS);
-	portConfigurations.c_cflag |= CS8 | CREAD | CLOCAL;
+		cfsetispeed(&portConfigurations, serialSpeed);
+		cfsetospeed(&portConfigurations, serialSpeed);
 
-	portConfigurations.c_iflag &= ~(IXON | IXOFF | IXANY | ICRNL);
+		portConfigurations.c_cflag &= ~(PARENB | PARODD | CSTOPB | CRTSCTS);
+		portConfigurations.c_cflag |= CS8 | CREAD | CLOCAL;
 
-	portConfigurations.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+		portConfigurations.c_iflag &= ~(IXON | IXOFF | IXANY | ICRNL);
 
-	portConfigurations.c_oflag &= ~OPOST;
+		portConfigurations.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
 
-	tcsetattr(drv->devFD, TCSANOW, &portConfigurations);
+		portConfigurations.c_oflag &= ~OPOST;
+
+		tcsetattr(drv->devFD, TCSANOW, &portConfigurations);
+
+	#endif
 }
 
 

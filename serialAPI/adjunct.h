@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		adjunct.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -41,6 +41,7 @@ extern		"C" {
 #include	"stdint.h"
 #include	"stdio.h"
 #include	"stdlib.h"
+#include	"limits.h"
 #include	"math.h"
 #include	"stdarg.h"
 
@@ -48,22 +49,47 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Types and Constants
  */
-#if	(defined (__x86_64__) ||defined (__aarch64__) || defined (_M_ARM64))
-	#define	_long__
-	#define	L32__
-#else
-	#define	_long__					long
-#endif
-
 typedef		unsigned char			ui8;
 typedef		unsigned short			ui16;
-typedef		_long__ unsigned int	ui32;
-typedef		long long unsigned int	ui64;
+
+#ifdef __UINT32_TYPE__
+	typedef __UINT32_TYPE__
+#elif (UINT_MAX == 0xFFFFFFFFU)
+	typedef	unsigned int
+#elif (ULONG_MAX == 0xFFFFFFFFUL)
+	typedef unsigned long
+#else
+	#error "No 32-bit unsigned type found"
+#endif
+									ui32;
+
+#ifdef __UINT64_TYPE__
+	typedef __UINT64_TYPE__
+#elif (ULLONG_MAX == 0xFFFFFFFFFFFFFFFFULL)
+	typedef unsigned long long		
+#endif
+									ui64;
 
 typedef		signed char				i8;
-typedef		short signed int		i16;
-typedef		_long__ signed int		i32;
-typedef		long long signed int	i64;
+typedef		short					i16;
+
+#ifdef __INT32_TYPE__
+	typedef __INT32_TYPE__			
+#elif (INT_MAX == 0x7FFFFFFF)
+	typedef	int						
+#elif (LONG_MAX == 0x7FFFFFFF)
+	typedef	long					
+#else
+	#error "No 32-bit signed type found"
+#endif
+									i32;
+
+#ifdef __INT64_TYPE__
+	typedef __INT64_TYPE__			
+#elif (LLONG_MAX == 0x7FFFFFFFFFFFFFFFLL)
+	typedef	long long				
+#endif
+									i64;
 
 #ifndef sbgcOFF
 	#define	sbgcOFF					(0)
@@ -114,6 +140,8 @@ typedef		long long signed int	i64;
 #define		PACKED__				__attribute__((packed))
 #define		WEAK__					__attribute__((weak))
 #define		NORETURN__				__attribute__((noreturn))
+#define		DEPRECATED__			__attribute__((deprecated))
+#define		FALLTHROUGH__			__attribute__((fallthrough))
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -152,7 +180,7 @@ typedef enum
 
 }   sbgcVarType_t;
 
-#define		CLEAN_TYPE_MASK			7				// Excluding all under sbgcFLOAT (0b00000111)
+#define		SBGC_CLEAN_TYPE_MASK	0x07			// Excluding all under sbgcFLOAT
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -160,13 +188,14 @@ typedef enum
  */
 #define		unused_(x)				((void)(x))
 #define		donothing_				(void)(1)
+#define		retifnull_(ptr)			if (ptr == NULL) return;
 #define		nameof_(var)			#var
 #define		countof_(arr)			(sizeof(arr) / sizeof(*(arr)))
 #define		offsetof_(pEnd, pStart)	(((ui8*)(pEnd)) - ((ui8*)(pStart)))
 #define		clearbuff_(p)			(memset(p, 0, sizeof(*(p))))
 #define		constrain_(x, min, max)	((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
-#define		constrainmin_(x, min)	(((x) < (min)) ? (min) : (x))
-#define		constrainmax_(x, max)	(((x) > (max)) ? (max) : (x))
+#define		constrainmin_(x, min)	((x) > (min) ? (min) : (x))
+#define		constrainmax_(x, max)	((x) < (max) ? (max) : (x))
 
 #define		rawconstrain_(val, min, max, raw)\
 									(((val) <= (min)) || ((val) >= (max)) ? (raw) : (val))

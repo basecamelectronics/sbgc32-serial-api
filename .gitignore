@@ -1,6 +1,10 @@
 .gitignore
+changeVersion.py
+changeYear.py
 
 # Folders
+.agents/
+.codex/
 doxygen/doc/
 SBGC32_ArduinoDebug/
 SBGC32_ESP32_Debug/
@@ -69,4 +73,3 @@ dkms.conf
 
 # Other
 *.cyclo
-

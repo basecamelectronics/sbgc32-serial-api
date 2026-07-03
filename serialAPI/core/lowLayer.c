@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		lowLayer.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -172,7 +172,7 @@ static void SBGC32_TX (sbgcGeneral_t *gSBGC)
 	memcpy(&dataBuff[4], gSBGC->_api->currentSerialCommand->_payload, gSBGC->_api->currentSerialCommand->_payloadSize);
 
 	/* ui8 size = real size current gSBGC->_api->currentSerialCommand */
-	ui8 size = gSBGC->_api->currentSerialCommand->_payloadSize + SBGC_SERVICE_BYTES_NUM;
+	ui16 size = gSBGC->_api->currentSerialCommand->_payloadSize + SBGC_SERVICE_BYTES_NUM;
 
 	#if (SBGC_PROTOCOL_VERSION == 1)
 
@@ -237,24 +237,11 @@ static void SBGC32_TX (sbgcGeneral_t *gSBGC)
 static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 {
 	/* Parser initializing */
-	static ui8 headBuff [3];  /* Header buffer:
-	headBuff[0] is command ID || headBuff[1] is payload size || headBuff[2] is header checksum */
-
 	ui8 startSymSample = (SBGC_PROTOCOL_VERSION - 1) ? SBGC_P2_START_CHARACTER : SBGC_P1_START_CHARACTER;
 	ui16 availableBytes;
 
-	static enum ParserState
-	{
-		STATE_IDLE = 0,
-		STATE_RESYNC,
-		STATE_CHECK_HEADER,
-		STATE_CHECK_PAYLOAD
-		// Next - a command received OK
-
-	}	parserState = STATE_IDLE;
-
 	/* Start parse */
-	switch (parserState)
+	switch (gSBGC->_ll->parserState)
 	{
 		/* Waiting start byte */
 		case STATE_IDLE :
@@ -281,7 +268,7 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 				break;
 			}
 
-			parserState = STATE_CHECK_HEADER;
+			gSBGC->_ll->parserState = STATE_CHECK_HEADER;
 			/* Passing to the next state */
 		}
 
@@ -292,7 +279,7 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 
 			if ((availableBytes >= 3) && (availableBytes != SBGC_RX_BUFFER_OVERFLOW_FLAG))
 				for (ui8 i = 0; i < 3; i++)
-					gSBGC->_ll->drvRx(gSBGC->_ll->drv, &headBuff[i]);
+					gSBGC->_ll->drvRx(gSBGC->_ll->drv, &gSBGC->_ll->headBuff[i]);
 
 			else
 			/* The parser could not read the next 3 header bytes. Try again in the next time */
@@ -301,16 +288,16 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 				break;
 			}
 
-			if (((headBuff[0] + headBuff[1]) % 256 != headBuff[2]) ||
-				(headBuff[0] == 0))
+			if (((gSBGC->_ll->headBuff[0] + gSBGC->_ll->headBuff[1]) % 256 != gSBGC->_ll->headBuff[2]) ||
+				(gSBGC->_ll->headBuff[0] == 0))
 			/* The header checksum is wrong. Break this command and look forward for a new command */
 			{
 				gSBGC->_lastSerialCommandStatus = serialAPI_RX_HEADER_CHECKSUM_ERROR;
-				parserState = STATE_RESYNC;
+				gSBGC->_ll->parserState = STATE_RESYNC;
 				break;
 			}
 
-			parserState = STATE_CHECK_PAYLOAD;
+			gSBGC->_ll->parserState = STATE_CHECK_PAYLOAD;
 			/* Passing to the next state */
 		}
 
@@ -318,12 +305,12 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 		case STATE_CHECK_PAYLOAD :
 		{
 			ui8 checksumSize = SBGC_PROTOCOL_VERSION;
-			ui8 complexBuff [sizeof(headBuff) + headBuff[1] + checksumSize];  // (Header + payloadSize + checksum) buffer
+			ui8 complexBuff [sizeof(gSBGC->_ll->headBuff) + gSBGC->_ll->headBuff[1] + checksumSize];  // (Header + payloadSize + checksum) buffer
 
 			availableBytes = gSBGC->_ll->drvAvailableBytes(gSBGC->_ll->drv);
 
-			if ((availableBytes >= (headBuff[1] + checksumSize)) && (availableBytes != SBGC_RX_BUFFER_OVERFLOW_FLAG))
-				for (ui8 i = 0; i < (headBuff[1] + checksumSize); i++)
+			if ((availableBytes >= (gSBGC->_ll->headBuff[1] + checksumSize)) && (availableBytes != SBGC_RX_BUFFER_OVERFLOW_FLAG))
+				for (ui8 i = 0; i < (gSBGC->_ll->headBuff[1] + checksumSize); i++)
 					gSBGC->_ll->drvRx(gSBGC->_ll->drv, &complexBuff[i + 3]);  // Offset from header space
 
 			else
@@ -336,7 +323,7 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 			/* Checksum checking */
 			#if (SBGC_PROTOCOL_VERSION == 1)  // V.1
 
-				if (complexBuff[3 + headBuff[1]] != SerialAPI_Modulo256_Calculate(&complexBuff[3], headBuff[1]))
+				if (complexBuff[3 + gSBGC->_ll->headBuff[1]] != SerialAPI_Modulo256_Calculate(&complexBuff[3], gSBGC->_ll->headBuff[1]))
 				/* The command came corrupted. Break it, look forward for a new command */
 				{
 					gSBGC->_lastSerialCommandStatus = serialAPI_RX_PAYLOAD_CHECKSUM_ERROR;
@@ -346,15 +333,15 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 
 			#else  // V.2
 
-				memcpy(complexBuff, headBuff, 3);
-				ui16 CRC_Res = SerialAPI_CRC16_Calculate(complexBuff, headBuff[1] + 3);
+				memcpy(complexBuff, gSBGC->_ll->headBuff, 3);
+				ui16 CRC_Res = SerialAPI_CRC16_Calculate(complexBuff, gSBGC->_ll->headBuff[1] + 3);
 
-				if (((CRC_Res & 0x00FF) != complexBuff[3 + headBuff[1]]) &&
-				   (((CRC_Res >> 8) & 0x00FF) != complexBuff[3 + headBuff[1] + 1]))
+				if (((CRC_Res & 0x00FF) != complexBuff[3 + gSBGC->_ll->headBuff[1]]) ||
+				   (((CRC_Res >> 8) & 0x00FF) != complexBuff[3 + gSBGC->_ll->headBuff[1] + 1]))
 				/* The command came corrupted. Break it, look forward for a new command */
 				{
 					gSBGC->_lastSerialCommandStatus = serialAPI_RX_PAYLOAD_CHECKSUM_ERROR;
-					parserState = STATE_RESYNC;
+					gSBGC->_ll->parserState = STATE_RESYNC;
 					break;
 				}
 
@@ -362,21 +349,21 @@ static void SBGC32_RX (sbgcGeneral_t *gSBGC)
 
 			#if (SBGC_NEED_CONFIRM_CMD == sbgcOFF)
 
-				if (((serialAPI_CommandID_t)headBuff[0] == CMD_CONFIRM) || ((serialAPI_CommandID_t)headBuff[0] == CMD_ERROR))
+				if (((serialAPI_CommandID_t)gSBGC->_ll->headBuff[0] == CMD_CONFIRM) || ((serialAPI_CommandID_t)gSBGC->_ll->headBuff[0] == CMD_ERROR))
 				/* The command is CMD_CONFIRM or CMD_ERROR. Break it, look forward for a new command */
 				{
 					gSBGC->_lastSerialCommandStatus = serialAPI_RX_REJECTED_CONFIRM_CMD;
-					parserState = STATE_IDLE;
+					gSBGC->_ll->parserState = STATE_IDLE;
 					break;
 				}
 
 			#endif
 
 			/* Data passed all checks. Fill the new serialCommand struct */
-			gSBGC->_api->saveCmd(gSBGC, (serialAPI_CommandID_t)headBuff[0], headBuff[1], &complexBuff[3]);
+			gSBGC->_api->saveCmd(gSBGC, (serialAPI_CommandID_t)gSBGC->_ll->headBuff[0], gSBGC->_ll->headBuff[1], &complexBuff[3]);
 
 			/* Prepare parser for new reading */
-			parserState = STATE_IDLE;
+			gSBGC->_ll->parserState = STATE_IDLE;
 
 			gSBGC->_lastSerialCommandStatus = serialAPI_TX_RX_OK;
 			return;

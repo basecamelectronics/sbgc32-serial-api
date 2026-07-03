@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		parser.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -57,7 +57,7 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 {
 	ui8 res = 0;
 
-	switch (varType & CLEAN_TYPE_MASK)
+	switch (varType & SBGC_CLEAN_TYPE_MASK)
 	{
 		case sbgcUCHAR :
 		case sbgcCHAR :
@@ -485,6 +485,7 @@ ui8 ParserSBGC32_ConvertCommunicationStatusToString (sbgcCommandStatus_t communi
 		case sbgcCOMMAND_QUEUE_IS_EMPTY :			memcpy(str, TEXT_LENGTH_("COMMAND_QUEUE_IS_EMPTY")); break;
 		case sbgcCOMMAND_TX_ERROR :					memcpy(str, TEXT_LENGTH_("COMMAND_TX_ERROR")); break;
 		case sbgcCOMMAND_RX_ERROR :					memcpy(str, TEXT_LENGTH_("COMMAND_RX_ERROR")); break;
+		case sbgcCOMMAND_FAILED_TO_ALLOCATE_MEMORY :memcpy(str, TEXT_LENGTH_("COMMAND_FAILED_TO_ALLOCATE_MEMORY")); break;
 		case sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE :memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_BY_FIRMWARE")); break;
 		case sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE :memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_BY_HARDWARE")); break;
 		case sbgcCOMMAND_NOT_SUPPORTED_FEATURE :	memcpy(str, TEXT_LENGTH_("COMMAND_NOT_SUPPORTED_FEATURE")); break;

@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		commandBuild.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -394,6 +394,8 @@ static void SerialAPI_RegisterCommand (sbgcGeneral_t *gSBGC, serialAPI_CommandID
 		{
 			case CMD_EXECUTE_MENU :
 			case CMD_CONTROL /* CMD_CONFIRM also */ :
+			case CMD_SET_ADJ_VARS_VAL :
+			case CMD_GET_ADJ_VARS_VAL :
 				break;
 
 			default :

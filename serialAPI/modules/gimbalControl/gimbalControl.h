@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		gimbalControl.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -165,7 +165,7 @@ typedef enum
  */
 static inline sbgcControlMode_t ParserSBGC32_GetControlMode (ui8 value)
 {
-	return (sbgcControlMode_t)(value & 0b00001111);
+	return (sbgcControlMode_t)(value & 0x0F);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -178,7 +178,7 @@ static inline sbgcControlMode_t ParserSBGC32_GetControlMode (ui8 value)
  */
 static inline sbgcControlFlag_t ParserSBGC32_GetControlFlag (ui8 value)
 {
-	return (sbgcControlFlag_t)(value & 0b11110000);
+	return (sbgcControlFlag_t)(value & 0xF0);
 }
 
 
@@ -199,7 +199,7 @@ typedef enum
 	CEDS_YAW_SPEED					= BIT_10_SET,	/*!<  SPEED parameter is given for YAW axis											*/
 	CEDS_YAW_ANGLE					= BIT_11_SET,	/*!<  ANGLE parameter is given for YAW axis											*/
 	CEDS_YAW_ANGLE_INC_RES			= BIT_12_SET,	/*!<  4 bytes ANGLE with increased resolution for YAW axis							*/
-	CEDS_YAW_SPEED_INC_RES			= BIT_13_SET,	/*!<  4 bytes SPEED with increased resolution for YAW axis							*/
+	CEDS_YAW_SPEED_INC_RES			= BIT_13_SET	/*!<  4 bytes SPEED with increased resolution for YAW axis							*/
 
 }	sbgcControlExtDataSet_t;
 
@@ -384,8 +384,13 @@ typedef struct PACKED__
 														  Otherwise, it is 16bit signed value with resolution 0.1220740379 degrees/sec.
 														  Use the @ref sbgcSpeedToValue or the @ref sbgcSpeedToValueHR
 														  macros to comfortable work with this field.									*/
-	i32		angle;									/*!<  Units: 0.02197265625 degree. Use the @ref sbgcAngleToDegree macro
-														  to comfortable work with this field											*/
+	i32		angle;									/*!<  Units: 0.02197265625 degree or
+														  Units: 0.00034332275390625 degree. If CEDS_x_ANGLE_INC_RES in
+														  sbgcControlExt_t.dataSet is set, ANGLE is encoded as 32-bit signed
+														  value with the resolution 20 bits per turn. Otherwise, it's 16-bit
+														  signed value with the resolution 14 bits per turnUse the
+														  @ref sbgcAngleToDegree or the @ref sbgcAngleToDegreeHR
+														  macro to comfortable work with this field										*/
 
 }	sbgcAxisCE_t;
 

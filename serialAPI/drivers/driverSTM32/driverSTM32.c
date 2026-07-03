@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverSTM32.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -559,7 +559,7 @@
 			extern sbgcGeneral_t SBGC_GENERAL_DEVICE;
 
 			/* Main Timer Interrupt Flags Check */
-			sbgcTimerIRQ_Handler(&SBGC32_Device);
+			sbgcTimerIRQ_Handler(&SBGC_GENERAL_DEVICE);
 
 			#if (SBGC_DRV_HAL_TIMER)
 				HAL_TIM_IRQHandler(SBGC_REFERENCE_TIMER);
@@ -572,7 +572,7 @@
 	{
 		extern sbgcGeneral_t SBGC_GENERAL_DEVICE;
 
-		sbgcUART_IRQ_Handler(&SBGC32_Device);
+		sbgcUART_IRQ_Handler(&SBGC_GENERAL_DEVICE);
 
 		#if (SBGC_DRV_HAL_DMA_UART) || (SBGC_DRV_HAL_NVIC_UART)
 			HAL_UART_IRQHandler(SBGC_SERIAL_PORT);
@@ -585,10 +585,10 @@
 		{
 			extern sbgcGeneral_t SBGC_GENERAL_DEVICE;
 
-			sbgcUART_DMA_TX_IRQ_Handler(&SBGC32_Device);
+			sbgcUART_DMA_TX_IRQ_Handler(&SBGC_GENERAL_DEVICE);
 
 			#if (SBGC_DRV_HAL_DMA_UART)
-				HAL_DMA_IRQHandler(&((sbgcDriver_t*)(SBGC32_Device._ll->drv))->hdmaTx);
+				HAL_DMA_IRQHandler(&((sbgcDriver_t*)(SBGC_GENERAL_DEVICE._ll->drv))->hdmaTx);
 			#endif
 		}
 
@@ -596,7 +596,7 @@
 		{
 			extern sbgcGeneral_t SBGC_GENERAL_DEVICE;
 
-			sbgcUART_DMA_RX_IRQ_Handler(&SBGC32_General);
+			sbgcUART_DMA_RX_IRQ_Handler(&SBGC_GENERAL_DEVICE);
 
 			#if (SBGC_DRV_HAL_DMA_UART)
 				HAL_DMA_IRQHandler(&((sbgcDriver_t*)(SBGC32_Device._ll->drv))->hdmaRx);
@@ -728,7 +728,7 @@ static void DriverSBGC32_PeripheryDeinit (sbgcDriver_t *driver)
  */
 #if (SBGC_STM32_CUSTOM_DRV == sbgcOFF)
 
-	void DriverSBGC32_MX_Init (void)
+	WEAK__ void DriverSBGC32_MX_Init (void)
 	{
 		donothing_;
 
@@ -766,94 +766,100 @@ void DriverSBGC32_Init (void **driver, void *serial, unsigned long serialSpeed)
 
 	#endif
 
-    /* UART */
-	drv->uart = (SBGC_DRV_UART_TYPE_DEF__*)serial;
-
-	if (drv->uart->Init.BaudRate != serialSpeed)
-	{
-		drv->uart->Init.BaudRate = serialSpeed;
-
-		#if (SBGC_DRV_CONFIGURED && (SBGC_DRV_HAL_DMA_UART || SBGC_DRV_HAL_NVIC_UART))
-			HAL_UART_Init(drv->uart);
-		#elif ((SBGC_DRV_CONFIGURED && (SBGC_DRV_LL_DMA_UART || SBGC_DRV_LL_NVIC_UART)))
-			LL_USART_SetBaudRate(drv->uart, SystemCoreClock, LL_USART_OVERSAMPLING_16, drv->uart->Init.BaudRate);
-		#endif
-	}
-
-	#if (SBGC_DRV_USE_UART_DEBUG && (SBGC_STM32_CUSTOM_DRV))
-		drv->debugUart = SBGC_DEBUG_SERIAL_PORT;
-	#endif
-
-	#if (SBGC_STM32_CUSTOM_DRV)
-
-		DriverSBGC32_SetPeripheryClock();
-
-		DriverSBGC32_UART_PinDeterminate(drv);
-		DriverSBGC32_UART_PeriphDeterminate(drv);
-
-		DriverSBGC32_PeripheryInit(drv);
-
-	#endif
-
 	drv->txBuffer = (ui8*)sbgcMalloc(SBGC_DRV_TX_BUFF_TOTAL_SIZE);
 	drv->rxBuffer = (ui8*)sbgcMalloc(SBGC_DRV_RX_BUFF_TOTAL_SIZE);
 
-	DriverSBGC32_ClearTxBuff(drv);
-	DriverSBGC32_ClearRxBuff(drv);
+	/* UART */
+	drv->uart = (SBGC_DRV_UART_TYPE_DEF__*)serial;
 
-	#if (SBGC_DRV_HAL_NVIC_UART || SBGC_DRV_LL_NVIC_UART)
-		/* UART Interrupts executable code */
-		DISABLE_UART_CR1_TCIE(drv->uart);
-		ENABLE_UART_CR1_RXNEIE(drv->uart);
-		DISABLE_UART_CR1_IDLEIE(drv->uart);
+	#if (SBGC_DRV_ALREADY_INIT)
+		unused_(serialSpeed);
+	#else
 
-		(void)READ_UART_BYTE(drv->uart);
-		CLEAR_UART_ORE(drv->uart);
+		if (drv->uart->Init.BaudRate != serialSpeed)
+		{
+			drv->uart->Init.BaudRate = serialSpeed;
 
-	#elif (SBGC_DRV_HAL_DMA_UART)
-		/* UART HAL DMA executable code */
-		HAL_UART_Receive_DMA(drv->uart, drv->rxBuffer, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
+			#if (SBGC_DRV_CONFIGURED && (SBGC_DRV_HAL_DMA_UART || SBGC_DRV_HAL_NVIC_UART))
+				HAL_UART_Init(drv->uart);
+			#elif ((SBGC_DRV_CONFIGURED && (SBGC_DRV_LL_DMA_UART || SBGC_DRV_LL_NVIC_UART)))
+				LL_USART_SetBaudRate(drv->uart, SystemCoreClock, LL_USART_OVERSAMPLING_16, drv->uart->Init.BaudRate);
+			#endif
+		}
 
-	#elif (SBGC_DRV_LL_DMA_UART)
-		/* UART LL DMA executable code */
-		/* Tx Init */
-		LL_USART_EnableDMAReq_TX(SBGC_SERIAL_PORT);
-		LL_DMA_EnableIT_TC(SBGC_UART_DMA, SBGC_UART_DMA_TX);
+		#if (SBGC_DRV_USE_UART_DEBUG && (SBGC_STM32_CUSTOM_DRV))
+			drv->debugUart = SBGC_DEBUG_SERIAL_PORT;
+		#endif
 
-		LL_DMA_ConfigAddresses(SBGC_UART_DMA, SBGC_UART_DMA_TX,
-							   (ui32)drv->txBuffer,
-							   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_TRANSMIT),
-							   LL_DMA_GetDataTransferDirection(SBGC_UART_DMA, SBGC_UART_DMA_TX));
+		#if (SBGC_STM32_CUSTOM_DRV)
 
-		SBGC_CLEAR_DMA_TC_TX(SBGC_UART_DMA);
+			DriverSBGC32_SetPeripheryClock();
 
-		/* Rx Init */
-		LL_USART_EnableDMAReq_RX(SBGC_SERIAL_PORT);
-		LL_DMA_EnableIT_TC(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+			DriverSBGC32_UART_PinDeterminate(drv);
+			DriverSBGC32_UART_PeriphDeterminate(drv);
 
-		LL_DMA_ConfigAddresses(SBGC_UART_DMA, SBGC_UART_DMA_RX,
-							   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_RECEIVE),
-							   (ui32)drv->rxBuffer,
-							   LL_DMA_GetDataTransferDirection(SBGC_UART_DMA, SBGC_UART_DMA_RX));
-
-		#ifdef LL_DMA_STREAM_0
-
-			LL_DMA_DisableStream(SBGC_UART_DMA, SBGC_UART_DMA_RX);
-			LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_RX, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
-			LL_DMA_EnableStream(SBGC_UART_DMA, SBGC_UART_DMA_RX);
-
-		#else
-
-			LL_DMA_DisableChannel(SBGC_UART_DMA, SBGC_UART_DMA_RX);
-			LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_RX, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
-			LL_DMA_EnableChannel(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+			DriverSBGC32_PeripheryInit(drv);
 
 		#endif
 
-	#endif
+		DriverSBGC32_ClearTxBuff(drv);
+		DriverSBGC32_ClearRxBuff(drv);
 
-	#if (SBGC_DRV_HAL_TIMER || SBGC_DRV_LL_TIMER)
-		START_TIMER(drv->tim);
+		#if (SBGC_DRV_HAL_NVIC_UART || SBGC_DRV_LL_NVIC_UART)
+			/* UART Interrupts executable code */
+			DISABLE_UART_CR1_TCIE(drv->uart);
+			ENABLE_UART_CR1_RXNEIE(drv->uart);
+			DISABLE_UART_CR1_IDLEIE(drv->uart);
+
+			(void)READ_UART_BYTE(drv->uart);
+			CLEAR_UART_ORE(drv->uart);
+
+		#elif (SBGC_DRV_HAL_DMA_UART)
+			/* UART HAL DMA executable code */
+			HAL_UART_Receive_DMA(drv->uart, drv->rxBuffer, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
+
+		#elif (SBGC_DRV_LL_DMA_UART)
+			/* UART LL DMA executable code */
+			/* Tx Init */
+			LL_USART_EnableDMAReq_TX(SBGC_SERIAL_PORT);
+			LL_DMA_EnableIT_TC(SBGC_UART_DMA, SBGC_UART_DMA_TX);
+
+			LL_DMA_ConfigAddresses(SBGC_UART_DMA, SBGC_UART_DMA_TX,
+								   (ui32)drv->txBuffer,
+								   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_TRANSMIT),
+								   LL_DMA_GetDataTransferDirection(SBGC_UART_DMA, SBGC_UART_DMA_TX));
+
+			SBGC_CLEAR_DMA_TC_TX(SBGC_UART_DMA);
+
+			/* Rx Init */
+			LL_USART_EnableDMAReq_RX(SBGC_SERIAL_PORT);
+			LL_DMA_EnableIT_TC(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+
+			LL_DMA_ConfigAddresses(SBGC_UART_DMA, SBGC_UART_DMA_RX,
+								   LL_USART_DMA_GetRegAddr(SBGC_SERIAL_PORT, LL_USART_DMA_REG_DATA_RECEIVE),
+								   (ui32)drv->rxBuffer,
+								   LL_DMA_GetDataTransferDirection(SBGC_UART_DMA, SBGC_UART_DMA_RX));
+
+			#ifdef LL_DMA_STREAM_0
+
+				LL_DMA_DisableStream(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_RX, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
+				LL_DMA_EnableStream(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+
+			#else
+
+				LL_DMA_DisableChannel(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_RX, SBGC_DRV_RX_BUFF_TOTAL_SIZE);
+				LL_DMA_EnableChannel(SBGC_UART_DMA, SBGC_UART_DMA_RX);
+
+			#endif
+
+		#endif
+
+		#if (SBGC_DRV_HAL_TIMER || SBGC_DRV_LL_TIMER)
+			START_TIMER(drv->tim);
+		#endif
+
 	#endif
 }
 
@@ -866,10 +872,6 @@ void DriverSBGC32_Deinit (void **driver)
 {
 	sbgcDriver_t *drv = (sbgcDriver_t*)(*driver);
 
-	#if (SBGC_STM32_CUSTOM_DRV)
-		DriverSBGC32_ResetPeripheryClock();
-	#endif
-
 	DriverSBGC32_ClearTxBuff(drv);
 	DriverSBGC32_ClearRxBuff(drv);
 
@@ -881,7 +883,9 @@ void DriverSBGC32_Deinit (void **driver)
 
 	sbgcFree(*driver);
 
-	#if (SBGC_STM32_CUSTOM_DRV == sbgcOFF)
+	#if (SBGC_STM32_CUSTOM_DRV)
+		DriverSBGC32_ResetPeripheryClock();
+	#else
 
 		/* Return to the initial point */
 		DriverSBGC32_MX_Init();
@@ -1032,13 +1036,13 @@ ui8 DriverSBGC32_TransmitData (void *driver, ui8 *data, ui16 size)
 			#ifdef LL_DMA_STREAM_0
 
 				LL_DMA_DisableStream(SBGC_UART_DMA, SBGC_UART_DMA_TX);
-				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_TX, SBGC_DRV_TX_BUFF_TOTAL_SIZE);
+				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_TX, size);
 				LL_DMA_EnableStream(SBGC_UART_DMA, SBGC_UART_DMA_TX);
 
 			#else
 
 				LL_DMA_DisableChannel(SBGC_UART_DMA, SBGC_UART_DMA_TX);
-				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_TX, SBGC_DRV_TX_BUFF_TOTAL_SIZE);
+				LL_DMA_SetDataLength(SBGC_UART_DMA, SBGC_UART_DMA_TX, size);
 				LL_DMA_EnableChannel(SBGC_UART_DMA, SBGC_UART_DMA_TX);
 
 			#endif

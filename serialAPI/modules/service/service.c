@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		service.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -1830,6 +1830,8 @@ sbgcCommandStatus_t SBGC32_ExecuteMenu (sbgcGeneral_t *gSBGC, sbgcMenuCommand_t 
 sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSettings_t *beeperSettings
 									   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	sbgcAssertUnsParam(beeperSettings->notesQuan, 50);
+
 	gSBGC->_api->startWrite(gSBGC, CMD_BEEP_SOUND SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeWord(gSBGC, beeperSettings->mode);
 	gSBGC->_api->writeByte(gSBGC, beeperSettings->noteLength);

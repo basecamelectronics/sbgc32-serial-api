@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		debug.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -41,14 +41,14 @@
 
 #define		SBGC_DEBUG_BUFF_SIZE	64
 
-#define		SBGC_LOG_BUFF_SIZE		((SBGC_LOG_COMMAND_TIME * -12) +\
-									(SBGC_LOG_COMMAND_NUMBER * -12) +\
-									(SBGC_LOG_COMMAND_DIR * -4) +\
-									(SBGC_LOG_COMMAND_NAME * -32) +\
-									(SBGC_LOG_COMMAND_ID * -7) +\
-									(SBGC_LOG_COMMAND_STATUS * -11) +\
-									((SBGC_LOG_COMMAND_PARAM * -5) * 4) +\
-									(SBGC_LOG_COMMAND_DATA * -6) +\
+#define		SBGC_LOG_BUFF_SIZE		((SBGC_LOG_COMMAND_TIME ? 12 : 0) +\
+									(SBGC_LOG_COMMAND_NUMBER ? 12 : 0) +\
+									(SBGC_LOG_COMMAND_DIR ? 4 : 0) +\
+									(SBGC_LOG_COMMAND_NAME ? 32 : 0) +\
+									(SBGC_LOG_COMMAND_ID ? 7 : 0) +\
+									(SBGC_LOG_COMMAND_STATUS ? 11 : 0) +\
+									(SBGC_LOG_COMMAND_PARAM ? 20 : 0) +\
+									(SBGC_LOG_COMMAND_DATA ? 6 : 0) +\
 									3)
 
 
@@ -58,6 +58,83 @@
 /**	@addtogroup	Debug
  *	@{
  */
+ #if (SBGC_LOG_CODE_ERRORS || SBGC_LOG_CODE_WARNINGS || SBGC_LOG_CODE_NOTES)
+ 
+	/**	@brief	Displays error tracking information
+	 *
+	 *	@param	*gSBGC - serial connection descriptor
+	 *	@param	type - type of debug message
+	 *	@param	*file - source file name
+	 *	@param	line - source line number
+	 *	@param	*str - message content
+	 */
+	void DebugSBGC32_PrintErrorLocation (sbgcGeneral_t *gSBGC, sbgcDebugMessageType_t type, const char *file, ui32 line, const char *str)
+	{
+		const char *fileName = file;
+		const char *typeStr;
+		const char *messageStr = str;
+		ui32 lineCopy = line;
+		ui32 lineDigits = 1;
+		ui32 debugStrSize;
+	
+		#if (SBGC_NEED_ASSERTS)
+			if (gSBGC->_ll->drvTxDebug == NULL) return;
+		#endif
+	
+		if (file == NULL)
+			fileName = "unknown";
+	
+		else
+		{
+			while (*file != '\0')
+			{
+				if ((*file == '/') || (*file == '\\'))
+					fileName = file + 1;
+	
+				file++;
+			}
+		}
+	
+		if (messageStr == NULL)
+			messageStr = "";
+
+		switch (type)
+		{
+			case DMT_ERROR :
+				typeStr = "[ERROR]";
+				break;
+
+			case DMT_WARNING :
+				typeStr = "[WARNING]";
+				break;
+	
+			case DMT_NOTE :
+				typeStr = "[NOTE]";
+				break;
+
+			default:
+				typeStr = "[???]";
+				break;
+		}
+	
+		while (lineCopy >= 10U)
+		{
+			lineCopy /= 10U;
+			lineDigits++;
+		}
+
+		debugStrSize = strlen(typeStr) + strlen(fileName) + lineDigits + strlen(messageStr) + 8;
+
+		char debugStr [debugStrSize];
+
+		gSBGC->_ll->debugSprintf(debugStr, "%s %s: %lu:: %s\n", typeStr, fileName, (unsigned long)line, messageStr);
+	
+		DebugSBGC32_PrintMessage(gSBGC, debugStr);
+	}
+	
+#endif
+
+
 /**	@brief	Displays debug information
  *
  *	@param	*gSBGC - serial connection descriptor
@@ -116,11 +193,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 				break;
 
 			case sbgcUINT :
-				#ifdef _L32__
-					gSBGC->_ll->debugSprintf(valueStr, "%u", *(ui32*)pValue);
-				#else
-					gSBGC->_ll->debugSprintf(valueStr, "%lu", *(ui32*)pValue);
-				#endif
+				gSBGC->_ll->debugSprintf(valueStr, "%lu", (unsigned long)*(ui32*)pValue);
 
 				break;
 
@@ -133,12 +206,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 				break;
 
 			case sbgcINT :
-				#ifdef _L32__
-					gSBGC->_ll->debugSprintf(valueStr, "%i", *(i32*)pValue);
-				#else
-					gSBGC->_ll->debugSprintf(valueStr, "%li", *(i32*)pValue);
-				#endif
-
+				gSBGC->_ll->debugSprintf(valueStr, "%li", (long)*(i32*)pValue);
 				break;
 
 			case sbgcFLOAT :
@@ -160,7 +228,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 	{
 		char flagStr [33] = { 0 };
 
-		switch (vType & CLEAN_TYPE_MASK)
+		switch (vType & SBGC_CLEAN_TYPE_MASK)
 		{
 			case sbgcUCHAR :
 			{
@@ -309,13 +377,7 @@ void DebugSBGC32_PrintStructElement (sbgcGeneral_t *gSBGC, void *pValue, const c
 		#endif
 
 		#if (SBGC_LOG_COMMAND_NUMBER)
-
-			#ifdef _L32__
-				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "%u. ", serialCommand->_CID);
-			#else
-				pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "%lu. ", serialCommand->_CID);
-			#endif
-
+			pointer += gSBGC->_ll->debugSprintf(&logBuffer[pointer], "%lu. ", (unsigned long)serialCommand->_CID);
 		#endif
 
 		#if (SBGC_LOG_COMMAND_DIR)

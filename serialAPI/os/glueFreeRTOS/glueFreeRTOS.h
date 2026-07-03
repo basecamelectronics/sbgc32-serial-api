@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		glueFreeRTOS.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -64,11 +64,11 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *											   Types
  */
-typedef		portTickType			sbgcTicks_t;
-typedef		xTaskHandle				sbgcThread_t;
+typedef		TickType_t				sbgcTicks_t;
+typedef		TaskHandle_t			sbgcThread_t;
 typedef		void					sbgcThreadRetval_t;
 typedef		void*					sbgcThreadArg_t;
-typedef		xSemaphoreHandle		sbgcMutex_t;
+typedef		SemaphoreHandle_t		sbgcMutex_t;
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -116,14 +116,13 @@ typedef		xSemaphoreHandle		sbgcMutex_t;
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-void SystemSBGC32_Init (void *gSBGC);
-void SystemSBGC32_Deinit (void *gSBGC);
+void SystemSBGC32_Init (void *sbgcGeneral);
+void SystemSBGC32_Deinit (void *sbgcGeneral);
 BaseType_t SystemSBGC32_CreateThread (TaskFunction_t pxTaskCode, const char * const pcName,
 									  const configSTACK_DEPTH_TYPE usStackDepth,
 									  void * const pvParameters,
 									  UBaseType_t uxPriority,
 									  TaskHandle_t * const pxCreatedTask);
-void SystemSBGC32_DestroyThreadItself (void);
 void SystemSBGC32_Yield (void);
 void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle);
 void SystemSBGC32_ResumeThread (sbgcThread_t *threadHandle);

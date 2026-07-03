@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		sbgc32.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -75,20 +75,27 @@
  */
 sbgcCommandStatus_t PrivateSBGC32_EnterInit (sbgcGeneral_t *gSBGC)
 {
-	#if (!(SBGC_USES_CUSTOM_DRIVER || SBGC_SEVERAL_DEVICES))
-
-		SerialAPI_LinkDriver(gSBGC, DriverSBGC32_TransmitData, DriverSBGC32_ReceiveByte, DriverSBGC32_GetAvailableBytes,
-							 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
-
-		#if (SBGC_USE_ARDUINO_DRIVER)
-			DriverSBGC32_Init(NULL, NULL, SBGC_SERIAL_SPEED);
-		#else
-			DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_SERIAL_SPEED);
+	if (!gSBGC->_swInitFlag)
+	{
+		#if (!(SBGC_USES_CUSTOM_DRIVER || SBGC_SEVERAL_DEVICES))
+	
+			SerialAPI_LinkDriver(gSBGC, DriverSBGC32_TransmitData, DriverSBGC32_ReceiveByte, DriverSBGC32_GetAvailableBytes,
+								 DriverSBGC32_PrintDebugData, DriverSBGC32_GetTimeMs);
+	
+			#if (SBGC_USE_ARDUINO_DRIVER)
+				DriverSBGC32_Init(NULL, NULL, SBGC_SERIAL_SPEED);
+			#else
+				DriverSBGC32_Init(&gSBGC->_ll->drv, SBGC_SERIAL_PORT, SBGC_SERIAL_SPEED);
+			#endif
+	
 		#endif
-
-	#endif
-
-	return SBGC32_SetupLibrary(gSBGC);
+	
+		gSBGC->_lastCommandStatus = SBGC32_SetupLibrary(gSBGC);
+		
+		gSBGC->_swInitFlag = sbgcTRUE;
+	}
+	
+	return gSBGC->_lastCommandStatus;
 }
 
 
@@ -130,7 +137,7 @@ sbgcCommandStatus_t SBGC32_Init (sbgcGeneral_t *gSBGC)
 
 		SystemSBGC32_Init(gSBGC);
 
-		return sbgcCOMMAND_OK;
+		return gSBGC->_lastCommandStatus;
 
 	#else
 		return PrivateSBGC32_EnterInit(gSBGC);
@@ -148,9 +155,13 @@ void SBGC32_Deinit (sbgcGeneral_t *gSBGC)
 		SystemSBGC32_Deinit(gSBGC);
 	#endif
 
-	DriverSBGC32_Deinit(&gSBGC->_ll->drv);
+	#if (!(SBGC_USES_CUSTOM_DRIVER || SBGC_SEVERAL_DEVICES))
+		DriverSBGC32_Deinit(&gSBGC->_ll->drv);
+	#endif
 
 	SerialAPI_ResetLibrary(gSBGC);
+
+	gSBGC->_swInitFlag = sbgcFALSE;
 }
 
 
@@ -184,6 +195,25 @@ WEAK__ void SerialAPI_CommandWaitingHandler (sbgcGeneral_t *gSBGC)
 
 	unused_(gSBGC);
 }
+
+
+#if (SBGC_USES_OS_SUPPORT)
+
+	/**	@brief	Called immediately after SBGC32
+	 *			initialization in OS mode
+	 *
+	 *	@note	Weak function
+	 *
+	 *	@param	*gSBGC - serial connection descriptor
+	 */
+	WEAK__ void SerialAPI_HandlerReadyCallback (sbgcGeneral_t *gSBGC)
+	{
+		/* Do something after SBGC32_HandlerThread enters the main loop */
+		
+		donothing_;
+	}
+
+#endif
 /**	@}
  */
 

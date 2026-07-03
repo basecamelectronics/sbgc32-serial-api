@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		service.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -310,7 +310,7 @@ typedef enum
  */
 static inline ui8 ParserSBGC32_PackAPID_AxisFlag (sbgcAutoPID2_AxisFlag_t flag, sbgcAutoPID2_AxisNotchFilter_t filter)
 {
-	return (flag & 0b00000011) | ((filter << 2) & 0b00001100);
+	return (flag & 0x03) | ((filter << 2) & 0xC0);
 }
 
 

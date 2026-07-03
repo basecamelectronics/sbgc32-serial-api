@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		core.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -233,18 +233,40 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	PARAMS_BLOCK_(name, type, len)	{ type, len }
 #endif
 
+#if (SBGC_LOG_CODE_ERRORS)
+	#define	sbgcLogErr(str)			{ DebugSBGC32_PrintErrorLocation(gSBGC, DMT_ERROR, __FILE__, __LINE__, str); }
+#else
+	#define	sbgcLogErr(str)
+#endif
+
+#if (SBGC_LOG_CODE_WARNINGS)
+	#define	sbgcLogWarn(str)		{ DebugSBGC32_PrintErrorLocation(gSBGC, DMT_WARNING, __FILE__, __LINE__, str); }
+#else
+	#define	sbgcLogWarn(str)
+#endif
+
+#if (SBGC_LOG_CODE_NOTES)
+	#define	sbgcLogNote(str)		{ DebugSBGC32_PrintErrorLocation(gSBGC, DMT_NOTE, __FILE__, __LINE__, str); }
+#else
+	#define	sbgcLogNote(str)
+#endif
+
 #if (SBGC_NEED_ASSERTS)
 	#define	sbgcAssertBoardVer(board)		{ if (gSBGC->_api->boardVersion < (board)) { gSBGC->_lastCommandStatus =\
-											  sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; return sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; } }
+											  sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; sbgcLogWarn("Command is not supported by hardware")\
+											  return sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE; } }
 	#define	sbgcAssertFrwVer(frw)			{ if (gSBGC->_api->baseFirmwareVersion < (frw)) { gSBGC->_lastCommandStatus =\
-											  sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; } }
-	#define	sbgcAssertFeature(ftr)			{ if (!(gSBGC->_api->boardFeatures & (ftr))) return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; }
-	#define	sbgcAssertFeature2(ftr)			{ if (!(gSBGC->_api->boardFeatures2 & (ftr))) return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; }
-	#define	sbgcAssertParam(val, min, max)	{ if (((val) < (min)) || ((val) > (max))) {\
-											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
+											  sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; sbgcLogWarn("Command is not supported by firmware")\
+											  return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE; } }
+	#define	sbgcAssertFeature(ftr)			{ if (!(gSBGC->_api->boardFeatures & (ftr))) { sbgcLogWarn("This feature is not supported")\
+											  return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; } }
+	#define	sbgcAssertFeature2(ftr)			{ if (!(gSBGC->_api->boardFeatures2 & (ftr))) { sbgcLogWarn("This feature is not supported")\
+											  return sbgcCOMMAND_NOT_SUPPORTED_FEATURE; } }
+	#define	sbgcAssertParam(val, min, max)	{ if (((val) < (min)) || ((val) > (max))) { \
+											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR; sbgcLogWarn("Parameter assert fail")\
 											  return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
 	#define	sbgcAssertUnsParam(val, max)	{ if (((val) > (max))) {\
-											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;\
+											  gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR; sbgcLogWarn("Parameter assert fail")\
 											  return sbgcCOMMAND_PARAM_ASSERT_ERROR; } }
 
 #else
@@ -256,7 +278,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 	#define	sbgcAssertUnsParam(val, max)
 #endif
 
-#define		serialAPI_Assert()		{ if (gSBGC->_api->serialAPI_Status != serialAPI_FORMING) return; }
+#define		serialAPI_Assert()		{ if (gSBGC->_api->serialAPI_Status != serialAPI_FORMING) { sbgcLogErr(NULL) return; } }
 
 #if (SBGC_USES_TOKENS)
 	#define	serialAPI_GiveToken()	{ if (commandToken) { *commandToken = gSBGC->_api->lastCommandToken; } }
@@ -267,15 +289,17 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 #define		serialAPI_GetTick()		gSBGC->_ll->drvGetTime()
 
 #define		serialAPI_Lock()		{ serialAPI_TakeMutex();\
-									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) return;\
+									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) { sbgcLogErr(NULL) return; }\
 									  gSBGC->_api->serialAPI_Status = serialAPI_FORMING; }
 
 #define		serialAPI_LockBus()		{ serialAPI_TakeMutex();\
-									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) return sbgcCOMMAND_SERIAL_API_BUSY_ERROR;\
+									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) { sbgcLogErr(NULL)\
+									  return sbgcCOMMAND_SERIAL_API_BUSY_ERROR; }\
 									  gSBGC->_api->serialAPI_Status = serialAPI_HANDLING; }
 
 #define		serialAPI_LockRead()	{ serialAPI_TakeMutex();\
-									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) return sbgcCOMMAND_SERIAL_API_BUSY_ERROR;\
+									  if (gSBGC->_api->serialAPI_Status != serialAPI_OK) { sbgcLogErr(NULL)\
+									  return sbgcCOMMAND_SERIAL_API_BUSY_ERROR; }\
 									  gSBGC->_api->serialAPI_Status = serialAPI_FORMING; }
 
 #define		serialAPI_Unlock()		{ gSBGC->_api->serialAPI_Status = serialAPI_OK;\
@@ -283,7 +307,7 @@ typedef		int						(*sbgcSprintf_t)(char *buffer, const char *format, ...);
 
 #define		serialAPI_Abort()		{ gSBGC->_api->abortLast(gSBGC); return; }
 
-#define		serialAPI_Error()		{ gSBGC->_api->serialAPI_Status = serialAPI_ERROR; return; }
+#define		serialAPI_Error()		{ gSBGC->_api->serialAPI_Status = serialAPI_ERROR; sbgcLogErr(NULL) return; }
 
 
 #define		api_					(gSBGC->_api)
@@ -493,6 +517,7 @@ typedef enum
 	sbgcCOMMAND_RX_ERROR,							/*!<  Rx error. See sbgcGeneral_t._lastSerialCommandStatus field to more details	*/
 
 	/* User-layer errors */
+	sbgcCOMMAND_FAILED_TO_ALLOCATE_MEMORY,			/*!<  @ref sbgcMalloc call failed													*/
 	sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE,			/*!<  The current firmware of the SBGC32 device is old for requested command		*/
 	sbgcCOMMAND_NOT_SUPPORTED_BY_HARDWARE,			/*!<  The feature isn't supported by this board										*/
 	sbgcCOMMAND_NOT_SUPPORTED_FEATURE,				/*!<  Function isn't supported by the board due to firmware or hardware limitations	*/
@@ -836,6 +861,18 @@ typedef struct
 	/* Driver objects handle */
 	void					*drv;					/*!<  Main hardware driver object													*/
 
+	ui8						headBuff [3];			/*!<  Command ID, payload size, header checksum										*/
+
+	enum
+	{
+		STATE_IDLE = 0,
+		STATE_RESYNC,
+		STATE_CHECK_HEADER,
+		STATE_CHECK_PAYLOAD
+		// Next - command received OK
+
+	}	parserState;
+
 	/* Driver functions */
 	/** Pointer to a user-defined function that returns the current time in milliseconds */
 	sbgcTicks_t
@@ -1059,6 +1096,8 @@ typedef struct sbgcGeneral_t
 	serialAPI_General_t		*_api;					/*!<  Pointer to system serial API handle object									*/
 
 	/* Read-only variables */
+	sbgcBoolean_t			_swInitFlag;			/*!<  Shows initialization status of the software									*/
+
 	serialAPI_CommandStatus_t
 					_lastSerialCommandStatus;		/*!<  The last status of the low-layer communication with SBGC32 device				*/
 

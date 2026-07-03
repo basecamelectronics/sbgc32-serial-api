@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		gluePThread.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -54,6 +54,8 @@ extern		"C" {
 #include	<pthread.h>
 #include	<semaphore.h>
 #include	<time.h>
+#include	<unistd.h>
+#include	<sched.h>
 
 
 /**	@addtogroup	PThread_Glue
@@ -78,8 +80,11 @@ typedef		pthread_mutex_t			sbgcMutex_t;
 #define		sbgcFree(ptr)			free(ptr)
 
 #define		sbgcDelay(tick)			usleep((tick) * 1000)
-#define		sbgcGetTick()			DriverSBGC32_GetTimeMs(NULL)
-#define		sbgcMsToTicks(ms)		(ms)
+#define		sbgcGetTick()			DriverSBGC32_GetTimeMs()
+#define		sbgcTickToMs(tick)		(tick)
+#define		sbgcMsToTick(ms)		(ms)
+
+#define		sbgcYield()				sched_yield()
 
 #define		sbgcCreateMutex(m)		pthread_mutex_init(m, 0)
 #define		sbgcDestroyMutex(m)		pthread_mutex_destroy(m)
@@ -92,24 +97,24 @@ typedef		pthread_mutex_t			sbgcMutex_t;
 #define		SBGC_THREAD_PRIOR_NORMAL		5
 #define		SBGC_THREAD_PRIOR_HIGH			10
 
-#define		SBGC_HANDLER_THREAD_PRIOR		(SBGC_THREAD_PRIOR_NORMAL + 1)
-#define		SBGC_INIT_THREAD_PRIOR			(SBGC_THREAD_PRIOR_HIGH + 1)
-
-
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *								 Function Prototypes
  */
-void SystemSBGC32_Init (void *gSBGC);
-void SystemSBGC32_CreateThread (SBGC_THREAD_FUNCTION((*fn), arg), sbgcThreadArg_t threadArg);
-void SystemSBGC32_DestroyThreadItself (void);
+void SystemSBGC32_Init (void *sbgcGeneral);
+void SystemSBGC32_Deinit (void *sbgcGeneral);
+int SystemSBGC32_CreateThread (SBGC_THREAD_FUNCTION((*fn), arg), const char * const threadName,
+							   ui32 stackSize,
+							   sbgcThreadArg_t threadArg,
+							   ui32 priority,
+							   sbgcThread_t * const threadHandle);
 void SystemSBGC32_Yield (void);
-void SystemSBGC32_SuspendThread (const sbgcThread_t *threadHandle);
-void SystemSBGC32_ResumeThread (const sbgcThread_t *threadHandle);
+void SystemSBGC32_SuspendThread (sbgcThread_t *threadHandle);
+void SystemSBGC32_ResumeThread (sbgcThread_t *threadHandle);
 void SystemSBGC32_CreateMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_DestroyMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_TakeMutex (sbgcMutex_t *mutex);
 void SystemSBGC32_GiveMutex (sbgcMutex_t *mutex);
-void SystemSBGC32_SetThreadPriority (const sbgcThread_t *threadHandle, ui32 newPrior);
+void SystemSBGC32_SetThreadPriority (sbgcThread_t *threadHandle, ui32 newPrior);
 /**	@}
  */
 

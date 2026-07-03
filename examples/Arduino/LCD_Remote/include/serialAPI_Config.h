@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		serialAPI_ConfigTemplate.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -98,6 +98,10 @@ extern		"C" {
 														  In this case they should be taken manually by its corresponding functions		*/
 #define		SBGC_NEED_DEBUG			sbgcOFF			/*!<  The system will print debug messages using callback function in driver		*/
 #if (SBGC_NEED_DEBUG)
+	#define	SBGC_LOG_PROLOGUE		"SBGC32: "		/*!<  Print all log messages starting with this string								*/
+	#define	SBGC_LOG_CODE_ERRORS	sbgcOFF			/*!<  Log all SerialAPI errors. Format: [ERROR] file_name: str_num:: text			*/
+	#define	SBGC_LOG_CODE_WARNINGS	sbgcOFF			/*!<  Log all SerialAPI warnings. Format: [WARNING] file_name: str_num:: text		*/
+	#define	SBGC_LOG_CODE_NOTES		sbgcOFF			/*!<  Log all SerialAPI notes. Format: [NOTE] file_name: str_num:: text				*/
 	#define	SBGC_LOG_COMMAND_TIME	sbgcOFF			/*!<  Add serial command completion time to log										*/
 	#define	SBGC_LOG_COMMAND_NUMBER	sbgcOFF			/*!<  Add serial command number to log												*/
 	#define	SBGC_LOG_COMMAND_DIR	sbgcOFF			/*!<  Add serial command type (Tx/Rx) to log										*/
@@ -186,6 +190,8 @@ extern		"C" {
 #define		SBGC_USE_ESPIDF_DRIVER	sbgcOFF			/*!<  Using an ESP32 controller with ESP-IDF framework as a master device			*/
 #define		SBGC_USE_LINUX_DRIVER	sbgcOFF			/*!<  Using a Linux machine as a master device										*/
 #define		SBGC_USE_STM32_DRIVER	sbgcOFF			/*!<  Using an STM32 controller as a master device									*/
+
+#define		SBGC_DRV_ALREADY_INIT	sbgcOFF			/*!<  Enable if the serial port has already been initialized						*/
 
 
 #if (SBGC_USE_ARDUINO_DRIVER && (SBGC_SEVERAL_DEVICES == sbgcOFF))

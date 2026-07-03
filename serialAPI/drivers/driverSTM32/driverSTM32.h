@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverSTM32.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -356,7 +356,7 @@ extern		"C" {
 #define		SBGC_DRV_RX_BUFF_TOTAL_SIZE		(1 << SBGC_DRV_RX_BUFF_POWER)
 
 #define		SBGC_DRV_TX_BUFF_SIZE_MASK		(SBGC_DRV_TX_BUFF_TOTAL_SIZE - 1)
-#define		SBGC_DRV_RX_BUFF_SIZE_MASK		(SBGC_DRV_TX_BUFF_TOTAL_SIZE - 1)
+#define		SBGC_DRV_RX_BUFF_SIZE_MASK		(SBGC_DRV_RX_BUFF_TOTAL_SIZE - 1)
 
 /* Warnings */
 #if ((!(SBGC_USE_FREE_RTOS || SBGC_USE_AZURE_RTOS)) && ((SBGC_DRV_HAL_TIMER) + (SBGC_DRV_LL_TIMER)) != -1)

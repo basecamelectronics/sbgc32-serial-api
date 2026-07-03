@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverESP32.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -27,6 +27,13 @@
  *	implied. See the License for the specific language governing
  *	permissions and limitations under the License.
  *	____________________________________________________________________
+ */
+/**	____________________________________________________________________
+ *
+ *	@defgroup	ESP32_Driver ESP32 Driver
+ *	@ingroup	Drivers
+ *		@brief	ESP32 Driver Module
+ *  ____________________________________________________________________
  */
 
 #ifndef		DRIVERS_DRIVER_ESP32_H_

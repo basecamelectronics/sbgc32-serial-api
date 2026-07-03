@@ -55,7 +55,7 @@ To connect the library to your project, just place or link the [serialAPI](seria
 	#include "sbgc32.h"
 
 	// Declare a general SBGC32 object
-	sbgcGeneral_t SBGC32_Device;
+	sbgcGeneral_t SBGC32_Device = { 0 };
 
 	// Initialize the library
 	SBGC32_Init(&SBGC32_Device);

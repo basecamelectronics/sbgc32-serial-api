@@ -3,6 +3,21 @@
                                 Releases
 ________________________________________________________________________
 
+### Release 2.3 (new)  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+- A new setting added:
+	* SBGC_LOG_PROLOGUE
+	* SBGC_LOG_CODE_ERRORS
+	* SBGC_LOG_CODE_WARNINGS
+	* SBGC_LOG_CODE_NOTES
+	* SBGC_DRV_ALREADY_INIT
+- SBGC32_GetBoardData() function became public
+- SBGC_OPTIMIZE_COMMANDS now passes CMD_GET_ADJ_VARS_VAL and CMD_SET_ADJ_VARS_VAL
+- FreeRTOS, Azure RTOS and PThread OS glue lifecycle updated
+- SerialAPI deinitialization flow improved
+- Debug logging format and configuration improved
+- Minor driver improvements and code optimizations
+
 ### Release 2.2.1  - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 - A new setting added:

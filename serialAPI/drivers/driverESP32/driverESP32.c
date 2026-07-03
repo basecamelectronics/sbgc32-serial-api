@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		driverESP32.c
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -57,23 +57,29 @@ void DriverSBGC32_Init (void **driver, uart_port_t serial, unsigned long serialS
 	
 	drv->uart = serial;
 	
-    uart_config_t cfg =
-    {
-        .baud_rate	= serialSpeed,
-        .data_bits	= UART_DATA_8_BITS,
-        .parity		= UART_PARITY_DISABLE,
-        .stop_bits	= UART_STOP_BITS_1,
-        .flow_ctrl	= UART_HW_FLOWCTRL_DISABLE,
-        
-		#if ESP_IDF_VERSION_MAJOR >= 5
-        	.source_clk = UART_SCLK_APB,
-		#endif
-    };
-
-    /* Configure parameters */
-    unused_(uart_param_config(drv->uart, &cfg));
-    unused_(uart_set_pin(drv->uart, SBGC_SERIAL_TX_PIN, SBGC_SERIAL_RX_PIN, -1, -1));
-    unused_(uart_driver_install(drv->uart, SBGC_DRV_RX_BUFF_TOTAL_SIZE, SBGC_DRV_TX_BUFF_TOTAL_SIZE, 0, NULL, 0));
+	#if (SBGC_DRV_ALREADY_INIT)
+		unused_(serialSpeed);
+	#else
+	
+	    uart_config_t cfg =
+	    {
+	        .baud_rate	= serialSpeed,
+	        .data_bits	= UART_DATA_8_BITS,
+	        .parity		= UART_PARITY_DISABLE,
+	        .stop_bits	= UART_STOP_BITS_1,
+	        .flow_ctrl	= UART_HW_FLOWCTRL_DISABLE,
+	        
+			#if ESP_IDF_VERSION_MAJOR >= 5
+	        	.source_clk = UART_SCLK_APB,
+			#endif
+	    };
+	
+	    /* Configure parameters */
+	    unused_(uart_param_config(drv->uart, &cfg));
+	    unused_(uart_set_pin(drv->uart, SBGC_SERIAL_TX_PIN, SBGC_SERIAL_RX_PIN, -1, -1));
+	    unused_(uart_driver_install(drv->uart, SBGC_DRV_RX_BUFF_TOTAL_SIZE, SBGC_DRV_TX_BUFF_TOTAL_SIZE, 0, NULL, 0));
+	    
+    #endif
 }
 
 
@@ -83,7 +89,12 @@ void DriverSBGC32_Init (void **driver, uart_port_t serial, unsigned long serialS
  */
 void DriverSBGC32_Deinit (void **driver)
 {
-	unused_(driver);
+	sbgcDriver_t *drv = (sbgcDriver_t*)(*driver);
+	
+	uart_driver_delete(drv->uart);
+
+	sbgcFree(drv);
+	*driver = NULL;
 }
 
 

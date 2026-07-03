@@ -1,6 +1,6 @@
 /**	____________________________________________________________________
  *
- *	SBGC32 Serial API Library v2.2.1
+ *	SBGC32 Serial API Library v2.3
  *
  *	@file		realtime.h
  *
@@ -8,7 +8,7 @@
  *	____________________________________________________________________
  *
  *	@attention	<h3><center>
- *				Copyright © 2025 BaseCam Electronics™.<br>
+ *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
  *
@@ -558,7 +558,7 @@ typedef enum
  */
 static inline sbgcVarType_t ParserSBGC32_GetVarType (ui8 value)
 {
-	return (sbgcVarType_t)(value & 0b00001111);
+	return (sbgcVarType_t)(value & 0x0F);
 }
 
 /**	@brief	Used as a mask to extract the
@@ -571,7 +571,7 @@ static inline sbgcVarType_t ParserSBGC32_GetVarType (ui8 value)
  */
 static inline sbgcVarTypeFlag_t ParserSBGC32_GetVarFlag (ui8 value)
 {
-	return (sbgcVarTypeFlag_t)(value & 0b11110000);
+	return (sbgcVarTypeFlag_t)(value & 0xF0);
 }
 /**	@}
  */
