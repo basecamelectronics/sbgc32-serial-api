@@ -263,7 +263,8 @@ typedef enum
 	CtrlCONFIG_FLAG_SERVO_MODE_DISABLE
 									= BIT_2_SET,
 	/* frw. ver. 2.72b3+ */
-	CtrlCONFIG_FLAG_LPF_EXT_RANGE	= BIT_3_SET
+	CtrlCONFIG_FLAG_LPF_EXT_RANGE	= BIT_3_SET,
+	CtrlCONFIG_FLAG_LPF_FREQ_HZ 	= BIT_4_SET
 
 }	sbgcControlConfigFlag_t;
 
@@ -485,6 +486,10 @@ typedef struct PACKED__
 /**	@brief	Part of sbgcControlConfig_t structure
  *
  *	@note	sbgcControlConfig_t.AxisCC
+ *  @note When @ref CtrlCONFIG_FLAG_LPF_FREQ_HZ is set (2.74.1+), angleLPF and
+ *        speedLPF specify cutoff frequency in Hz instead of the legacy factor.
+ *        See @ref sbgcControlConfigFlag_t.
+
  */
 typedef struct PACKED__
 {

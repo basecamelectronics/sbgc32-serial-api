@@ -73,6 +73,31 @@
  *				### CMD_BOOT_MODE_3
  *				### CMD_RESET
  *
+ *	@defgroup Pass_Protect Password Protection
+ *	@ingroup Service
+ *		@brief Reads and updates password protection settings
+ *
+ *				Covered Commands:
+ *				### CMD_PASS_PROTECT_READ
+ *				### CMD_PASS_PROTECT_WRITE
+ *
+ *	@attention Firmware: 2.73.6+. On a protected channel, first authenticate
+ *			using the password extension of CMD_BOARD_INFO. These functions
+ *			do not authenticate automatically. Call @ref SBGC32_ReadBoardInfo
+ *			with the current password before using a protected channel.
+ *	@note Password bytes are never returned by READ. WRITE accepts 0 bytes to
+ *		  retain the current password, or 1..32 bytes to replace it.
+ *
+ *	@defgroup Module_Flash CAN Module Firmware Update
+ *	@ingroup Service
+ *		@brief Uploads firmware to an external CAN module through SBGC32
+ *
+ *				Covered Commands:
+ *
+ *				### CMD_MODULE_FLASH_START
+ *				### CMD_MODULE_FLASH_WRITE
+ *				### CMD_MODULE_FLASH_FINISH
+ *
  *	@defgroup	Scripts Scripts
  *	@ingroup	Service
  *		@brief	Scripts Module
@@ -106,6 +131,7 @@
  *				Covered Commands:
  *
  *				###	CMD_TRANSPARENT_SAPI
+ *				### CMD_SET_TRANSP_PROXY
  *
  *	@defgroup	Servo_Out Servo Out
  *	@ingroup	Service
@@ -127,6 +153,7 @@
  *				### CMD_BEEP_SOUND
  *				### CMD_SIGN_MESSAGE
  *				### CMD_CAN_DEVICE_SCAN
+ *				### CMD_UDRV_DEVICE_SCAN
  *				### CMD_MODULE_LIST
  *	____________________________________________________________________
  */
@@ -147,6 +174,69 @@ extern		"C" {
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *										   Constants
  */
+/** @addtogroup Module_Flash
+ *  @{
+ */
+/** Maximum firmware data bytes in one CMD_MODULE_FLASH_WRITE request. */
+#define SBGC_MODULE_FLASH_MAX_DATA_SIZE 128U
+/** Firmware size, block size and offset alignment, in bytes. */
+#define SBGC_MODULE_FLASH_ALIGNMENT 4U
+/** @}
+ */
+
+/** @addtogroup Pass_Protect
+ *  @{
+ */
+/** Maximum password length in bytes; no terminating NUL is sent. */
+#define SBGC_PASS_PROTECT_MAX_PASSWORD_SIZE 32U
+/** Supported FLAGS bits: 1, 2 and 4...15. */
+#define SBGC_PASS_PROTECT_FLAGS_MASK 0x0000FFF6UL
+
+/** @brief Password protection flags, combined with bitwise OR
+ *	@note CH1...CH6 denote Serial API channel indices 1..6 in the protocol.
+ *		  CH_ENABLED requires authentication; CH_ALLOW permits control commands.
+ *		  Unlisted bits are reserved and must be zero when writing.
+ */
+typedef enum
+{
+	PPF_ENCRYPT_PARAMS 			= BIT_1_SET,		/*!< Encrypt the parameters section 						*/
+	PPF_SILENT 					= BIT_2_SET,		/*!< Suppress responses to unauthenticated commands 		*/
+	PPF_CH1_ENABLED 			= BIT_4_SET,
+	PPF_CH2_ENABLED 			= BIT_5_SET,
+	PPF_CH3_ENABLED 			= BIT_6_SET,
+	PPF_CH4_ENABLED 			= BIT_7_SET,
+	PPF_CH5_ENABLED 			= BIT_8_SET,
+	PPF_CH6_ENABLED 			= BIT_9_SET,
+	PPF_CH1_ALLOW 				= BIT_10_SET,
+	PPF_CH2_ALLOW 				= BIT_11_SET,
+	PPF_CH3_ALLOW				= BIT_12_SET,
+	PPF_CH4_ALLOW				= BIT_13_SET,
+	PPF_CH5_ALLOW 				= BIT_14_SET,
+	PPF_CH6_ALLOW				= BIT_15_SET
+
+}	sbgcPassProtectFlag_t;
+
+/** @brief Fixed eight-byte password protection settings
+ *	@note flags is stored in host byte order after reading. The password itself
+ *		  is not exposed. WRITE always sends zero reserved bytes regardless
+ *		  of the contents of reserved[].
+ *	@see SBGC32_ReadPassProtect
+ *	@see SBGC32_WritePassProtect
+ */
+typedef struct PACKED__
+{
+	ui32 flags;			/*!< See @ref sbgcPassProtectFlag_t 			*/
+	ui8 reserved [4];	/*!< Reserved response bytes 					*/
+
+}	sbgcPassProtect_t;
+
+#if (SBGC_USES_REF_INFO)
+	extern const sbgcParameterReferenceInfo_t passProtectReferenceInfoArray[];
+	extern const ui8 passProtectReferenceInfoArrayElCnt;
+#endif
+/** @}
+ */
+
 /**	@addtogroup	Service_Other
  *	@{
  */
@@ -463,7 +553,9 @@ typedef enum
 	DPF_CMD_CONTROL					= BIT_11_SET,
 	DPF_CMD_SET_ADJ_VARS_VAL		= BIT_12_SET,
 	DPF_CMD_API_VIRT_CH_CONTROL		= BIT_13_SET,
-	DPF_CMD_API_VIRT_CH_HIGH_RES	= BIT_14_SET
+	DPF_CMD_API_VIRT_CH_HIGH_RES	= BIT_14_SET,
+	DPF_CMD_VIBRATION_TEST_DATA 	= BIT_15_SET,
+	DPF_CMD_REALTIME_DATA_CUSTOM2 	= BIT_16_SET
 
 }	sbgcDebugPortFilter_t;
 /**	@}
@@ -556,9 +648,30 @@ typedef enum
 	sbgcPIN_STATE_LOW				= 0,
 	sbgcPIN_STATE_HIGH				= 1,
 	/* frw. ver 2.66+ */
-	sbgcPIN_STATE_FLOATING			= 2
+	sbgcPIN_STATE_FLOATING			= 2, /*!< Input without pull-up/down; input reporting since 2.74.3 */
+	sbgcPIN_STATE_PULLED_UP = 3, /*!< Input with pull-up; firmware 2.74.3+ */
+	sbgcPIN_STATE_PULLED_DOWN = 4 /*!< Input with pull-down; firmware 2.74.3+ */
 
 }	sbgcPinState_t;
+
+/** @brief Extracts the input PIN_ID from CMD_TRIGGER_PIN confirmation data
+ *  @pre Check @ref SerialAPI_GetConfirmStatus for sbgcCONFIRM_RECEIVED first.
+ *  @note Firmware 2.74.3+ input modes only. See @ref SBGC32_SetTriggerPin.
+ */
+static inline ui8 ParserSBGC32_GetTriggerPinID (const sbgcConfirm_t *confirm)
+{
+	return (ui8)(confirm->cmdData & 0xFFU);
+}
+
+/** @brief Extracts the signed input state: -1 unavailable, 0 low, 1 high
+ *  @pre Check @ref SerialAPI_GetConfirmStatus for sbgcCONFIRM_RECEIVED first.
+ *  @note Firmware 2.74.3+ input modes only. See @ref SBGC32_SetTriggerPin.
+ */
+static inline i8 ParserSBGC32_GetTriggerPinState (const sbgcConfirm_t *confirm)
+{
+	return (i8)(ui8)(confirm->cmdData >> 8);
+}
+
 
 
 /**	@note	@ref SBGC32_ExecuteMenuExt, 3 arg
@@ -622,6 +735,10 @@ typedef enum
  */
 typedef enum
 {
+	CDID_UDRV_1 = 1,
+	CDID_UDRV_2 = 2,
+	CDID_UDRV_3 = 3,
+	CDID_UDRV_4 = 4,
 	CDID_CAN_IMU_MAIN				= 5,
 	CDID_CAN_IMU_FRAME				= 6,
 	CDID_GPS_IMU_MAIN				= 7,
@@ -645,6 +762,10 @@ typedef enum
 	CDT_MOTOR_DRIVER				= 1,
 	CDT_IMU							= 2,
 
+	CDT_UDRV = 3,
+	CDT_TYPE_MASK = 0x3F,             /*!< Bits 0..5 contain the device type */
+	CDT_UDRV_IMU_CONNECTED = BIT_6_SET, /*!< IMU sensor connected to a uDrv module */
+
 	CDT_HARDWARE_ASSIGNED			= BIT_7_SET
 
 }	sbgcCAN_DeviceType_t;
@@ -666,7 +787,11 @@ typedef enum
 	CDID2_GPS_IMU					= 10,
 	CDID2_CAN_HUB_GNSS				= 11,
 	CDID2_CAN_HUB1					= 12,
-	CDID2_CAN_HUB2					= 13
+	CDID2_CAN_HUB2					= 13,
+	CDID2_UDRV_1 = 14, /*!< uDrv #1 in CMD_MODULE_LIST */
+	CDID2_UDRV_2 = 15,
+	CDID2_UDRV_3 = 16,
+	CDID2_UDRV_4 = 17
 
 }	sbgcCAN_DeviceID2_t;
 /**	@}
@@ -1111,6 +1236,39 @@ typedef struct PACKED__
 }	sbgcCAN_DeviceScan_t;
 
 
+/** Maximum number of 14-byte records in one scan response (252 bytes). */
+#define SBGC_UDRV_SCAN_MAX_DEVICES 18U
+
+/** @brief Result of decoding a uDrv scan response, independent of confirmation support */
+typedef enum
+{
+	UDS_PENDING = 0,         /*!< No response decoded yet; inspect communication status for timeout */
+	UDS_RECEIVED,            /*!< deviceNum records were copied to devices[] */
+	UDS_ERROR,               /*!< CMD_ERROR received; see error.errorCode (file-operation codes) */
+	UDS_BUFFER_TOO_SMALL,    /*!< deviceNum is the required capacity; devices[] was not modified */
+	UDS_INVALID_PAYLOAD      /*!< Malformed response; devices[] was not modified */
+
+} sbgcUDRV_ScanStatus_t;
+
+/** @brief Destination descriptor for SBGC32_UDRV_DeviceScan
+ *  @note Initialize devices and deviceCapacity before calling. Keep the descriptor
+ *        and array alive until processing completes. This is a host descriptor,
+ *        not a wire layout; do not pass it to PM_CAN_DEVICE_SCAN.
+ *  @note error must remain the first member: the generic CMD_ERROR filter reads
+ *        its commandID. Only errorCode/errorData are used for error details;
+ *        use status below to determine the scan result in all configurations.
+ */
+typedef struct
+{
+	sbgcConfirm_t 				error;							/*!< CMD_ERROR details; commandID is initialized to 144 		*/
+	sbgcCAN_DeviceScan_t 		*devices;						/*!< Caller-owned array of UID[12], ID, type records 			*/
+	ui8 						deviceCapacity;					/*!< Allocated array capacity: 1..SBGC_UDRV_SCAN_MAX_DEVICES 	*/
+	ui8 						deviceNum;						/*!< Number reported in the response, derived from payload size */
+	sbgcUDRV_ScanStatus_t 		status;							/*!< Always available, even when SBGC_NEED_CONFIRM_CMD is off 	*/
+
+} sbgcUDRV_DeviceScan_t;
+
+
 #if (SBGC_USES_REF_INFO)
 	/**	@cond
 	 */
@@ -1148,7 +1306,7 @@ typedef struct
 /**	@addtogroup	Board_Info
  *	@{
  */
-sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t *boardInfo, ui16 cfg SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t *boardInfo, ui16 cfg, ui8 passwordLength, const ui8 *password SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ReadBoardInfo3 (sbgcGeneral_t *gSBGC, sbgcBoardInfo3_t *boardInfo3 SBGC_ADVANCED_PARAMS__);
 /**	@}
  */
@@ -1205,6 +1363,33 @@ sbgcCommandStatus_t SBGC32_ReadStateVars (sbgcGeneral_t *gSBGC, sbgcStateVars_t 
  */
 
 
+/** @addtogroup Pass_Protect
+ *	@{
+ */
+sbgcCommandStatus_t SBGC32_ReadPassProtect (sbgcGeneral_t *gSBGC, sbgcPassProtect_t *passProtect SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_WritePassProtect (sbgcGeneral_t *gSBGC, const sbgcPassProtect_t *passProtect,
+											 const ui8 *newPassword, ui8 newPasswordLength, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
+/** @}
+ */
+
+
+/**	@addtogroup	Module_Flash
+ *	@{
+ */
+ui32 SerialAPI_CalculateModuleFlashCRC32 (const ui8 *data, ui32 size);
+
+sbgcCommandStatus_t SBGC32_ModuleFlashStart (sbgcGeneral_t *gSBGC, ui8 deviceID, ui32 firmwareSizeWords, sbgcConfirm_t *confirm
+											 SBGC_ADVANCED_PARAMS__);
+
+sbgcCommandStatus_t SBGC32_ModuleFlashWrite (sbgcGeneral_t *gSBGC, ui8 deviceID, ui8 packetID, ui32 address,
+											 const ui8 *data, ui8 size, sbgcConfirm_t *confirm SBGC_ADVANCED_PARAMS__);
+
+sbgcCommandStatus_t SBGC32_ModuleFlashFinish (sbgcGeneral_t *gSBGC, ui8 deviceID, ui32 fileCRC32, sbgcConfirm_t *confirm
+											  SBGC_ADVANCED_PARAMS__);
+/**	@}
+ */
+
+
 /**	@addtogroup	Debug_Port
  *	@{
  */
@@ -1218,6 +1403,8 @@ sbgcCommandStatus_t SBGC32_ReadDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortDat
 /**	@addtogroup	Transparent_SerialAPI
  *	@{
  */
+sbgcCommandStatus_t SBGC32_SetTransparentProxy (sbgcGeneral_t *gSBGC, ui8 port1, ui8 port2 SBGC_ADVANCED_PARAMS__);
+
 sbgcCommandStatus_t SBGC32_SendTransparentCommand (sbgcGeneral_t *gSBGC, const sbgcTransparentCommand_t *cmd SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_ReadTransparentCommand (sbgcGeneral_t *gSBGC, sbgcTransparentCommand_t *cmd SBGC_ADVANCED_PARAMS__);
 /**	@}
@@ -1244,6 +1431,7 @@ sbgcCommandStatus_t SBGC32_ExecuteMenuExt (sbgcGeneral_t *gSBGC, sbgcMenuCommand
 										   SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_PlayBeeper (sbgcGeneral_t *gSBGC, const sbgcBeeperSettings_t *beeperSettings SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, const char *txMessage, char *rxMessage SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_UDRV_DeviceScan (sbgcGeneral_t *gSBGC, sbgcUDRV_DeviceScan_t *scan SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_CAN_DeviceScan (sbgcGeneral_t *gSBGC, sbgcCAN_DeviceScan_t *CAN_DeviceScan SBGC_ADVANCED_PARAMS__);
 sbgcCommandStatus_t SBGC32_RequestModuleList (sbgcGeneral_t *gSBGC, sbgcCAN_ModuleInfo_t *CAN_ModuleInfo, ui8 deviceNumMax SBGC_ADVANCED_PARAMS__);
 /**	@endcond

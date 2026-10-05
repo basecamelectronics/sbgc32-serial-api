@@ -349,6 +349,7 @@ typedef enum
 	CMD_AUTO_PID					= 35,			/*!<  Starts automatic PID calibration												*/
 	CMD_SERVO_OUT					= 36,			/*!<  Output PWM signal on the servo1..4 pins										*/
 	CMD_BODE_TEST_START_STOP		= 37,
+	CMD_BODE_TEST_DATA 				= 38,			/*!<  The system response test data 												*/
 	CMD_I2C_WRITE_REG_BUF			= 39,			/*!<  Writes data to any device connected to I2C line								*/
 	CMD_I2C_READ_REG_BUF			= 40,			/*!<  Requests reading from any device connected to I2C line						*/
 	CMD_WRITE_EXTERNAL_DATA			= 41,			/*!<  Stores any user data to the dedicated area in the EEPROM						*/
@@ -388,9 +389,12 @@ typedef enum
 	CMD_GYRO_CORRECTION				= 75,			/*!<  Correct the gyroscope sensor's zero bias manually								*/
 	CMD_MODULE_LIST					= 76,			/*!<  Version information for the connected CAN devices								*/
 	CMD_MOTORS_ON					= 77,			/*!<  Switch motors ON																*/
+	CMD_MODULE_FLASH_START 			= 78,			/*!<  Start flashing firmware on the external CAN device							*/
 	CMD_CALIB_OFFSET				= 79,			/*!<  Calibrate follow offset														*/
 	CMD_CALIB_POLES					= 80,			/*!<  Calibrate poles and direction													*/
+	CMD_MODULE_FLASH_WRITE 			= 81,			/*!<  Write a portion of firmware on the external CAN device						*/
 	CMD_READ_PARAMS					= 82,			/*!<  Request parameters from the board												*/
+	CMD_MODULE_FLASH_FINISH 		= 83,			/*!<  Finish firmware flashing on the external CAN device							*/
 	CMD_TRIGGER_PIN					= 84,			/*!<  Trigger output pin															*/
 	CMD_DATA_STREAM_INTERVAL		= 85,			/*!<  Register or update data stream - a commands sent by the controller			*/
 	CMD_BOARD_INFO					= 86,			/*!<  Request board and firmware information										*/
@@ -439,9 +443,14 @@ typedef enum
 	CMD_SERVO_OUT_EXT				= 133,			/*!<  Output PWM signal on the servo pins (internal and external)					*/
 	CMD_SET_ADJ_VARS_VAL_F			= 134,			/*!<  Set the values of selected parameter(s) to floating points					*/
 	CMD_GET_ADJ_VARS_VAL_F			= 135,			/*!<  Query the actual value of selected parameter(s) in floating points			*/
+	CMD_PASS_PROTECT_READ 			= 136, 			/*!<  Read password protection settings												*/
+	CMD_PASS_PROTECT_WRITE 			= 137,			/*!<  Updates password protection settings and set new password (optionally)		*/
+	CMD_REALTIME_DATA_CUSTOM2 		= 139,			/*!<  Request configurable realtime data											*/
 	CMD_CONTROL_QUAT				= 140,			/*!<  Control gimbal position in quaternions										*/
 	CMD_CONTROL_QUAT_STATUS			= 141,			/*!<  Request real-time data related to gimbal control in quaternions				*/
 	CMD_CONTROL_QUAT_CONFIG			= 142,			/*!<  Configure the quaternion-based control mode									*/
+	CMD_SET_TRANSP_PROXY			= 143,			/*!<  Put two serial ports into transparent proxy mode								*/
+	CMD_UDRV_DEVICE_SCAN			= 144,			/*!<  Scan for the connected uDrv devices											*/
 	CMD_EXT_SENS_CMD				= 150,			/*!<  Forward message to the GPS_IMU sensor											*/
 	CMD_TRANSPARENT_SAPI			= 151,			/*!<  Send data to serial port on any device via CAN bus							*/
 	CMD_SET_DEBUG_PORT				= 249,			/*!<  Use this port for debugging													*/
@@ -703,9 +712,12 @@ typedef enum
 	PM_AUTO_PID_2,									/*!<  See @ref autoPID2_ReferenceInfoArray											*/
 	PM_AUTO_PID_STATE,								/*!<  See @ref autoPID_StateReferenceInfoArray										*/
 	PM_SYNC_MOTORS,									/*!<  See @ref syncMotorsReferenceInfoArray											*/
-    PM_SCRIPT_DEBUG_INFO,                           /*!<  See @ref scriptDebugInfoReferenceInfoArray									*/
+	PM_SCRIPT_DEBUG_INFO,							/*!<  See @ref scriptDebugInfoReferenceInfoArray									*/
 	PM_STATE_VARS,									/*!<  See @ref stateVarsReferenceInfoArray											*/
-	PM_CAN_DEVICE_SCAN								/*!<  See @ref CAN_DeviceScanReferenceInfoArray										*/
+	PM_CAN_DEVICE_SCAN,								/*!<  See @ref CAN_DeviceScanReferenceInfoArray										*/
+	PM_PASS_PROTECT,									/*!< See @ref passProtectReferenceInfoArray */
+
+	PM_IMU_STATE /*!< See @ref IMU_StateReferenceInfoArray */
 
 }	sbgcParserMap_t;
 /**	@}

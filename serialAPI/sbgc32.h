@@ -494,6 +494,7 @@
  *		- @ref Realtime_Data_Custom
  *
  *			+ @ref SBGC32_RequestRealTimeDataCustom - Requests configurable realtime data				\n
+ *			+ @ref SBGC32_RequestRealTimeDataCustom2 - Requests configurable realtime data using CUSTOM2 \n
  *
  *		- @ref Realtime_Data_3_4
  *
@@ -553,6 +554,19 @@
  *			+ @ref SBGC32_ReadMotorState - Reads real-time status and current values of
  *			parameters related to motion control														\n
  *
+ *		- @ref Pass_Protect
+ *
+ *			+ @ref SBGC32_ReadPassProtect - Reads password protection settings 							\n
+ *			+ @ref SBGC32_WritePassProtect - Updates protection settings and optionally the password 	\n
+ *
+ *		- @ref Module_Flash
+ *
+ *			+ @ref SerialAPI_CalculateModuleFlashCRC32 - Calculates CRC-32/ISO-HDLC for a block or image \n
+ *
+ *			+ @ref SBGC32_ModuleFlashStart - Starts external CAN module firmware upload					\n
+ *			+ @ref SBGC32_ModuleFlashWrite - Writes one firmware block with automatic CRC32			\n
+ *			+ @ref SBGC32_ModuleFlashFinish - Finishes upload with a supplied image CRC32				\n
+ *
  *		- @ref Boot_Mode
  *
  *			+ @ref SBGC32_SetBootMode - Enters bootloader mode to upload firmware						\n
@@ -578,6 +592,8 @@
  *
  *		- @ref Transparent_SerialAPI
  *
+ *			+ @ref SBGC32_SetTransparentProxy - Forwards data between two local serial ports \n
+ *
  *			+ @ref SBGC32_SendTransparentCommand - Sends data to serial port on any device via CAN bus	\n
  *			+ @ref SBGC32_ReadTransparentCommand - Receives data from serial port on
  *			any device via CAN bus																		\n
@@ -585,6 +601,8 @@
  *			kind and flag parameters of the SerialAPI transparent command								\n
  *
  *		- @ref Service_Other
+ *
+ *			+ @ref SBGC32_UDRV_DeviceScan - Scans uDrv devices and receives their assigned IDs \n
  *
  *			+ @ref SBGC32_Reset - Resets the controller													\n
  *			+ @ref SBGC32_SetTriggerPin - Triggers output pin											\n

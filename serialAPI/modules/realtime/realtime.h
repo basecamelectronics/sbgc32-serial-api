@@ -46,13 +46,14 @@
  *				### CMD_EXT_MOTORS_STATE
  *				### CMD_DATA_STREAM_INTERVAL
  *
- *	@defgroup	Realtime_Data_Custom Realtime Data Custom
+ *	@defgroup	Realtime_Data_Custom Realtime Data Custom / Custom2
  *	@ingroup	Realtime
- *		@brief	Realtime Data Custom Module
+ *		@brief	Configurable realtime data requests with independent data selection flags
  *
  *				Covered Commands:
  *
  *				### CMD_REALTIME_DATA_CUSTOM
+ *				### CMD_REALTIME_DATA_CUSTOM2
  *
  *	@defgroup	Realtime_Data_3_4 Realtime Data 3(-4)
  *	@ingroup	Realtime
@@ -175,6 +176,8 @@ typedef enum
 	DSC_CMD_REALTIME_DATA_4			= CMD_REALTIME_DATA_4,
 	DSC_CMD_REALTIME_DATA_CUSTOM	= CMD_REALTIME_DATA_CUSTOM,
 	DSC_CMD_AHRS_HELPER				= CMD_AHRS_HELPER,
+	/* frw. ver. 2.74.2+ */
+	DSC_CMD_REALTIME_DATA_CUSTOM2	= CMD_REALTIME_DATA_CUSTOM2,
 	/* frw. ver. 2.65b7+ */
 	DSC_CMD_EVENT					= CMD_EVENT,
 	/* frw. ver. 2.72b0+ ("Extended" family only) */
@@ -286,7 +289,9 @@ typedef enum
 {
 	sbgcMSF_SOFTWARE_LIMIT_VIOLATED_ANY
 									= BIT_0_SET,
-	sbgcMSF_OVERHEAT_WARNING		= BIT_1_SET
+	sbgcMSF_OVERHEAT_WARNING		= BIT_1_SET,
+	sbgcMSF_DRIVER_OTW = BIT_2_SET,   /*!< Internal driver over-temperature warning */
+	sbgcMSF_DRIVER_FAULT = BIT_3_SET  /*!< Internal driver FAULT signal */
 
 }	sbgcMotorSystemFlags_t;
 
@@ -337,9 +342,45 @@ typedef enum
 	RTDCF_ADC_CH_RAW				= BIT_24_SET,
 	RTDCF_SW_LIMITS_DIST			= BIT_25_SET,
 	RTDCF_FOLLOW_DIST				= BIT_26_SET,
-	RTDCF_EXT_TARGET_LIMIT			= BIT_27_SET
+	RTDCF_EXT_TARGET_LIMIT			= BIT_27_SET,
+	RTDCF_FRAME_CAM_ANGLE_20		= BIT_28_SET,
+	RTDCF_MAIN_IMU_STATE			= BIT_29_SET,
+
+	RTDCF_DATA_SET_FLAGS			= BIT_31_SET /*!< Include returned mask after timestamp; firmware 2.74.1+ */
 
 }	sbgcRealTimeDataCustomFlag_t;
+/**	@}
+ */
+
+
+/** @addtogroup Realtime_Data_Custom
+ *  @{
+ */
+/** @brief Data selection flags for CMD_REALTIME_DATA_CUSTOM2
+ *
+ *  @note Bitwise combination stored in sbgcRealTimeDataCustom2Reference_t.flags.
+ *        These flags are independent of sbgcRealTimeDataCustomFlag_t.
+ *        RTDC2F_DATA_SET_FLAGS includes the data mask immediately after
+ *        the timestamp in the response.
+ *
+ *  @attention Firmware: 2.74.2+.
+ *             RTDC2F_STAB_ERR_AMPL requires firmware 2.74.4+.
+ *
+ *  @see SBGC32_RequestRealTimeDataCustom2
+ *  @see ParserSBGC32_RTDC_FlagsToStream
+ */
+typedef enum
+{
+	RTDC2F_FRAME_IMU_ANGLES			= BIT_0_SET,
+	RTDC2F_FRAME_GYRO				= BIT_1_SET,
+	RTDC2F_FRAME_ACC				= BIT_2_SET,
+	RTDC2F_DEBUG					= BIT_3_SET,
+	RTDC2F_MAG_SENS_DATA			= BIT_4_SET,
+	RTDC2F_PIN_STATE				= BIT_5_SET,
+	RTDC2F_STAB_ERR_AMPL			= BIT_6_SET,
+	RTDC2F_DATA_SET_FLAGS			= BIT_31_SET
+
+}	sbgcRealTimeDataCustom2Flag_t;
 /**	@}
  */
 
@@ -726,9 +767,13 @@ typedef struct PACKED__
 	i8		motorTemp;								/*!<  Motor temperature estimated by heating model (if configured) or
 														  measured by the hardware sensors (if present)									*/
 	ui16	motorFlags;								/*!<  See @ref sbgcMotorFlag_t enumeration											*/
-	ui8		reserved [6];
+	i8		balance; 								/*!< -127..127: static holding torque from -MAX to +MAX 							*/
+	ui16	stabErrAmpl; 							/*!< Instant stabilization error amplitude, 0.001 degrees 							*/
+
+	ui8		reserved [3];
 
 }	sbgcAxisMPS_t;
+
 
 /**	@brief	Type of structure provides the
  *			system power information
@@ -789,12 +834,20 @@ typedef struct PACKED__
  *	@note	Part of sbgcRealTimeDataCustom_t
  *			structure
  */
-typedef struct
+typedef struct PACKED__
 {
 	ui32	flags;									/*!<  The special system flags. See @ref sbgcStateFlag_t enumeration				*/
 	ui8		calibMode;								/*!<  If not 0, calibration or automatic task is running. Otherwise see
 														  @ref sbgcCalibMode_t enumeration												*/
-	ui8		reserved [8];
+	ui8		currentProfile; /*!< Active profile index, 0..4. See @ref sbgcProfile_t */
+	ui8		progress; /*!< Calibration progress, 0..100 percent */
+
+	ui16	systemError; /*!< See @ref sbgcSystemError_t */
+	ui8		systemSubError; /*!< Emergency stop code. See @ref sbgcSystemSubError_t */
+
+	ui16	cycleTime; /*!< Control cycle time, microseconds */
+
+	ui8		reserved [1];
 
 }	sbgcSystemState_t;
 
@@ -808,6 +861,26 @@ typedef struct
 	 */
 #endif
 
+
+/** @brief Main IMU state reported by RTDCF_MAIN_IMU_STATE (11 wire bytes)
+ *  @see SBGC32_RequestRealTimeDataCustom
+ */
+typedef struct PACKED__
+{
+	ui8 gRefErr;   /*!< Attitude reference error, 0.01 degrees */
+	ui8 hRefErr;   /*!< Heading reference error, 0.01 degrees */
+	ui8 flags;     /*!< Bits 0..2: G source; bits 3..5: H source. See @ref sbgcAHRS_RefSrc_t.
+                       Bits 6/7: sensor active / IMU enabled. See @ref sbgcFlagsRefSrc_t.
+                       Decode sources with @ref ParserSBGC32_GetAttitudeRefSrc and
+                       @ref ParserSBGC32_GetHeaderRefSrc. */
+	ui8 extSensErr; /*!< External sensor error on CAN_IMU; codes depend on sensor type */
+	ui8 reserved[7];
+} sbgcIMU_State_t;
+
+#if (SBGC_USES_REF_INFO)
+extern const sbgcParameterReferenceInfo_t IMU_StateReferenceInfoArray[];
+extern const ui8 IMU_StateReferenceInfoArrayElCnt;
+#endif
 
 /**	@brief	Structure reference for work with
  *			RealTimeDataCustom parameters
@@ -826,6 +899,7 @@ typedef struct
 
 	/* Received parameters */
 	ui16	timestampMs;							/*!<  Units: ms. Received in the packet every time regardless of flags				*/
+	ui32 dataSetFlags; /*!< Returned mask immediately after timestamp when bit 31 is requested; 2.74.1+ */
 
 	/* The followed data is regulated
 	   by the 'flags' field */
@@ -900,7 +974,60 @@ typedef struct
 														  change when the gimbal doesn't actually move. If MIN = MAX = 0, the
 														  constraints are not enabled. Frw. ver. 2.73.8									*/
 
+	i32 frameCamAngles20[3]; /*!< ROLL/PITCH/YAW joint angles, 0.00034332275390625 degrees; bit 28 */
+	sbgcIMU_State_t IMU_State; /*!< Main IMU sensor state, bit 29. See @ref sbgcIMU_State_t */
+
 }	sbgcRealTimeDataCustomReference_t;
+/**	@}
+ */
+
+
+/** @addtogroup Realtime_Data_Custom
+ *  @{
+ */
+/** @brief Structure reference for RealTimeDataCustom2 parameters
+ *
+ *  @note For SBGC32_RequestRealTimeDataCustom2 on big-endian systems,
+ *        pass this complete structure; selected fields are decoded individually.
+ *        On little-endian systems, prepare a PACKED__ structure containing
+ *        flags, timestampMs and only the requested response fields in protocol
+ *        order. This reference structure is not a packed wire layout.
+ *
+ *  @note flags is local request data. timestampMs is always received.
+ *        dataSetFlags follows timestampMs only when bit 31 is requested;
+ *        the big-endian decoder sets dataSetFlags to zero otherwise.
+ *        Other unrequested fields are not updated.
+ *
+ *  @attention Firmware: 2.74.2+; StabErrAmpl requires firmware 2.74.4+.
+ *
+ *  @see SBGC32_RequestRealTimeDataCustom2
+ *  @see sbgcRealTimeDataCustom2Flag_t
+ */
+typedef struct
+{
+	/* Sent parameters */
+	ui32	flags;									/*!<  See @ref sbgcRealTimeDataCustom2Flag_t enumeration								*/
+
+	/* Received parameters */
+	ui16	timestampMs;							/*!<  Units: ms. Received in the packet every time regardless of flags				*/
+	ui32	dataSetFlags;							/*!<  Included only if bit 31 was set in the request.								*/
+
+	/* The followed data is regulated
+	   by the 'flags' field */
+	i16		frameIMU_Angles [3],					/*!<  Frame IMU Euler angles, ROLL : PITCH : YAW. Units: 0.02197265625 degree. */
+			frameGyro [3],							/*!<  Units: 0.06103701895 degree/sec. Data from the frame IMU
+														  gyroscope sensor with the calibrations applied.								*/
+			frameACC [3],							/*!<  Units: 1/512 G. Data from the frame IMU accelerometer sensor with the
+														  calibrations applied, expressed in END coordinate system, sign is inverted.	*/
+			debug [4],								/*!<  For debugging purpose. 														*/
+
+			magSensData [3];						/*!<  Magnetometer sensor data with calibrations applied.							*/
+
+	ui8		pinState [8];							/*!<  PIN_STATE: exactly 8 raw bytes; no byte-order conversion.															*/
+
+	ui16	StabErrAmpl [3];						/*!<  Instant stabilization error amplitude, 0.001 degrees. Frw. ver. 2.74.4+		*/
+
+}	sbgcRealTimeDataCustom2Reference_t;
 /**	@}
  */
 
@@ -1194,15 +1321,22 @@ typedef struct
 /**	@addtogroup	Data_Stream_Interval
  *	@{
  */
-/**	@brief	Fills sbgcDataStreamInterval_t.config field
+/** @brief Fills the first four bytes of sbgcDataStreamInterval_t.config
  *
- *	@param	*dataStreamInterval - data stream structure
- *	@param	flags - realtime data custom parameter. See
- *			@ref sbgcRealTimeDataCustomFlag_t enumeration
+ *  @note Select flags matching the stream command: sbgcRealTimeDataCustomFlag_t
+ *        for CMD_REALTIME_DATA_CUSTOM or sbgcRealTimeDataCustom2Flag_t
+ *        for CMD_REALTIME_DATA_CUSTOM2. Initialize the descriptor to zero
+ *        before use; this helper leaves the remaining config bytes unchanged.
+ *
+ *  @note The mask is stored in little-endian wire order on every architecture.
+ *
+ *  @param *dataStreamInterval - data stream descriptor
+ *  @param flags - data selection mask for the selected command
  */
 static inline void ParserSBGC32_RTDC_FlagsToStream (sbgcDataStreamInterval_t *dataStreamInterval, ui32 flags)
 {
-	memcpy(dataStreamInterval->config, &flags, sizeof(flags));
+	for (ui8 i = 0; i < 4; i++)
+		dataStreamInterval->config[i] = (ui8)(flags >> (8U * i));
 }
 
 /**	@brief	Helps to fill sbgcDataStreamInterval_t.config field
@@ -1273,7 +1407,8 @@ sbgcCommandStatus_t SBGC32_ReadDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamC
 /**	@addtogroup	Realtime_Data_Custom
  *	@{
  */
-sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void *realTimeDataCustom, ui8 size SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void *realTimeDataCustom, ui16 size SBGC_ADVANCED_PARAMS__);
+sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom2 (sbgcGeneral_t *gSBGC, void *realTimeDataCustom2, ui8 size SBGC_ADVANCED_PARAMS__);
 /**	@}
  */
 

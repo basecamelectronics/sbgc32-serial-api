@@ -42,6 +42,19 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
 
 #if (SBGC_USES_REF_INFO)
 
+	/** @addtogroup Pass_Protect
+	 *  @{
+	 */
+	/** Mapping for big-endian conversion and whole-structure debug output. */
+	const sbgcParameterReferenceInfo_t passProtectReferenceInfoArray[] =
+	{
+		PARAM_BLOCK_("Flags", (sbgcUINT | sbgcFLAG)),
+		PARAMS_BLOCK_("Reserved", sbgcRCHAR, 4),
+	};
+	const ui8 passProtectReferenceInfoArrayElCnt = countof_(passProtectReferenceInfoArray);
+	/** @}
+	 */
+
 	/* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 	 *					Big Endian Mapping and Reference Info Structures
 	 */
@@ -283,7 +296,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  */
 /**	@brief	Reads version and board information
  *
- *	####	TX —> CMD_BOARD_INFO :	2 bytes
+ *	####	TX —> CMD_BOARD_INFO :	2 bytes, or 3 + passwordLength bytes
  *	####	RX <— CMD_BOARD_INFO :	18 bytes
  *
  *	@post	Use the @ref DebugSBGC32_PrintWholeStruct
@@ -294,7 +307,7 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
 
 			sbgcBoardInfo_t BoardInfo;
 
-			SBGC32_ReadBoardInfo(&SBGC32_Device, &BoardInfo, 0);
+			SBGC32_ReadBoardInfo(&SBGC32_Device, &BoardInfo, 0, 0, NULL);
 
 			#if (SBGC_NEED_DEBUG && SBGC_NEED_REF_INFO)
 				DebugSBGC32_PrintWholeStruct(&SBGC32_Device, &BoardInfo, PM_BOARD_INFO);
@@ -303,6 +316,9 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
+ *  @param passwordLength - 0 omits authentication; 1..32 sends the supplied bytes
+ *  @param *password - password bytes without a terminating zero; NULL when length is 0
+ *  @note Authentication extension: see @ref SBGC32_WritePassProtect.
  *	@param	*boardInfo - structure storing board information
  *	@param	cfg - configuration for this serial driver. For UARTs –
  *			period (in ms) between 20-bytes packets for BLE mode.
@@ -310,11 +326,22 @@ extern sbgcCommandStatus_t SBGC32_SendEmptyCommand (sbgcGeneral_t *gSBGC, serial
  *
  *	@return	Communication status. See @ref Readme_S2
  */
-sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t *boardInfo, ui16 cfg
+sbgcCommandStatus_t SBGC32_ReadBoardInfo (sbgcGeneral_t *gSBGC, sbgcBoardInfo_t *boardInfo, ui16 cfg,
+										  ui8 passwordLength, const ui8 *password
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	if (!boardInfo || passwordLength > 32U || (passwordLength && !password))
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+
 	gSBGC->_api->startWrite(gSBGC, CMD_BOARD_INFO SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->writeWord(gSBGC, cfg);
+
+	if (passwordLength)
+	{
+		gSBGC->_api->writeByte(gSBGC, passwordLength);
+		gSBGC->_api->writeBuff(gSBGC, password, passwordLength);
+	}
+
 	gSBGC->_api->finishWrite(gSBGC);
 
 	gSBGC->_api->startRead(gSBGC, CMD_BOARD_INFO SBGC_ADVANCED_ARGS__);
@@ -1369,6 +1396,58 @@ sbgcCommandStatus_t SBGC32_ReadDebugPort (sbgcGeneral_t *gSBGC, sbgcDebugPortDat
 /**	@addtogroup	Transparent_SerialAPI
  *	@{
  */
+/** @brief Connects two local serial ports in transparent proxy mode
+ *
+ *  #### TX -> CMD_SET_TRANSP_PROXY : 2 bytes (PORT1, PORT2)
+ *  #### RX <- no response on success; CMD_ERROR on failure
+ *
+ *  @attention Firmware: 2.74.5+ (checked when SBGC_NEED_ASSERTS is enabled).
+ *
+ *  @pre Both ports must be enabled for Serial API and unused by other functions.
+ *		  Each port uses its baud rate configured in controller settings.
+ *
+ *  @note Port indices start at 1; zero selects the current command port.
+ *		  These are local port indices, not packed CMD_TRANSPARENT_SAPI targets.
+ *		  Equal indices are rejected. If zero and an explicit index refer to
+ *		  the same physical port, the controller must detect this condition.
+ *	@note Data is forwarded in both directions, possibly with buffering.
+ *		  A participating port then carries raw forwarded data. No confirmation
+ *		  read is registered: success is silent, so waiting for CMD_CONFIRM would
+ *		  time out. sbgcCOMMAND_OK describes transmission/queueing only, not
+ *		  acceptance by the controller. CMD_ERROR is not decoded by this wrapper.
+ *
+ *  @code
+ *		// Blocking mode: forward between the current port and local port 2.
+ *		SBGC32_SetTransparentProxy(&SBGC32_Device, 0, 2);
+ *	@endcode
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param port1 - first local serial port (0 = current port)
+ *	@param port2 - second local serial port (0 = current port)
+ *	@return Communication status; identical indices are rejected before transmission
+ */
+sbgcCommandStatus_t SBGC32_SetTransparentProxy (sbgcGeneral_t *gSBGC, ui8 port1, ui8 port2
+												/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if (port1 == port2)
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFrwVer(2745)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_SET_TRANSP_PROXY SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, port1);
+	gSBGC->_api->writeByte(gSBGC, port2);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
 /**	@brief	Sends data to serial port on
  *			any device via CAN bus
  *
@@ -1634,6 +1713,12 @@ sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs
  *	@endcode
  *
  *	@param	*gSBGC - serial connection descriptor
+ *  @note Since firmware 2.74.3, FLOATING/PULLED_UP/PULLED_DOWN read the input.
+ *        After successful confirmation, use @ref ParserSBGC32_GetTriggerPinID
+ *        and @ref ParserSBGC32_GetTriggerPinState. cmdData low byte is PIN_ID;
+ *        high byte is signed state: -1 unavailable, 0 low, 1 high.
+ *  @note External pins require CAN_DRV 1.48+ or CAN_IMU 1.55+ respectively;
+ *        the caller must ensure the remote module firmware supports the pin.
  *	@param	pinID - trigger pin identifier
  *	@param	state - the physical state of the pin
  *	@param	*confirm - confirmation result storage structure
@@ -1643,7 +1728,12 @@ sbgcCommandStatus_t SBGC32_Reset (sbgcGeneral_t *gSBGC, ui8 flag, ui16 delayMs
 sbgcCommandStatus_t SBGC32_SetTriggerPin (sbgcGeneral_t *gSBGC, sbgcTriggerPinID_t pinID, sbgcPinState_t state, sbgcConfirm_t *confirm
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	if ((ui32)state > sbgcPIN_STATE_PULLED_DOWN) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+
 	#if (SBGC_NEED_ASSERTS)
+		if (state >= sbgcPIN_STATE_PULLED_UP || pinID >= sbgcPIN_CAN_DRV1_AUX1)
+			sbgcAssertFrwVer(2743)
+
 
 		if ((gSBGC->_api->baseFirmwareVersion < 2660) && (state == sbgcPIN_STATE_FLOATING))
 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
@@ -1903,6 +1993,141 @@ sbgcCommandStatus_t SBGC32_SignMessage (sbgcGeneral_t *gSBGC, ui8 signType, cons
 }
 
 
+/** @brief Decodes the device list or CMD_ERROR returned by a uDrv scan
+ *
+ *	@note Private function. All device record fields are bytes, so the existing
+ *		  PM_CAN_DEVICE_SCAN map works on both endian architectures. Read each
+ *		  record separately to apply that map to exactly one 14-byte structure.
+ */
+static void PostUDRV_DeviceScan (sbgcGeneral_t *gSBGC)
+{
+	sbgcUDRV_DeviceScan_t *scan = (sbgcUDRV_DeviceScan_t*)curCmdDest_;
+
+	if (curCmd_->_commandID == CMD_ERROR)
+	{
+		if (curCmd_->_payloadSize < 2)
+		{
+			scan->status = UDS_INVALID_PAYLOAD;
+			return;
+		}
+
+		if (gSBGC->_api->readByte(gSBGC) != CMD_UDRV_DEVICE_SCAN)
+		{
+			scan->status = UDS_INVALID_PAYLOAD;
+			return;
+		}
+
+		scan->error.errorCode = gSBGC->_api->readByte(gSBGC);
+		ui8 extraSize = curCmd_->_payloadSize - 2U;
+
+		if (extraSize > sizeof(scan->error.errorData))
+			extraSize = sizeof(scan->error.errorData);
+
+		if (extraSize != 0)
+			gSBGC->_api->readBuff(gSBGC, scan->error.errorData, extraSize);
+
+		#if (SBGC_NEED_CONFIRM_CMD)
+			scan->error.status = sbgcCONFIRM_ERROR;
+		#endif
+
+		scan->status = UDS_ERROR;
+		return;
+	}
+
+	if ((curCmd_->_commandID != CMD_CAN_DEVICE_SCAN) ||
+		((curCmd_->_payloadSize % sizeof(sbgcCAN_DeviceScan_t)) != 0))
+	{
+		scan->status = UDS_INVALID_PAYLOAD;
+		return;
+	}
+
+	scan->deviceNum = curCmd_->_payloadSize / sizeof(sbgcCAN_DeviceScan_t);
+	if (scan->deviceNum > scan->deviceCapacity)
+	{
+		scan->status = UDS_BUFFER_TOO_SMALL;
+		return;
+	}
+
+	for (ui8 i = 0; i < scan->deviceNum; i++)
+		gSBGC->_api->readBuff(gSBGC, &scan->devices[i], sizeof(sbgcCAN_DeviceScan_t));
+
+	scan->status = UDS_RECEIVED;
+}
+
+
+/** @brief Scans uDrv devices, detects the IMU connection and assigns device IDs
+ *
+ *	#### TX -> CMD_UDRV_DEVICE_SCAN : no payload
+ *	#### RX <- CMD_CAN_DEVICE_SCAN : 14 * deviceNum bytes, or CMD_ERROR
+ *
+ *	@note The response ID is 96, not 144. Records are UID[12], ID (1 byte),
+ *		  type (1 byte), with no count prefix. IDs 1..4 identify uDrv modules.
+ *		  type & CDT_TYPE_MASK selects the device type; CDT_UDRV_IMU_CONNECTED
+ *		  marks an attached IMU and CDT_HARDWARE_ASSIGNED marks a jumper-set ID.
+ *	@note Scanning changes device ID assignments. Do not run simultaneous CAN
+ *		  and uDrv scans: their successful responses use the same command ID.
+ *		  The specification does not state a minimum firmware version for this
+ *		  command; no CAN-port feature or firmware-version check is assumed.
+ *
+ *	@post Check communication status, then scan->status. UDS_RECEIVED means the
+ *		  array contains deviceNum valid records. UDS_ERROR exposes the file-
+ *		  operation error code in scan->error.errorCode. UDS_BUFFER_TOO_SMALL
+ *		  reports the required capacity in deviceNum without modifying the array.
+ *		  UDS_INVALID_PAYLOAD rejects a partial record. Timeout leaves UDS_PENDING.
+ *
+ *	@note In nonblocking mode, keep scan and scan->devices alive until completion.
+ *		  PM_CAN_DEVICE_SCAN may be used to print individual device records.
+ *
+ *  @code
+ *		// Blocking mode.
+ *		sbgcCAN_DeviceScan_t devices[SBGC_UDRV_SCAN_MAX_DEVICES];
+ *		sbgcUDRV_DeviceScan_t scan = {0};
+ *
+ *		scan.devices = devices;
+ *		scan.deviceCapacity = SBGC_UDRV_SCAN_MAX_DEVICES;
+ *
+ *		sbgcCommandStatus_t status = SBGC32_UDRV_DeviceScan(&SBGC32_Device, &scan);
+ *
+ *		if ((status == sbgcCOMMAND_OK) && (scan.status == UDS_RECEIVED))
+ *		{
+ *			// Process devices[0..scan.deviceNum-1].
+ *		}
+ *	@endcode
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param *scan - initialized destination descriptor, including devices/capacity
+ *
+ *	@return Communication status; invalid pointers/capacity are rejected before TX
+ */
+sbgcCommandStatus_t SBGC32_UDRV_DeviceScan (sbgcGeneral_t *gSBGC, sbgcUDRV_DeviceScan_t *scan
+											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if ((scan == NULL) || (scan->devices == NULL) || (scan->deviceCapacity == 0) ||
+		(scan->deviceCapacity > SBGC_UDRV_SCAN_MAX_DEVICES))
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	memset(&scan->error, 0, sizeof(scan->error));
+	scan->error.commandID = CMD_UDRV_DEVICE_SCAN;
+	scan->deviceNum = 0;
+	scan->status = UDS_PENDING;
+
+	gSBGC->_api->startWrite(gSBGC, CMD_UDRV_DEVICE_SCAN SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->startRead(gSBGC, CMD_CAN_DEVICE_SCAN SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->assignEvent(gSBGC, PostUDRV_DeviceScan, scan, sizeof(sbgcUDRV_DeviceScan_t));
+	gSBGC->_api->finishRead(gSBGC);
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
 /**	@brief	Scans CAN bus devices
  *
  *	####	TX —> CMD_CAN_DEVICE_SCAN		with no payload
@@ -2025,6 +2250,381 @@ sbgcCommandStatus_t SBGC32_RequestModuleList (sbgcGeneral_t *gSBGC, sbgcCAN_Modu
 	return gSBGC->_api->exit(gSBGC);
 }
 /**	@}
+ */
+
+
+/** @addtogroup Module_Flash
+ *	@{
+ */
+/** @brief Calculates CRC-32/ISO-HDLC for firmware data
+ *
+ *  @note Polynomial: 0x04C11DB7 (reflected: 0xEDB88320); initial value and
+ *		  final XOR: 0xFFFFFFFF; RefIn = RefOut = true. The right-shifting
+ *		  reflected implementation needs no additional output bit reversal.
+ *		  The result for "123456789" is 0xCBF43926; an empty buffer yields zero.
+ *  @note Each call starts a new checksum. For MODULE_FLASH_WRITE, cover only
+ *		  the block data, excluding command fields and Serial API framing.
+ *		  For MODULE_FLASH_FINISH, call once on the complete transmitted image;
+ *		  do not sum or XOR the checksums of individual blocks.
+ *
+ *	@pre data must point to at least size readable bytes when size is nonzero.
+ *		  NULL is permitted only when size is zero.
+ *
+ *	@param *data - byte buffer, processed in its original order
+ *	@param size - number of bytes, without the 128-byte WRITE block restriction
+ *
+ *	@return Finalized 32-bit CRC in host byte order
+ *
+ *	@see SBGC32_ModuleFlashWrite
+ *	@see SBGC32_ModuleFlashFinish
+ */
+ui32 SerialAPI_CalculateModuleFlashCRC32 (const ui8 *data, ui32 size)
+{
+	ui32 crc = 0xFFFFFFFFU;
+
+	for (ui32 i = 0; i < size; i++)
+	{
+		crc ^= data[i];
+
+		for (ui8 bit = 0; bit < 8; bit++)
+			crc = (crc >> 1) ^ ((crc & 1U) ? 0xEDB88320U : 0U);
+	}
+
+	return crc ^ 0xFFFFFFFFU;
+}
+
+
+/** @brief Starts firmware upload to an external CAN module
+ *
+ *	#### TX -> CMD_MODULE_FLASH_START : 5 bytes
+ *	#### RX <- CMD_CONFIRM or CMD_ERROR
+ *
+ *	@pre Select deviceID using CMD_MODULE_LIST. For an image whose size is
+ *		 divisible by four, firmwareSizeWords = imageSizeBytes / 4.
+ *		 Do not silently pad or truncate an unaligned image.
+ *	@pre Board requirements: BF_CAN_PORT (checked when SBGC_NEED_ASSERTS is on).
+ *
+ *	@post Wait for sbgcCONFIRM_RECEIVED before sending the first block.
+ *		  On success, confirm->cmdData contains the confirmed device ID.
+ *
+ *  @note The module error payload is CMD_ID (ui8), ERROR_CODE (ui8),
+ *		  DEVICE_ID (ui16), PACKET_ID (ui16). The last four bytes are retained
+ *		  in confirm->errorData in little-endian wire order. Decode them as
+ *		  two 16-bit values; the request IDs themselves are 8-bit values.
+ *	@note Invalid deviceID zero or firmware size zero is rejected even when
+ *		  SBGC_NEED_ASSERTS is disabled. The controller validates other IDs.
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param deviceID - nonzero module ID from CMD_MODULE_LIST
+ *	@param firmwareSizeWords - firmware size in 32-bit words, not bytes
+ *	@param *confirm - persistent confirmation destination, or SBGC_NO_CONFIRM
+ *
+ *	@return Communication status. Also inspect confirm->status when enabled.
+ *
+ *	@see Module_Flash
+ *	@see SBGC32_ModuleFlashWrite
+ *	@see SBGC32_ModuleFlashFinish
+ */
+sbgcCommandStatus_t SBGC32_ModuleFlashStart (sbgcGeneral_t *gSBGC, ui8 deviceID, ui32 firmwareSizeWords, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if ((deviceID == 0) || (firmwareSizeWords == 0))
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFeature(BF_CAN_PORT)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_MODULE_FLASH_START SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, deviceID);
+	gSBGC->_api->writeLong(gSBGC, firmwareSizeWords);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_MODULE_FLASH_START SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/** @brief Writes one firmware block to an external CAN module
+ *
+ *	#### TX -> CMD_MODULE_FLASH_WRITE : 10 + size bytes (14..138)
+ *	#### RX <- CMD_CONFIRM or CMD_ERROR
+ *
+ *	@pre START and the preceding WRITE, if any, must be confirmed successfully.
+ *		  The caller must keep address + size within the announced image size.
+ *	@pre Board requirements: BF_CAN_PORT (checked when SBGC_NEED_ASSERTS is on).
+ *
+ *	@note The first packetID is zero. Increase it for each subsequent block.
+ *		  Confirm target bootloader behavior on 8-bit counter wrap and duplicate
+ *		  packets before relying on wraparound or retrying a timed-out write.
+ *	@note size is local metadata and is not sent as a separate field.
+ *		  Numeric fields are serialized in little-endian order by writeLong;
+ *		  firmware data bytes are sent unchanged on both endian architectures.
+ *	@note CRC-32/ISO-HDLC is calculated automatically over exactly
+ *		  data[0..size-1], excluding all command fields and Serial API framing.
+ *		  The finalized CRC is sent as a 32-bit little-endian field.
+ *	@note The former dataCRC32 argument has been removed. Pass data directly
+ *		  after address; callers no longer supply a block checksum.
+ *
+ *  @post Wait for sbgcCONFIRM_RECEIVED before advancing the offset and packet ID.
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param deviceID - nonzero module ID from CMD_MODULE_LIST
+ *	@param packetID - 8-bit block counter, starting at zero
+ *	@param address - byte offset from the beginning of the image, aligned to 4
+ *	@param *data - readable firmware bytes; must not be NULL
+ *	@param size - 4..128 data bytes, divisible by 4
+ *	@param *confirm - persistent confirmation destination, or SBGC_NO_CONFIRM
+ *
+ *	@return Communication status. Invalid ID, pointer, size or alignment returns
+ *			sbgcCOMMAND_PARAM_ASSERT_ERROR before registering a command,
+ *			including when SBGC_NEED_ASSERTS is disabled.
+ *
+ *	@see SBGC32_ModuleFlashStart for the confirmation/error format
+ */
+sbgcCommandStatus_t SBGC32_ModuleFlashWrite (sbgcGeneral_t *gSBGC, ui8 deviceID, ui8 packetID, ui32 address,
+											 const ui8 *data, ui8 size, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if ((deviceID == 0) || (data == NULL) ||
+		(size < SBGC_MODULE_FLASH_ALIGNMENT) || (size > SBGC_MODULE_FLASH_MAX_DATA_SIZE) ||
+		((size % SBGC_MODULE_FLASH_ALIGNMENT) != 0) || ((address % SBGC_MODULE_FLASH_ALIGNMENT) != 0))
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFeature(BF_CAN_PORT)
+
+	const ui32 dataCRC32 = SerialAPI_CalculateModuleFlashCRC32(data, size);
+
+	gSBGC->_api->startWrite(gSBGC, CMD_MODULE_FLASH_WRITE SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, deviceID);
+	gSBGC->_api->writeByte(gSBGC, packetID);
+	gSBGC->_api->writeLong(gSBGC, address);
+	gSBGC->_api->writeLong(gSBGC, dataCRC32);
+	gSBGC->_api->writeBuff(gSBGC, data, size);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_MODULE_FLASH_WRITE SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/** @brief Finishes firmware upload to an external CAN module
+ *
+ *	#### TX -> CMD_MODULE_FLASH_FINISH : 5 bytes
+ *	#### RX <- CMD_CONFIRM or CMD_ERROR
+ *
+ * 	@pre All image blocks must have been written and confirmed successfully.
+ *	@pre Board requirements: BF_CAN_PORT (checked when SBGC_NEED_ASSERTS is on).
+ *
+ *	@note fileCRC32 is the CRC32 of the complete transmitted .bin image, not
+ *		  a sum or XOR of block checksums. Obtain it using
+ *		  SerialAPI_CalculateModuleFlashCRC32(image, imageSizeBytes).
+ *		  This function has no image pointer and sends the supplied value as-is.
+ *
+ *  @post Check both communication status and confirm->status. Query module
+ *		  information again when the module is available to verify its version.
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param deviceID - nonzero module ID from CMD_MODULE_LIST
+ *	@param fileCRC32 - externally computed CRC32 of the entire firmware image
+ *	@param *confirm - persistent confirmation destination, or SBGC_NO_CONFIRM
+ *
+ *	@return Communication status; zero deviceID is rejected unconditionally.
+ *
+ *	@see SBGC32_ModuleFlashStart for the confirmation/error format
+ */
+sbgcCommandStatus_t SBGC32_ModuleFlashFinish (sbgcGeneral_t *gSBGC, ui8 deviceID, ui32 fileCRC32, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if (deviceID == 0)
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFeature(BF_CAN_PORT)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_MODULE_FLASH_FINISH SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeByte(gSBGC, deviceID);
+	gSBGC->_api->writeLong(gSBGC, fileCRC32);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_MODULE_FLASH_FINISH SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->link(gSBGC);
+
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+/** @}
+ */
+
+
+/** @addtogroup Pass_Protect
+ *	@{
+ */
+/** @brief Reads password protection settings
+ *
+ *	#### TX -> CMD_PASS_PROTECT_READ : no payload
+ *	#### RX <- CMD_PASS_PROTECT_READ : 8 bytes
+ *
+ *	@attention Firmware: 2.73.6+. Authenticate a protected channel using the
+ *		  CMD_BOARD_INFO password extension before this request.
+ *
+ *  @note Returns flags and four reserved bytes, never the stored password.
+ *		  PM_PASS_PROTECT converts flags on big-endian hosts and supports
+ *		  DebugSBGC32_PrintWholeStruct when reference information is enabled.
+ *	@note An eight-byte response is required. The destination is only valid
+ *		  after successful processing. A corrupt EEPROM may produce CMD_ERROR;
+ *		  the generic data receiver does not return its code through this API,
+ *		  and failure to receive the settings surfaces as an RX error/timeout.
+ *		  Silent password protection can also cause a timeout.
+ *
+ *	@code
+ *		// Blocking mode; the channel must already be authenticated if required.
+ *
+ *		sbgcPassProtect_t settings = {0};
+ *		sbgcCommandStatus_t status = SBGC32_ReadPassProtect(&SBGC32_Device, &settings);
+ *
+ *		if (status == sbgcCOMMAND_OK)
+ *		{
+ *			// Inspect settings.flags. No password is returned.
+ *		}
+ *
+ *	@endcode
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param *passProtect - destination, valid until the request completes
+ *	@return Communication status. NULL destination is rejected before transmission.
+ */
+sbgcCommandStatus_t SBGC32_ReadPassProtect (sbgcGeneral_t *gSBGC, sbgcPassProtect_t *passProtect
+											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if (passProtect == NULL)
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFrwVer(2736)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_PASS_PROTECT_READ SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->startRead(gSBGC, CMD_PASS_PROTECT_READ SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->assignEvent(gSBGC, NULL, passProtect, sizeof(sbgcPassProtect_t));
+	gSBGC->_api->definePayload(gSBGC, sizeof(sbgcPassProtect_t));
+	gSBGC->_api->finishRead(gSBGC);
+
+	gSBGC->_api->link(gSBGC);
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+
+
+/** @brief Updates protection settings and optionally replaces the password
+ *
+ *	#### TX -> CMD_PASS_PROTECT_WRITE : 9 + newPasswordLength bytes (9..41)
+ *	#### RX <- CMD_CONFIRM or CMD_ERROR
+ *
+ *  @attention Firmware: 2.73.6+. Authenticate with the current password through
+ *		  CMD_BOARD_INFO before writing on an already protected channel.
+ *
+ *	@note Sends flags (4 bytes), four zero reserved bytes, password length
+ *		  (1 byte) and exactly that many password bytes. There is no automatic
+ *		  strlen(), encoding conversion or terminating NUL on the wire.
+ *  @note A zero length retains the password; it does not clear it. In this case
+ *		  newPassword may be NULL. To disable protection, update the channel
+ *		  enable flags. Reading settings does not reveal the current password.
+ *  @note Password verification and authentication are performed by the device.
+ *		  ERR_PASSWORD_REQUIRED (12) indicates authentication is needed;
+ *		  silent mode can cause no response instead.
+ *
+ *  @post With SBGC_NEED_CONFIRM_CMD enabled, pass a confirmation object and
+ *		  check sbgcCONFIRM_RECEIVED before treating the change as accepted.
+ *		 SBGC_NO_CONFIRM only transmits the request. In nonblocking mode,
+ *		  keep the confirmation object valid until processing completes.
+ *
+ *  @code
+ *
+ *		// Blocking mode: update selected flags, preserving the current password.
+ *
+ *		sbgcPassProtect_t settings = {0};
+ *		sbgcConfirm_t confirm;
+ *
+ *		if (SBGC32_ReadPassProtect(&SBGC32_Device, &settings) == sbgcCOMMAND_OK)
+ *		{
+ *			// Set settings.flags to the desired combination before writing.
+ *			sbgcCommandStatus_t status = SBGC32_WritePassProtect(&SBGC32_Device, &settings, NULL, 0, &confirm);
+ *
+ *			// Check status, then confirm.status after the command completes.
+ *			(void)status;
+ *		}
+ *
+ *  @endcode
+ *
+ *	@param *gSBGC - initialized serial connection descriptor
+ *	@param *passProtect - desired flags; reserved[] is ignored and sent as zeros
+ *	@param *newPassword - new password bytes, required only for nonzero length
+ *	@param newPasswordLength - 0 keeps the password; 1..32 replaces it
+ *	@param *confirm - confirmation destination, or SBGC_NO_CONFIRM
+ *
+ *	@return Communication status. NULL settings, reserved flags, excessive
+ *		  	length or a missing password buffer are rejected unconditionally.
+ */
+sbgcCommandStatus_t SBGC32_WritePassProtect (sbgcGeneral_t *gSBGC, const sbgcPassProtect_t *passProtect,
+											 const ui8 *newPassword, ui8 newPasswordLength, sbgcConfirm_t *confirm
+											 /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+{
+	if ((passProtect == NULL) || (newPasswordLength > SBGC_PASS_PROTECT_MAX_PASSWORD_SIZE) ||
+		((newPasswordLength != 0) && (newPassword == NULL)))
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	ui32 flags;
+	memcpy(&flags, &passProtect->flags, sizeof(flags));
+
+	if (flags & ~((ui32)SBGC_PASS_PROTECT_FLAGS_MASK))
+
+	{
+		gSBGC->_lastCommandStatus = sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
+	sbgcAssertFrwVer(2736)
+
+	gSBGC->_api->startWrite(gSBGC, CMD_PASS_PROTECT_WRITE SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->writeLong(gSBGC, flags);
+	gSBGC->_api->writeEmptyBuff(gSBGC, 4);
+	gSBGC->_api->writeByte(gSBGC, newPasswordLength);
+
+	if (newPasswordLength != 0)
+		gSBGC->_api->writeBuff(gSBGC, newPassword, newPasswordLength);
+
+	gSBGC->_api->finishWrite(gSBGC);
+
+	gSBGC->_api->addConfirm(gSBGC, confirm, CMD_PASS_PROTECT_WRITE SBGC_ADVANCED_ARGS__);
+	gSBGC->_api->link(gSBGC);
+	serialAPI_GiveToken()
+
+	return gSBGC->_api->exit(gSBGC);
+}
+/** @}
  */
 
 #endif /* SBGC_SERVICE_MODULE */

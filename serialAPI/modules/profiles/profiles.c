@@ -320,59 +320,65 @@
 		PARAM_BLOCK_(	"Ext IMU Position",			sbgcUCHAR						),  // 4
 		PARAM_BLOCK_(	"Ext IMU Orientation",		sbgcUCHAR						),  // 5
 		PARAM_BLOCK_(	"Ext IMU Flags",			(sbgcUSHORT | sbgcFLAG)			),  // 6
-		PARAMS_BLOCK_(	"Ext IMU Reserved",			sbgcRCHAR,					12	),  // 7
-		PARAMS_BLOCK_(	"Soft Limit Width",			sbgcUCHAR,					3	),  // 8
-		PARAMS_BLOCK_(	"ADC Replace Src",			sbgcUCHAR,					3	),  // 9
+		PARAMS_BLOCK_(	"Ext IMU Alignment Correction",
+													sbgcSHORT, 					3	),  // 7
+		PARAM_BLOCK_(	"Ext IMU Startup Delay", 	sbgcUCHAR						),  // 8
+		PARAM_BLOCK_(	"Ext IMU Gyro Correction Rate",
+													sbgcUCHAR						),  // 9
+		PARAMS_BLOCK_(	"Ext IMU Reserved", 		sbgcRCHAR, 					4	),  // 10
+		PARAMS_BLOCK_(	"Soft Limit Width",			sbgcUCHAR,					3	),  // 11
+		PARAMS_BLOCK_(	"ADC Replace Src",			sbgcUCHAR,					3	),  // 12
 		PARAM_BLOCK_(	"Glock Mid Mot Pos Corr Rate",
-													sbgcUCHAR						),  // 10
-		PARAMS_BLOCK_(	"Extra Btn Cfg",			sbgcUCHAR,					5	),  // 11
-		PARAMS_BLOCK_(	"Power Ctrl Cfg",			sbgcUCHAR,					8	),  // 12
-		PARAMS_BLOCK_(	"LPF Q Inv",				sbgcUCHAR,					3	),  // 13
-		PARAM_BLOCK_(	"CAN IMU Ext Sens Type",	sbgcUCHAR						),  // 14
-		PARAM_BLOCK_(	"Profile Flags 2",			(sbgcUSHORT | sbgcFLAG)			),  // 15
-		PARAMS_BLOCK_(	"Reserved 3",				sbgcRCHAR,					3	),  // 16
-		PARAM_BLOCK_(	"General Flags 3",			(sbgcUINT | sbgcFLAG)			),  // 17
-		PARAMS_BLOCK_(	"Follow Offset Ext",		sbgcSHORT,					3	),  // 18
-		PARAM_BLOCK_(	"Motor Startup Delay",		sbgcUSHORT						),  // 19
-		PARAM_BLOCK_(	"IMU Model Main",			sbgcUCHAR						),  // 20
-		PARAM_BLOCK_(	"IMU Model Frame",			sbgcUCHAR						),  // 21
-		PARAMS_BLOCK_(	"Stab Threshold Angle",		sbgcUCHAR,					3	),  // 22
-		PARAM_BLOCK_(	"Ext Buzzer Pin",			sbgcUCHAR						),  // 23
+													sbgcUCHAR						),  // 13
+		PARAMS_BLOCK_(	"Extra Btn Cfg",			sbgcUCHAR,					5	),  // 14
+		PARAMS_BLOCK_(	"Power Ctrl Cfg",			sbgcUCHAR,					8	),  // 15
+		PARAMS_BLOCK_(	"LPF Q Inv",				sbgcUCHAR,					3	),  // 16
+		PARAM_BLOCK_(	"CAN IMU Ext Sens Type",	sbgcUCHAR						),  // 17
+		PARAM_BLOCK_(	"Profile Flags 2",			(sbgcUSHORT | sbgcFLAG)			),  // 18
+		PARAMS_BLOCK_(	"Reserved 3",				sbgcRCHAR,					3	),  // 19
+		PARAM_BLOCK_(	"General Flags 3",			(sbgcUINT | sbgcFLAG)			),  // 20
+		PARAMS_BLOCK_(	"Follow Offset Ext",		sbgcSHORT,					3	),  // 21
+		PARAM_BLOCK_(	"Motor Startup Delay",		sbgcUSHORT						),  // 22
+		PARAM_BLOCK_(	"IMU Model Main",			sbgcUCHAR						),  // 23
+		PARAM_BLOCK_(	"IMU Model Frame",			sbgcUCHAR						),  // 24
+		PARAMS_BLOCK_(	"Stab Threshold Angle",		sbgcUCHAR,					3	),  // 25
+		PARAM_BLOCK_(	"Ext Buzzer Pin",			sbgcUCHAR						),  // 26
 		PARAMS_BLOCK_(	"Encoder Limit Return Speed",
-													sbgcUCHAR,					3	),  // 24
+													sbgcUCHAR,					3	),  // 27
 		PARAM_BLOCK_(	"Tripod Mode Auto Threshold",
-													sbgcUCHAR						),  // 25
-		PARAM_BLOCK_(	"RC Deadband Pitch",		sbgcUCHAR						),  // 26
-		PARAM_BLOCK_(	"RC Deadband Yaw",			sbgcUCHAR						),  // 27
-		PARAM_BLOCK_(	"RC Expo Rate Pitch",		sbgcUCHAR						),  // 28
-		PARAM_BLOCK_(	"RC Expo Rate Yaw",			sbgcUCHAR						),  // 29
-		PARAM_BLOCK_(	"Profile Flags 3",			(sbgcUINT | sbgcFLAG)			),  // 30
-		PARAM_BLOCK_(	"Default Profile",			sbgcUCHAR						),  // 31
-		PARAMS_BLOCK_(	"Retracted Angle",			sbgcSHORT,					3	),  // 32
-		PARAMS_BLOCK_(	"SGC Amplitude",			sbgcUCHAR,					3	),  // 33
-		PARAM_BLOCK_(	"SGC Frequency Range",		sbgcUCHAR						),  // 34
-		PARAM_BLOCK_(	"SGC Pause Period",			sbgcUCHAR						),  // 35
-		PARAM_BLOCK_(	"SGC Pause Balance",		sbgcUCHAR						),  // 36
-		PARAM_BLOCK_(	"SGC Pause Attenuation",	sbgcUCHAR						),  // 37
-		PARAM_BLOCK_(	"SGC Pause Randomness",		sbgcUCHAR						),  // 38
-		PARAM_BLOCK_(	"SGC Pause Phase Var",		sbgcUCHAR						),  // 39
-		PARAMS_BLOCK_(	"SGC Resonance Gain",		sbgcUCHAR,					3	),  // 40
-		PARAM_BLOCK_(	"SGC Resonance Frequency",	sbgcUCHAR						),  // 41
-		PARAMS_BLOCK_(	"SGC Frequency Shift",		sbgcCHAR,					3	),  // 42
-		PARAMS_BLOCK_(	"SGC Reserved 4",			sbgcRCHAR,					5	),  // 43
-		PARAMS_BLOCK_(	"Ext Motor Drv IDs",		sbgcUCHAR,					7	),  // 44
-		PARAMS_BLOCK_(	"Encoder Cfg Ext",			sbgcUSHORT,					3	),  // 45
-		PARAMS_BLOCK_(	"Ext Sens Params",			sbgcUCHAR,					16	),  // 46
-		PARAM_BLOCK_(	"IMU Angle Corr R",			sbgcSHORT						),  // 47
-		PARAM_BLOCK_(	"IMU Angle Corr P",			sbgcSHORT						),  // 48
-		PARAMS_BLOCK_(	"CAN IMU Servo Out",		sbgcUCHAR,					2	),  // 49
-		PARAM_BLOCK_(	"CAN IMU Servo Rate",		sbgcUCHAR						),  // 50
-		PARAM_BLOCK_(	"Servo Outer P Mult",		sbgcUCHAR						),  // 51
-		PARAM_BLOCK_(	"Servo Outer I",			sbgcUCHAR						),  // 52
-		PARAM_BLOCK_(	"Ext Pwr Sw Shunt R",		sbgcUSHORT						),  // 53
-		PARAM_BLOCK_(	"General Flags 4",			(sbgcUINT | sbgcFLAG)			),  // 54
-		PARAMS_BLOCK_(	"Reserved 5",				sbgcRCHAR,					49	),  // 55
-
+													sbgcUCHAR						),  // 28
+		PARAM_BLOCK_(	"RC Deadband Pitch",		sbgcUCHAR						),  // 29
+		PARAM_BLOCK_(	"RC Deadband Yaw",			sbgcUCHAR						),  // 30
+		PARAM_BLOCK_(	"RC Expo Rate Pitch",		sbgcUCHAR						),  // 31
+		PARAM_BLOCK_(	"RC Expo Rate Yaw",			sbgcUCHAR						),  // 32
+		PARAM_BLOCK_(	"Profile Flags 3",			(sbgcUINT | sbgcFLAG)			),  // 33
+		PARAM_BLOCK_(	"Default Profile",			sbgcUCHAR						),  // 34
+		PARAMS_BLOCK_(	"Retracted Angle",			sbgcSHORT,					3	),  // 35
+		PARAMS_BLOCK_(	"SGC Amplitude",			sbgcUCHAR,					3	),  // 36
+		PARAM_BLOCK_(	"SGC Base Frequency", 		sbgcUCHAR						),  // 37
+		PARAM_BLOCK_(	"SGC Frequency Range",		sbgcUCHAR						),  // 38
+		PARAM_BLOCK_(	"SGC Pause Period",			sbgcUCHAR						),  // 39
+		PARAM_BLOCK_(	"SGC Pause Balance",		sbgcUCHAR						),  // 40
+		PARAM_BLOCK_(	"SGC Pause Attenuation",	sbgcUCHAR						),  // 41
+		PARAM_BLOCK_(	"SGC Pause Randomness",		sbgcUCHAR						),  // 42
+		PARAM_BLOCK_(	"SGC Pause Phase Var",		sbgcUCHAR						),  // 43
+		PARAMS_BLOCK_(	"SGC Resonance Gain",		sbgcUCHAR,					3	),  // 44
+		PARAM_BLOCK_(	"SGC Resonance Frequency",	sbgcUCHAR						),  // 45
+		PARAMS_BLOCK_(	"SGC Frequency Shift",		sbgcCHAR,					3	),  // 46
+		PARAMS_BLOCK_(	"SGC Reserved 4",			sbgcRCHAR,					5	),  // 47
+		PARAMS_BLOCK_(	"Ext Motor Drv IDs",		sbgcUCHAR,					7	),  // 48
+		PARAMS_BLOCK_(	"Encoder Cfg Ext",			sbgcUSHORT,					3	),  // 49
+		PARAMS_BLOCK_(	"Ext Sens Params",			sbgcUCHAR,					16	),  // 50
+		PARAM_BLOCK_(	"IMU Angle Corr R",			sbgcSHORT						),  // 51
+		PARAM_BLOCK_(	"IMU Angle Corr P",			sbgcSHORT						),  // 52
+		PARAMS_BLOCK_(	"CAN IMU Servo Out",		sbgcUCHAR,					2	),  // 53
+		PARAM_BLOCK_(	"CAN IMU Servo Rate",		sbgcUCHAR						),  // 54
+		PARAM_BLOCK_(	"Servo Outer P Mult",		sbgcUCHAR						),  // 55
+		PARAM_BLOCK_(	"Servo Outer I",			sbgcUCHAR						),  // 56
+		PARAM_BLOCK_(	"Ext Pwr Sw Shunt R",		sbgcUSHORT						),  // 57
+		PARAM_BLOCK_(	"General Flags 4",			(sbgcUINT | sbgcFLAG)			),  // 58
+		PARAM_BLOCK_(	"Auto Motion Timeout", 		sbgcUCHAR						),  // 59
+		PARAMS_BLOCK_(	"Reserved 5", 				sbgcRCHAR, 					48	),  // 60
 	};
 
 	const ui8 mainParamsExt3_ReferenceInfoArrayElCnt = countof_(mainParamsExt3_ReferenceInfoArray);
@@ -950,6 +956,9 @@ sbgcCommandStatus_t SBGC32_ReadParamsExt2 (sbgcGeneral_t *gSBGC, sbgcMainParamsE
  *	@param	*confirm - confirmation result storage structure
  *
  *	@return	Communication status. See @ref Readme_S2
+ *  @note Includes extIMU_AlignCorrection (0.001 degrees), extIMU_StartupDelay
+ *        (50 ms), extIMU_GyroCorrRate and autoMotionTimeout (100 ms, 2.73.9+).
+ *        See @ref sbgcMainParamsExt3_t and @ref sbgcGeneralFlag4_t.
  */
 sbgcCommandStatus_t SBGC32_WriteParamsExt3 (sbgcGeneral_t *gSBGC, const sbgcMainParamsExt3_t *mainParamsExt3, sbgcConfirm_t *confirm
 											/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
@@ -990,6 +999,9 @@ sbgcCommandStatus_t SBGC32_WriteParamsExt3 (sbgcGeneral_t *gSBGC, const sbgcMain
  *	@param	profileID - profile number
  *
  *	@return	Communication status. See @ref Readme_S2
+ *  @note Includes extIMU_AlignCorrection (0.001 degrees), extIMU_StartupDelay
+ *        (50 ms), extIMU_GyroCorrRate and autoMotionTimeout (100 ms, 2.73.9+).
+ *        See @ref sbgcMainParamsExt3_t and @ref sbgcGeneralFlag4_t.
  */
 sbgcCommandStatus_t SBGC32_ReadParamsExt3 (sbgcGeneral_t *gSBGC, sbgcMainParamsExt3_t *mainParamsExt3, sbgcProfile_t profileID
 										   /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )

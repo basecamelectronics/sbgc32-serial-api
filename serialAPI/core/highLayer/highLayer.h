@@ -11,7 +11,7 @@
  *				Copyright © 2026 BaseCam Electronics™.<br>
  *				All rights reserved.
  *				</center></h3>
- *
+ *l
  *				<center><a href="https://www.basecamelectronics.com">
  *				www.basecamelectronics.com</a></center>
  *
@@ -572,7 +572,25 @@ typedef enum
 	sbgcERR_WRONG_STATE				= 8,
 	sbgcERR_NOT_SUPPORTED			= 9,
 	sbgcERR_OPERATION_FAILED		= 10,
-	sbgcERR_TEMPORARY				= 11
+	sbgcERR_TEMPORARY				= 11,
+	sbgcERR_PASSWORD_REQUIRED		= 12,
+
+	sbgcERR_BOOT_EER_CMD_START 		= 100,
+	sbgcERR_BOOT_EER_CMD_WRITE 		= 101,
+	sbgcERR_BOOT_EER_CMD_FINISH 	= 102,
+	sbgcERR_BOOT_ERR_INVALID_CMD 	= 107,
+	sbgcERR_BOOT_EER_WRITE_DISABLE 	= 108,
+	sbgcERR_BOOT_EER_ADDR 			= 109,
+	sbgcERR_BOOT_EER_NUM_WORD 		= 110,
+	sbgcERR_BOOT_EER_CRC 			= 111,
+	sbgcERR_BOOT_ERR_INVALID_CMD_DATA
+									= 112,
+	sbgcERR_BOOT_EER_FLASH_BUSY 	= 120,
+	sbgcERR_BOOT_EER_FLASH_ERROR_WRP
+									= 121,
+	sbgcERR_BOOT_EER_FLASH_ERROR_PROGRAM
+									= 122,
+	sbgcERR_BOOT_EER_FLASH_TIMEOUT 	= 123
 
 	/*	Codes related to file operations:
 
@@ -645,6 +663,8 @@ typedef enum
 														  previous value and choosing the shortest path. See Quaternions section in
 														  Appendix D in the <a href=https://www.basecamelectronics.com/serialapi/>
 														  SimpleBGC32 Serial API protocol specification</a>	for more details			*/
+	CtrlQ_FLAG_ATT_REMOVE_ABSENT_AXES = BIT_3_SET,	/*!< MODE_ATTITUDE on 1/2-axis systems stabilizing regular Euler axes:
+														  remove rotations over unstabilized axes; firmware 2.74.1+ 					*/
 	CtrlQ_FLAG_AUTO_TASK			= BIT_6_SET		/*!<  Applicable for: CtrlQ_MODE_ATTITUDE. The task is processed with the speed and
 														  acceleration configured for automated tasks. When the target attitude is
 														  reached with the 1-degree tolerance, confirmation is sent: CMD_CONFIRM
@@ -657,12 +677,12 @@ typedef enum
 }	sbgcControlQuatFlag_t;
 
 
-/**	@note	sbgcMainParams3_t.profileID \n
- *			sbgcMainParams3_t.curProfileID \n
- *			sbgcMainParamsExt_t.profileID \n
- *			sbgcMainParamsExt2_t.profileID \n
- *			sbgcMainParamsExt3_t.profileID \n
- *			sbgcRealTimeData_t.curProfile \n
+/**	@note	sbgcMainParams3_t.profileID 	\n
+ *			sbgcMainParams3_t.curProfileID 	\n
+ *			sbgcMainParamsExt_t.profileID 	\n
+ *			sbgcMainParamsExt2_t.profileID 	\n
+ *			sbgcMainParamsExt3_t.profileID 	\n
+ *			sbgcRealTimeData_t.curProfile 	\n
  *			sbgcAutoPID_t.profileID
  */
 typedef enum
@@ -786,7 +806,34 @@ typedef enum
 	sbgcPIN_AUX_2					= 17,
 	sbgcPIN_AUX_3					= 18,
 	sbgcPIN_BUZZER					= 32,
-	sbgcPIN_SSAT_POWER				= 33
+	sbgcPIN_SSAT_POWER				= 33,
+
+	/* Firmware 2.74.3+; CAN_DRV 1.48+, CAN_IMU 1.55+. */
+	sbgcPIN_CAN_DRV1_AUX1 = 64, /*!< CAN driver 1, AUX1 */
+	sbgcPIN_CAN_DRV1_AUX2 = 65, /*!< CAN driver 1, AUX2 */
+	sbgcPIN_CAN_DRV1_AUX3 = 66, /*!< CAN driver 1, AUX3 */
+	sbgcPIN_CAN_DRV2_AUX1 = 67, /*!< CAN driver 2, AUX1 */
+	sbgcPIN_CAN_DRV2_AUX2 = 68, /*!< CAN driver 2, AUX2 */
+	sbgcPIN_CAN_DRV2_AUX3 = 69, /*!< CAN driver 2, AUX3 */
+	sbgcPIN_CAN_DRV3_AUX1 = 70, /*!< CAN driver 3, AUX1 */
+	sbgcPIN_CAN_DRV3_AUX2 = 71, /*!< CAN driver 3, AUX2 */
+	sbgcPIN_CAN_DRV3_AUX3 = 72, /*!< CAN driver 3, AUX3 */
+	sbgcPIN_CAN_DRV4_AUX1 = 73, /*!< CAN driver 4, AUX1 */
+	sbgcPIN_CAN_DRV4_AUX2 = 74, /*!< CAN driver 4, AUX2 */
+	sbgcPIN_CAN_DRV4_AUX3 = 75, /*!< CAN driver 4, AUX3 */
+	sbgcPIN_CAN_DRV5_AUX1 = 76, /*!< CAN driver 5, AUX1 */
+	sbgcPIN_CAN_DRV5_AUX2 = 77, /*!< CAN driver 5, AUX2 */
+	sbgcPIN_CAN_DRV5_AUX3 = 78, /*!< CAN driver 5, AUX3 */
+	sbgcPIN_CAN_DRV6_AUX1 = 79, /*!< CAN driver 6, AUX1 */
+	sbgcPIN_CAN_DRV6_AUX2 = 80, /*!< CAN driver 6, AUX2 */
+	sbgcPIN_CAN_DRV6_AUX3 = 81, /*!< CAN driver 6, AUX3 */
+	sbgcPIN_CAN_DRV7_AUX1 = 82, /*!< CAN driver 7, AUX1 */
+	sbgcPIN_CAN_DRV7_AUX2 = 83, /*!< CAN driver 7, AUX2 */
+	sbgcPIN_CAN_DRV7_AUX3 = 84, /*!< CAN driver 7, AUX3 */
+	sbgcPIN_CAN_IMU_AUX1 = 85,
+	sbgcPIN_CAN_IMU_AUX2 = 86,
+	sbgcPIN_CAN_IMU_FRAME_AUX1 = 88,
+	sbgcPIN_CAN_IMU_FRAME_AUX2 = 89
 
 }	sbgcTriggerPinID_t;
 
@@ -892,7 +939,7 @@ static inline sbgcExtIMU_Status_t ParserSBGC32_GetExtIMU_Status (ui8 value)
 
 
 /**	@note	sbgcBoardInfo_t.stateFlags \n
- *			sbgcRealTimeDataCustomReference_t.systemStateFlags \n
+ *			sbgcRealTimeDataCustomReference_t.SystemState.flags \n
  *			sbgcRealTimeData_t.systemStateFlags
  */
 typedef enum
@@ -906,7 +953,9 @@ typedef enum
 	SF_INIT_STEP2_DONE				= BIT_3_SET,
 	SF_STARTUP_AUTO_ROUTINE_DONE	= BIT_4_SET,
 	SF_POWER_MANAGER_ENABLED		= BIT_5_SET,	// For CAN_MCU board only
-	/* For real-time data custom only */
+	SF_MOTORS_ON = BIT_6_SET, /*!< Motors are turned on */
+	SF_DEBUG_PORT = BIT_7_SET, /*!< Commands from other ports are forwarded here */
+	/* Extended bits for realtime state fields */
 	SF_SHAKE_GENERATOR_ENABLED		= BIT_8_SET,	// Shake Generator is active
 	SF_SERVO_MODE_IS_ACTIVE			= BIT_9_SET,	// "Servo mode" is active (gimbal is controlled in motor coordinates)
 	SF_FOLLOW_MODE_ROLL_IS_ACTIVE	= BIT_10_SET,
@@ -916,6 +965,12 @@ typedef enum
 	SF_TRIPOD_MODE_ENABLED			= BIT_13_SET,	// "Tripod mode" is active
 	/* frw. ver. 2.74+ */
 	SF_RETRACTED_POSITION			= BIT_14_SET,	// "Retracted position" is active
+
+	SF_FRAME_IMU_SELECTED = BIT_15_SET, /*!< Frame IMU selected for realtime data */
+	SF_AUTO_MOTION_ROLL = BIT_16_SET,   /*!< Automated motion task on ROLL */
+	SF_AUTO_MOTION_PITCH = BIT_17_SET,  /*!< Automated motion task on PITCH */
+	SF_AUTO_MOTION_YAW = BIT_18_SET,    /*!< Automated motion task on YAW */
+	SF_SCRIPT_RUNNING = BIT_19_SET,    /*!< A script is executing */
 
 }	sbgcStateFlag_t;
 

@@ -516,6 +516,13 @@ sbgcCommandStatus_t SBGC32_ControlExt (sbgcGeneral_t *gSBGC, const sbgcControlEx
 sbgcCommandStatus_t SBGC32_ControlQuat (sbgcGeneral_t *gSBGC, const sbgcControlQuat_t *controlQuat
 										/** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	/* ToDo: with CtrlQ_FLAG_ATTITUDE_PACKED transmit 8 bytes without float[4] (16) */
+	if (controlQuat->flags & CtrlQ_FLAG_ATT_REMOVE_ABSENT_AXES)
+	{
+		sbgcAssertFrwVer(2741)
+		if (controlQuat->mode != CtrlQ_MODE_ATTITUDE) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	}
+
 	sbgcAssertFrwVer(2730)
 	sbgcAssertFeature2(BFE2_QUAT_CONTROL)
 
@@ -705,6 +712,11 @@ sbgcCommandStatus_t SBGC32_ControlExtMotors (sbgcGeneral_t *gSBGC, sbgcControlEx
 sbgcCommandStatus_t SBGC32_ControlConfig (sbgcGeneral_t *gSBGC, const sbgcControlConfig_t *controlConfig, sbgcConfirm_t *confirm
 										  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
+	if (controlConfig->flags & CtrlCONFIG_FLAG_LPF_FREQ_HZ)
+	{
+		sbgcAssertFrwVer(2741)
+	}
+
 	sbgcAssertFrwVer(2610)
 
 	gSBGC->_api->startWrite(gSBGC, CMD_CONTROL_CONFIG SBGC_ADVANCED_ARGS__);

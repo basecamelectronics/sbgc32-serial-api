@@ -494,7 +494,8 @@ typedef enum
 	FE_EN_NOTCH1					= BIT_0_SET,
 	FE_EN_NOTCH2					= BIT_1_SET,
 	FE_EN_NOTCH3					= BIT_2_SET,
-	FE_EN_LPF						= BIT_3_SET
+	FE_EN_LPF						= BIT_3_SET,
+	FE_LPF_1_ORDER					= BIT_4_SET
 
 }	sbgcFiltersEnable_t;
 
@@ -1183,6 +1184,8 @@ typedef enum
 	GF4_EULER_MIDDLE_AXIS			= BIT_2_SET,
 	GF4_EULER_MATCH_MOTOR_ROTATION	= BIT_3_SET,
 
+	GF4_PID_V2 = BIT_4_SET, /*!< GUI: PID V2 version */
+
 }	sbgcGeneralFlag4_t;
 /**	@}
  */
@@ -1418,7 +1421,7 @@ typedef struct PACKED__
 	ui8		encoderType [3];						/*!<  See @ref sbgcEncoderType_t and @ref sbgcEncoderFlag_t enumerations			*/
 	ui8		encoderCfg [3];							/*!<  See @ref sbgcEncoderCfg_t enumeration											*/
 	ui8		outerP [3];								/*!<  0 --> 255																		*/
-	ui8		outerI [3];								/*!<  0 --> 255																		*/
+	ui8		reserved [3];
 
 	i8		magAxisTop,								/*!<  ...																			*/
 			magAxisRight;							/*!<  ...See @ref sbgcMagAxis_t enumeration											*/
@@ -1426,7 +1429,7 @@ typedef struct PACKED__
 	ui8		magTrust;								/*!<  0 --> 255																		*/
 	i8		magDeclination;							/*!<  -90 --> 90. Units: degree														*/
 	ui16	accLPF_Freq;							/*!<  0 --> 1000. Units: 0.01 Hz													*/
-	ui8		D_TermLPF_Freq [3];						/*!<  0 --> 60. Units: 10 Hz														*/
+	ui8		D_TermLPF_Freq [3];						/*!<  0 --> 255. Units: 2 Hz														*/
 
 }	sbgcMainParamsExt_t;
 
@@ -1596,7 +1599,11 @@ typedef struct PACKED__
 	ui8		extIMU_Position;						/*!<  See @ref sbgcExtIMU_Position_t enumeration									*/
 	ui8		extIMU_Orientation;						/*!<  See @ref sbgcExtIMU_Orientation_t enumeration									*/
 	ui16	extIMU_Flags;							/*!<  See @ref sbgcExtIMU_Flag_t enumeration. Frw.ver. 2.68b7+						*/
-	ui8		extIMU_Reserved [12];
+	i16		extIMU_AlignCorrection [3]; 			/*!<  GUI: Alignment correction; rotation over X/Y/Z. Wire units: 0.001 degrees 	*/
+	ui8		extIMU_StartupDelay; 					/*!<  GUI: Ext.IMU / MavLink startup delay. Wire units: 50 ms (GUI displays ms) 	*/
+	ui8		extIMU_GyroCorrRate; 					/*!<  Strength of gyroscope correction by external
+														  IMU in the online calibration algorithm 										*/
+	ui8		extIMU_Reserved [4];
 	ui8		softLimitWidth [3];						/*!<  1 --> 255. Units: 0.1 degrees. Width of the software limits
 														  defined by the FRAME_CAM_ANGLE_MIN, FRAME_CAM_ANGLE_MAX						*/
 	ui8		ADC_ReplaceSrc [3];						/*!<  See @ref sbgcRC_MapSourceType_t and @ref sbgcRC_MapSource_t enumerations		*/
@@ -1674,7 +1681,9 @@ typedef struct PACKED__
 	ui16	extPwrSwShuntR;							/*!<  Units: 0.01 Ohm. External power switch shunt resistance						*/
 	ui32	generalFlags4;							/*!<  See @ref sbgcGeneralFlag4_t enumeration										*/
 
-	ui8		reserved5 [49];
+	ui8 autoMotionTimeout; 							/*!<  Timeout for obstructed automated motion, 100 ms units; default 100 = 10 s.
+														  Firmware 2.73.9+ 																*/
+	ui8		reserved5 [48];
 
 }	sbgcMainParamsExt3_t;
 

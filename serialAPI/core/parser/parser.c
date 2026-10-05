@@ -44,7 +44,7 @@
 #define		SBGC_COMM_STATUS_NAME_MAX_LEN	33
 #define		SBGC_CMD_ID_NAME_MAX_LEN		31
 #define		SBGC_CMD_STATUS_NAME_MAX_LEN	10
-#define		SBGC_ERROR_CODE_NAME_MAX_LEN	20
+/* Error names are checked against the actual destination size below. */
 
 
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -235,6 +235,10 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 					*buffArr = communicationErrorsReferenceInfoArray;
 					return communicationErrorsReferenceInfoArrayElCnt;
 
+				case PM_IMU_STATE :
+					*buffArr = IMU_StateReferenceInfoArray;
+					return IMU_StateReferenceInfoArrayElCnt;
+
 				case PM_SYSTEM_STATE :
 					*buffArr = systemStateReferenceInfoArray;
 					return systemStateReferenceInfoArrayElCnt;
@@ -293,6 +297,10 @@ static ui8 ParserSBGC32_ConvertTypeToSize (sbgcVarType_t varType)
 				case PM_STATE_VARS :
 					*buffArr = stateVarsReferenceInfoArray;
 					return stateVarsReferenceInfoArrayElCnt;
+
+				case PM_PASS_PROTECT :
+					*buffArr = passProtectReferenceInfoArray;
+					return passProtectReferenceInfoArrayElCnt;
 
 				case PM_CAN_DEVICE_SCAN :
 					*buffArr = CAN_DeviceScanReferenceInfoArray;
@@ -623,8 +631,17 @@ ui8 ParserSBGC32_ConvertCommandID_ToString (serialAPI_Command_t *serialCommand, 
 		case CMD_CALIB_ENCODER_LUT :				memcpy(str, TEXT_LENGTH_("CMD_CALIB_ENCODER_LUT")); break;
 		case CMD_CALIB_ENCODER_LUT_RES :			memcpy(str, TEXT_LENGTH_("CMD_CALIB_ENCODER_LUT_RES")); break;
 		case CMD_WRITE_PARAMS_SET :					memcpy(str, TEXT_LENGTH_("CMD_WRITE_PARAMS_SET")); break;
+		case CMD_MODULE_FLASH_START :				memcpy(str, TEXT_LENGTH_("CMD_MODULE_FLASH_START")); break;
+		case CMD_MODULE_FLASH_WRITE :				memcpy(str, TEXT_LENGTH_("CMD_MODULE_FLASH_WRITE")); break;
+		case CMD_MODULE_FLASH_FINISH :				memcpy(str, TEXT_LENGTH_("CMD_MODULE_FLASH_FINISH")); break;
+		case CMD_PASS_PROTECT_READ :				memcpy(str, TEXT_LENGTH_("CMD_PASS_PROTECT_READ")); break;
+		case CMD_PASS_PROTECT_WRITE :				memcpy(str, TEXT_LENGTH_("CMD_PASS_PROTECT_WRITE")); break;
+		case CMD_REALTIME_DATA_CUSTOM2 :			memcpy(str, TEXT_LENGTH_("CMD_REALTIME_DATA_CUSTOM2")); break;
+		case CMD_SET_TRANSP_PROXY :					memcpy(str, TEXT_LENGTH_("CMD_SET_TRANSP_PROXY")); break;
+		case CMD_UDRV_DEVICE_SCAN :					memcpy(str, TEXT_LENGTH_("CMD_UDRV_DEVICE_SCAN")); break;
 		case CMD_CALIB_CUR_SENS :					memcpy(str, TEXT_LENGTH_("CMD_CALIB_CUR_SENS")); break;
 		case CMD_CONTROL_EXT :						memcpy(str, TEXT_LENGTH_("CMD_CONTROL_EXT")); break;
+		case CMD_BODE_TEST_DATA :					memcpy(str, TEXT_LENGTH_("CMD_BODE_TEST_DATA")); break;
 		case CMD_SYNC_MOTORS :						memcpy(str, TEXT_LENGTH_("CMD_SYNC_MOTORS")); break;
 		case CMD_CAN_DRV_TELEMETRY :				memcpy(str, TEXT_LENGTH_("CMD_CAN_DRV_TELEMETRY")); break;
 		case CMD_EXT_MOTORS_ACTION :				memcpy(str, TEXT_LENGTH_("CMD_EXT_MOTORS_ACTION")); break;
@@ -691,23 +708,47 @@ ui8 ParserSBGC32_ConvertCommandStatusToString (serialAPI_Command_t *serialComman
 	 */
 	ui8 ParserSBGC32_ConvertErrorCodeToString (sbgcConfirm_t *confirm, char *str, ui8 size)
 	{
-		if (size < SBGC_ERROR_CODE_NAME_MAX_LEN) return 0;
+		if ((str == NULL) || (size == 0)) return 0;
+
+		str[0] = '\0';
+		const char *name;
 
 		switch (confirm->errorCode)
 		{
-			case sbgcERR_CMD_SIZE :					memcpy(str, TEXT_LENGTH_("ERR_CMD_SIZE")); break;
-			case sbgcERR_WRONG_PARAMS :				memcpy(str, TEXT_LENGTH_("ERR_WRONG_PARAMS")); break;
-			case sbgcERR_CRYPTO :					memcpy(str, TEXT_LENGTH_("ERR_CRYPTO")); break;
-			case sbgcERR_UNKNOWN_COMMAND :			memcpy(str, TEXT_LENGTH_("ERR_UNKNOWN_COMMAND")); break;
-			case sbgcERR_WRONG_STATE :				memcpy(str, TEXT_LENGTH_("ERR_WRONG_STATE")); break;
-			case sbgcERR_NOT_SUPPORTED :			memcpy(str, TEXT_LENGTH_("ERR_NOT_SUPPORTED")); break;
-			case sbgcERR_OPERATION_FAILED :			memcpy(str, TEXT_LENGTH_("ERR_OPERATION_FAILED")); break;
-			case sbgcERR_TEMPORARY :				memcpy(str, TEXT_LENGTH_("ERR_TEMPORARY")); break;
+			case sbgcERR_CMD_SIZE :					name = "ERR_CMD_SIZE"; break;
+			case sbgcERR_WRONG_PARAMS :				name = "ERR_WRONG_PARAMS"; break;
+			case sbgcERR_CRYPTO :					name = "ERR_CRYPTO"; break;
+			case sbgcERR_UNKNOWN_COMMAND :			name = "ERR_UNKNOWN_COMMAND"; break;
+			case sbgcERR_WRONG_STATE :				name = "ERR_WRONG_STATE"; break;
+			case sbgcERR_NOT_SUPPORTED :			name = "ERR_NOT_SUPPORTED"; break;
+			case sbgcERR_OPERATION_FAILED :			name = "ERR_OPERATION_FAILED"; break;
+			case sbgcERR_TEMPORARY :				name = "ERR_TEMPORARY"; break;
+			case sbgcERR_PASSWORD_REQUIRED : 		name = "ERR_PASSWORD_REQUIRED"; break;
+
+			case sbgcERR_BOOT_EER_CMD_START :		name = "ERR_BOOT_EER_CMD_START"; break;
+			case sbgcERR_BOOT_EER_CMD_WRITE :		name = "ERR_BOOT_EER_CMD_WRITE"; break;
+			case sbgcERR_BOOT_EER_CMD_FINISH :		name = "ERR_BOOT_EER_CMD_FINISH"; break;
+			case sbgcERR_BOOT_ERR_INVALID_CMD :		name = "ERR_BOOT_ERR_INVALID_CMD"; break;
+			case sbgcERR_BOOT_EER_WRITE_DISABLE :	name = "ERR_BOOT_EER_WRITE_DISABLE"; break;
+			case sbgcERR_BOOT_EER_ADDR :			name = "ERR_BOOT_EER_ADDR"; break;
+			case sbgcERR_BOOT_EER_NUM_WORD :		name = "ERR_BOOT_EER_NUM_WORD"; break;
+			case sbgcERR_BOOT_EER_CRC :				name = "ERR_BOOT_EER_CRC"; break;
+			case sbgcERR_BOOT_ERR_INVALID_CMD_DATA :
+													name = "ERR_BOOT_ERR_INVALID_CMD_DATA"; break;
+			case sbgcERR_BOOT_EER_FLASH_BUSY :		name = "ERR_BOOT_EER_FLASH_BUSY"; break;
+			case sbgcERR_BOOT_EER_FLASH_ERROR_WRP :	name = "ERR_BOOT_EER_FLASH_ERROR_WRP"; break;
+			case sbgcERR_BOOT_EER_FLASH_ERROR_PROGRAM :
+													name = "ERR_BOOT_EER_FLASH_ERROR_PROGRAM"; break;
+			case sbgcERR_BOOT_EER_FLASH_TIMEOUT :	name = "ERR_BOOT_EER_FLASH_TIMEOUT"; break;
 
 			default :								return 0;
 		}
 
-		return strlen(str);
+		ui8 length = (ui8)strlen(name);
+        if (length >= size) return 0;
+
+        memcpy(str, name, length + 1U);
+        return length;
 	}
 
 #endif
@@ -889,6 +930,7 @@ static sbgcParserMap_t ParserSBGC32_GetCommandParserMap (serialAPI_Command_t *se
 			case CMD_SCRIPT_DEBUG :													return PM_SCRIPT_DEBUG_INFO;
 			case CMD_WRITE_STATE_VARS : case CMD_READ_STATE_VARS :					return PM_STATE_VARS;
 			case CMD_CAN_DEVICE_SCAN :												return PM_CAN_DEVICE_SCAN;
+			case CMD_PASS_PROTECT_READ : return PM_PASS_PROTECT;
 
 			default :																return PM_DEFAULT_8BIT;
 		}

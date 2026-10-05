@@ -76,22 +76,27 @@
 		PARAM_BLOCK_(	"Motor Current [ROLL]",		sbgcUSHORT						),  // 1
 		PARAM_BLOCK_(	"Motor Temp [ROLL]",		sbgcCHAR						),  // 2
 		PARAM_BLOCK_(	"Motor Flags [ROLL]",		(sbgcUSHORT | sbgcFLAG)			),  // 3
-		PARAMS_BLOCK_(	"Reserved [ROLL]",			sbgcRCHAR,					6	),  // 4
-		PARAM_BLOCK_(	"Motor Power [PITCH]",		sbgcSHORT						),  // 5
-		PARAM_BLOCK_(	"Motor Current [PITCH]",	sbgcUSHORT						),  // 6
-		PARAM_BLOCK_(	"Motor Temp [PITCH]",		sbgcCHAR						),  // 7
-		PARAM_BLOCK_(	"Motor Flags [PITCH]",		(sbgcUSHORT | sbgcFLAG)			),  // 8
-		PARAMS_BLOCK_(	"Reserved [PITCH]",			sbgcRCHAR,					6	),  // 9
-		PARAM_BLOCK_(	"Motor Power [YAW]",		sbgcSHORT						),  // 10
-		PARAM_BLOCK_(	"Motor Current [YAW]",		sbgcUSHORT						),  // 11
-		PARAM_BLOCK_(	"Motor Temp [YAW]",			sbgcCHAR						),  // 12
-		PARAM_BLOCK_(	"Motor Flags [YAW]",		(sbgcUSHORT | sbgcFLAG)			),  // 13
-		PARAMS_BLOCK_(	"Reserved [YAW]",			sbgcRCHAR,					6	),  // 14
-		PARAM_BLOCK_(	"System Power State",		sbgcCHAR						),  // 15
-		PARAM_BLOCK_(	"Battery Voltage",			sbgcUSHORT						),  // 16
-		PARAM_BLOCK_(	"Total Current",			sbgcUSHORT						),  // 17
-		PARAM_BLOCK_(	"System Flags",				sbgcUSHORT						),  // 18
-
+		PARAM_BLOCK_("Balance [ROLL]", sbgcCHAR),  // 4
+		PARAM_BLOCK_("Stabilization Error Amplitude [ROLL]", sbgcUSHORT),  // 5
+		PARAMS_BLOCK_("Reserved [ROLL]", sbgcRCHAR, 3),  // 6
+		PARAM_BLOCK_(	"Motor Power [PITCH]",		sbgcSHORT						),  // 7
+		PARAM_BLOCK_(	"Motor Current [PITCH]",	sbgcUSHORT						),  // 8
+		PARAM_BLOCK_(	"Motor Temp [PITCH]",		sbgcCHAR						),  // 9
+		PARAM_BLOCK_(	"Motor Flags [PITCH]",		(sbgcUSHORT | sbgcFLAG)			),  // 10
+		PARAM_BLOCK_("Balance [PITCH]", sbgcCHAR),  // 11
+		PARAM_BLOCK_("Stabilization Error Amplitude [PITCH]", sbgcUSHORT),  // 12
+		PARAMS_BLOCK_("Reserved [PITCH]", sbgcRCHAR, 3),  // 13
+		PARAM_BLOCK_(	"Motor Power [YAW]",		sbgcSHORT						),  // 14
+		PARAM_BLOCK_(	"Motor Current [YAW]",		sbgcUSHORT						),  // 15
+		PARAM_BLOCK_(	"Motor Temp [YAW]",			sbgcCHAR						),  // 16
+		PARAM_BLOCK_(	"Motor Flags [YAW]",		(sbgcUSHORT | sbgcFLAG)			),  // 17
+		PARAM_BLOCK_("Balance [YAW]", sbgcCHAR),  // 18
+		PARAM_BLOCK_("Stabilization Error Amplitude [YAW]", sbgcUSHORT),  // 19
+		PARAMS_BLOCK_("Reserved [YAW]", sbgcRCHAR, 3),  // 20
+		PARAM_BLOCK_(	"System Power State",		sbgcCHAR						),  // 21
+		PARAM_BLOCK_(	"Battery Voltage",			sbgcUSHORT						),  // 22
+		PARAM_BLOCK_(	"Total Current",			sbgcUSHORT						),  // 23
+		PARAM_BLOCK_(	"System Flags",				sbgcUSHORT						),  // 24
 	};
 
 	const ui8 systemPowerStateReferenceInfoArrayElCnt = countof_(systemPowerStateReferenceInfoArray);
@@ -117,11 +122,27 @@
 	{
 		PARAM_BLOCK_(	"Flags",					sbgcUINT						),  // 0
 		PARAM_BLOCK_(	"Calib Mode",				sbgcUCHAR						),  // 1
-		PARAMS_BLOCK_(	"Reserved",					sbgcRCHAR,					8	),  // 2
-
+		PARAM_BLOCK_("Current Profile", sbgcUCHAR),  // 2
+		PARAM_BLOCK_("Progress", sbgcUCHAR),  // 3
+		PARAM_BLOCK_("System Error", (sbgcUSHORT | sbgcFLAG)),  // 4
+		PARAM_BLOCK_("System Sub Error", sbgcUCHAR),  // 5
+		PARAM_BLOCK_("Cycle Time", sbgcUSHORT),  // 6
+		PARAM_BLOCK_("Reserved", sbgcRCHAR),  // 7
 	};
 
 	const ui8 systemStateReferenceInfoArrayElCnt = countof_(systemStateReferenceInfoArray);
+
+	/** @brief Main IMU state reference; all fields are single wire bytes. */
+	const sbgcParameterReferenceInfo_t IMU_StateReferenceInfoArray[] =
+	{
+		PARAM_BLOCK_("Attitude Reference Error", sbgcUCHAR),
+		PARAM_BLOCK_("Heading Reference Error", sbgcUCHAR),
+		PARAM_BLOCK_("Flags", (sbgcUCHAR | sbgcFLAG)),
+		PARAM_BLOCK_("External Sensor Error", sbgcUCHAR),
+		PARAMS_BLOCK_("Reserved", sbgcRCHAR, 7),
+	};
+	const ui8 IMU_StateReferenceInfoArrayElCnt = countof_(IMU_StateReferenceInfoArray);
+
 	/**	@}
 	 */
 
@@ -235,6 +256,39 @@
 /* ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
  *														Static Functions
  */
+/** @brief Returns the selected CUSTOM wire size, or zero for unsupported masks.
+ *  @note Timestamp and optional returned mask are included; local flags are not.
+ */
+static ui16 SerialAPI_RealTimeCustomPayloadSize (ui32 flags, ui8 custom2)
+{
+	static const ui8 sizes[] = {6,6,6,6,6,12,24,36,6,8,26,9,12,40,20,46,6,12,12,7,13,8,8,8,8,12,6,24,12,11};
+	static const ui8 sizes2[] = {6,6,6,8,6,8,6};
+	if (flags & ~(custom2 ? 0x8000007FUL : 0xBFFFFFFFUL)) return 0;
+	ui16 size = 2U + ((flags & 0x80000000UL) ? 4U : 0U);
+	for (ui8 i = 0; i < (custom2 ? 7 : 30); i++)
+		if (flags & ((ui32)1U << i)) size += custom2 ? sizes2[i] : sizes[i];
+	return size;
+}
+
+#if (SBGC_SYS_BIG_ENDIAN)
+/** @brief Reads a nested CUSTOM structure across the receive ring boundary. */
+static void SerialAPI_ReadCustomMapped (sbgcGeneral_t *gSBGC, void *destination, ui8 size, sbgcParserMap_t map)
+{
+	ui8 buffer[sizeof(sbgcSystemPowerState_t)];
+	gSBGC->_api->readBuff(gSBGC, buffer, size);
+	gSBGC->_api->convWithPM(destination, buffer, size, map);
+}
+
+/** @brief Preserves IEEE-754 bits after converting the wire byte order. */
+static float SerialAPI_ReadCustomFloat (sbgcGeneral_t *gSBGC)
+{
+	ui32 bits = gSBGC->_api->readLong(gSBGC);
+	float value;
+	memcpy(&value, &bits, sizeof(value));
+	return value;
+}
+#endif
+
 #if (SBGC_NEED_ASSERTS)
 
 	/**	@brief	Asserts the realtime data custom flags
@@ -260,6 +314,51 @@
 		if ((flags & RTDCF_IMU_QUAT) || (flags & RTDCF_TARGET_QUAT) || (flags & RTDCF_IMU_TO_FRAME_QUAT))
 			sbgcAssertFeature2(BFE2_QUAT_CONTROL)
 
+		if (flags & (RTDCF_ENCODER_RAW24))
+			sbgcAssertFrwVer(2680)
+
+		if (flags & (RTDCF_IMU_ANGLES_RAD | RTDCF_SCRIPT_VARS_FLOAT | RTDCF_SCRIPT_VARS_INT16))
+			sbgcAssertFrwVer(2687)
+
+		if (flags & (RTDCF_SYSTEM_POWER_STATE | RTDCF_FRAME_CAM_RATE))
+			sbgcAssertFrwVer(2706)
+
+		if (flags & (RTDCF_IMU_ANGLES_20 | RTDCF_TARGET_ANGLES_20))
+			sbgcAssertFrwVer(2708)
+
+		if (flags & (RTDCF_COMM_ERRORS))
+			sbgcAssertFrwVer(2720)
+
+		if (flags & (RTDCF_SYSTEM_STATE | RTDCF_IMU_QUAT | RTDCF_TARGET_QUAT | RTDCF_IMU_TO_FRAME_QUAT | RTDCF_ADC_CH_RAW))
+			sbgcAssertFrwVer(2730)
+
+		if (flags & (RTDCF_SW_LIMITS_DIST | RTDCF_FOLLOW_DIST | RTDCF_EXT_TARGET_LIMIT))
+			sbgcAssertFrwVer(2738)
+
+		if (flags & (RTDCF_DATA_SET_FLAGS))
+			sbgcAssertFrwVer(2741)
+
+		return sbgcCOMMAND_OK;
+	}
+
+
+	/**	@brief	Asserts the realtime data custom 2 flags
+	 *
+	 *	@note	Private function
+	 *
+	 *	@param	*gSBGC - serial connection descriptor
+	 *	@param	flags - required data
+	 *
+	 *	@return	Assert result
+	 */
+	static sbgcCommandStatus_t SerialAPI_AssertRealTimeDataCustom2Flags (sbgcGeneral_t *gSBGC, ui32 flags)
+	{
+		if (flags & ~((ui32)0x8000007FUL))
+			return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+
+		if (flags & RTDC2F_STAB_ERR_AMPL)
+			sbgcAssertFrwVer(2744)
+
 		return sbgcCOMMAND_OK;
 	}
 
@@ -284,6 +383,13 @@
  *			@ref ParserSBGC32_EventID_AndTypeToStream \n
  *			@ref ParserSBGC32_CAN_DT_FlagsAndID_ToStream \n
  *			@ref ParserSBGC32_EMS_ID_AndSetToStream
+ *
+ *  @note For DSC_CMD_REALTIME_DATA_CUSTOM2, config[0..3] contains the
+ *        sbgcRealTimeDataCustom2Flag_t mask in little-endian order;
+ *        config[4..7] must be zero. The command requires firmware 2.74.2+;
+ *        RTDC2F_STAB_ERR_AMPL requires firmware 2.74.4+.
+ *        Both CUSTOM masks and selected payload sizes are validated. Firmware
+ *        and board capability checks are enabled by SBGC_NEED_ASSERTS.
  *
  *	@pre	Board requirements:\n
  *			ENCODERS = (1 << 2) when using RTDCF_ENCODER_RAW24 \n
@@ -433,6 +539,22 @@ sbgcCommandStatus_t SBGC32_StartDataStream (sbgcGeneral_t *gSBGC, const sbgcData
 {
 	sbgcAssertFrwVer(2600)
 
+	if (!dataStreamInterval) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	if (dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM ||
+		dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM2)
+	{
+		ui32 flags = 0;
+		for (ui8 i = 0; i < 4; i++) flags |= (ui32)dataStreamInterval->config[i] << (8U * i);
+		ui8 custom2 = dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM2;
+		ui16 size = SerialAPI_RealTimeCustomPayloadSize(flags, custom2);
+		if (!size || size > 255U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+		#if (SBGC_NEED_ASSERTS)
+			sbgcCommandStatus_t status = custom2 ? SerialAPI_AssertRealTimeDataCustom2Flags(gSBGC, flags) :
+				SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags);
+			if (status != sbgcCOMMAND_OK) return status;
+		#endif
+	}
+
 	#if (SBGC_NEED_ASSERTS)
 
 		if ((gSBGC->_api->baseFirmwareVersion < 2657) && (dataStreamInterval->cmdID == DSC_CMD_EVENT))
@@ -445,21 +567,15 @@ sbgcCommandStatus_t SBGC32_StartDataStream (sbgcGeneral_t *gSBGC, const sbgcData
 		if ((gSBGC->_api->baseFirmwareVersion < 2730) && (dataStreamInterval->cmdID == DSC_CMD_EXT_MOTORS_STATE))
 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
 
+		if ((gSBGC->_api->baseFirmwareVersion < 2742) && (dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM2))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
 		if (dataStreamInterval->cmdID == DSC_CMD_CAN_DRV_TELEMETRY)
 			sbgcAssertFeature(BF_CAN_PORT)
 
 		if (dataStreamInterval->cmdID == DSC_CMD_EXT_MOTORS_STATE)
 			sbgcAssertFeature2(BFE2_EXT_MOTORS)
 
-		if (dataStreamInterval->cmdID == DSC_CMD_REALTIME_DATA_CUSTOM)
-		{
-			ui32 flags;
-
-			memcpy(&flags, dataStreamInterval->config, sizeof(ui32));
-
-			if (SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags) != sbgcCOMMAND_OK)
-				return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
-		}
 
 	#endif
 
@@ -568,6 +684,19 @@ static void PostReadDataStream (sbgcGeneral_t *gSBGC)
 						break;
 					}
 
+		case CMD_REALTIME_DATA_CUSTOM2 :
+		{
+			/* Raw CUSTOM2 stream payload: starts with timestampMs, without local flags.
+               If bit 31 was selected, dataSetFlags follows the timestamp.
+               Unlike the request handler, this branch performs no field-by-field
+               decoding. Use a matching packed wire layout on little-endian
+               systems, or receive bytes and decode them explicitly on big-endian
+               systems. Do not cast this buffer to the full reference structure. */
+
+			gSBGC->_api->readBuff(gSBGC, curCmdDest_, curCmd_->_payloadSize);
+			break;
+		}
+
 		case CMD_EVENT :
 		case CMD_CAN_DRV_TELEMETRY :
 		case CMD_EXT_MOTORS_STATE :
@@ -598,6 +727,15 @@ static void PostReadDataStream (sbgcGeneral_t *gSBGC)
  *	####	RX <— CMD_CAN_DRV_TELEMETRY :			3 + ? bytes
  *	or		frw.ver. 2.73+
  *	####	RX <— CMD_EXT_MOTORS_STATE :			5 + ? bytes
+ *
+ *  #### RX <- CMD_REALTIME_DATA_CUSTOM2 : variable payload size (firmware 2.74.2+)
+ *
+ *  @note CUSTOM2 streams are currently copied as raw payload bytes, starting
+ *        with timestampMs. Do not prepend the local flags field used by
+ *        SBGC32_RequestRealTimeDataCustom2. If bit 31 was selected during stream
+ *        registration, dataSetFlags follows timestampMs. Remaining fields must
+ *        match the registered mask in protocol order. size is the raw payload
+ *        buffer capacity. Big-endian systems must decode these bytes explicitly.
  *
  *	@pre	Use the @ref SBGC32_StartDataStream function
  *			to start data stream first
@@ -633,6 +771,9 @@ sbgcCommandStatus_t SBGC32_ReadDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamC
 		if ((gSBGC->_api->baseFirmwareVersion < 2730) && (cmdID == DSC_CMD_EXT_MOTORS_STATE))
 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
 
+		if ((gSBGC->_api->baseFirmwareVersion < 2742) && (cmdID == DSC_CMD_REALTIME_DATA_CUSTOM2))
+			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
 	#endif
 
 	/* It's necessary to lock SerialAPI before Rx operation */
@@ -662,9 +803,10 @@ sbgcCommandStatus_t SBGC32_ReadDataStream (sbgcGeneral_t *gSBGC, sbgcDataStreamC
  */
 static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 {
-	if (curCmd_->_destinationSize < curCmd_->_payloadSize)
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize + 4U))
 	{
 		SerialAPI_FatalErrorHandler();
+		return;
 	}
 
 	#if (SBGC_SYS_LITTLE_ENDIAN)
@@ -677,6 +819,8 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 		sbgcRealTimeDataCustomReference_t *realTimeDataCustom = curCmdDest_;
 
 		realTimeDataCustom->timestampMs = gSBGC->_api->readWord(gSBGC);
+
+		realTimeDataCustom->dataSetFlags = (realTimeDataCustom->flags & RTDCF_DATA_SET_FLAGS) ? gSBGC->_api->readLong(gSBGC) : 0;
 
 		/* Data Parsing */
 		if (realTimeDataCustom->flags & RTDCF_IMU_ANGLES)
@@ -726,12 +870,12 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 		if (realTimeDataCustom->flags & RTDCF_Z_VECTOR_H_VECTOR)
 		{
-			realTimeDataCustom->Z_Vector[SBGC_X] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->Z_Vector[SBGC_Y] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->Z_Vector[SBGC_Z] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->H_Vector[SBGC_X] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->H_Vector[SBGC_Y] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->H_Vector[SBGC_Z] = (float)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->Z_Vector[SBGC_X] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->Z_Vector[SBGC_Y] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->Z_Vector[SBGC_Z] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->H_Vector[SBGC_X] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->H_Vector[SBGC_Y] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->H_Vector[SBGC_Z] = SerialAPI_ReadCustomFloat(gSBGC);
 		}
 
 					if (realTimeDataCustom->flags & RTDCF_RC_CHANNELS)
@@ -749,15 +893,12 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_MOTOR4_CONTROL)
 					{
-						curCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->Motor4_Control, curCmd_->_payload,
-														sizeof(sbgcMotor4_Control_t), PM_MOTOR_4_CONTROL);
+						SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->Motor4_Control, sizeof(sbgcMotor4_Control_t), PM_MOTOR_4_CONTROL);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_AHRS_DEBUG_INFO)
 		{
-			curCmd_->_payload += gSBGC->_api->convWithPM(&realTimeDataCustom->AHRS_DebugInfo, curCmd_->_payload,
-			sizeof(sbgcAHRS_DebugInfo_t), PM_AHRS_DEBUG_INFO);
+			SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->AHRS_DebugInfo, sizeof(sbgcAHRS_DebugInfo_t), PM_AHRS_DEBUG_INFO);
 		}
 
 					if (realTimeDataCustom->flags & RTDCF_ENCODER_RAW24)
@@ -769,15 +910,15 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 		if (realTimeDataCustom->flags & RTDCF_IMU_ANGLES_RAD)
 		{
-			realTimeDataCustom->IMU_AnglesRad[SBGC_X] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->IMU_AnglesRad[SBGC_Y] = (float)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->IMU_AnglesRad[SBGC_Z] = (float)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->IMU_AnglesRad[SBGC_X] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->IMU_AnglesRad[SBGC_Y] = SerialAPI_ReadCustomFloat(gSBGC);
+			realTimeDataCustom->IMU_AnglesRad[SBGC_Z] = SerialAPI_ReadCustomFloat(gSBGC);
 		}
 
 					if (realTimeDataCustom->flags & RTDCF_SCRIPT_VARS_FLOAT)
 					{
 						for (ui8 k = 0; k < 10; k++)
-							realTimeDataCustom->scriptVarsFloat[k] = (float)gSBGC->_api->readLong(gSBGC);
+							realTimeDataCustom->scriptVarsFloat[k] = SerialAPI_ReadCustomFloat(gSBGC);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_SCRIPT_VARS_INT16)
@@ -788,9 +929,7 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 					if (realTimeDataCustom->flags & RTDCF_SYSTEM_POWER_STATE)
 					{
-						curCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->SystemPowerState, curCmd_->_payload,
-														sizeof(sbgcSystemPowerState_t), PM_SYSTEM_POWER_STATE);
+						SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->SystemPowerState, sizeof(sbgcSystemPowerState_t), PM_SYSTEM_POWER_STATE);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_FRAME_CAM_RATE)
@@ -809,33 +948,35 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 
 		if (realTimeDataCustom->flags & RTDCF_TARGET_ANGLES_20)
 		{
-			realTimeDataCustom->IMU_Angles20[ROLL] = (i32)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->IMU_Angles20[PITCH] = (i32)gSBGC->_api->readLong(gSBGC);
-			realTimeDataCustom->IMU_Angles20[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->targetAngles20[ROLL] = (i32)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->targetAngles20[PITCH] = (i32)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->targetAngles20[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
 		}
 
 					if (realTimeDataCustom->flags & RTDCF_COMM_ERRORS)
 					{
-						curCmd_->_payload +=
-								gSBGC->_api->convWithPM(&realTimeDataCustom->CommunicationErrors, curCmd_->_payload,
-														sizeof(sbgcCommunicationErrors_t), PM_COMMUNICATION_ERRORS);
+						SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->CommunicationErrors, sizeof(sbgcCommunicationErrors_t), PM_COMMUNICATION_ERRORS);
 					}
 
 		if (realTimeDataCustom->flags & RTDCF_SYSTEM_STATE)
 		{
-			curCmd_->_payload +=
-					gSBGC->_api->convWithPM(&realTimeDataCustom->SystemState, curCmd_->_payload,
-							sizeof(sbgcSystemState_t), PM_SYSTEM_STATE);
+			SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->SystemState, sizeof(sbgcSystemState_t), PM_SYSTEM_STATE);
 		}
 
 					if (realTimeDataCustom->flags & RTDCF_IMU_QUAT)
+					{
 						 gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->IMU_Quat, sizeof(realTimeDataCustom->IMU_Quat));
+					}
 
 		if (realTimeDataCustom->flags & RTDCF_TARGET_QUAT)
+		{
 			gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->targetQuat, sizeof(realTimeDataCustom->targetQuat));
+		}
 
 					if (realTimeDataCustom->flags & RTDCF_IMU_TO_FRAME_QUAT)
+					{
 						gSBGC->_api->readBuff(gSBGC, realTimeDataCustom->IMU_ToFrameQuat, sizeof(realTimeDataCustom->IMU_ToFrameQuat));
+					}
 
 		if (realTimeDataCustom->flags & RTDCF_ADC_CH_RAW)
 			for (ui8 k = 0; k < 4; k++)
@@ -862,11 +1003,34 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
 						realTimeDataCustom->extTargetLimitMax[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
 					}
 
+		if (realTimeDataCustom->flags & RTDCF_FRAME_CAM_ANGLE_20)
+		{
+			realTimeDataCustom->frameCamAngles20[ROLL] = (i32)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->frameCamAngles20[PITCH] = (i32)gSBGC->_api->readLong(gSBGC);
+			realTimeDataCustom->frameCamAngles20[YAW] = (i32)gSBGC->_api->readLong(gSBGC);
+		}
+
+		if (realTimeDataCustom->flags & RTDCF_MAIN_IMU_STATE)
+		{
+			SerialAPI_ReadCustomMapped(gSBGC, &realTimeDataCustom->IMU_State, sizeof(sbgcIMU_State_t), PM_IMU_STATE);
+		}
+
 	#endif
 }
 
 
 /**	@brief	Requests configurable realtime data
+ *
+ *	@note Bit 28 adds frameCamAngles20[3] (12 bytes); bit 29 adds IMU_State
+ *		  (11 bytes, see @ref sbgcIMU_State_t). Bit 31 (2.74.1+) inserts
+ *		  dataSetFlags (4 bytes) immediately after timestampMs, before any groups.
+ *	@note For little-endian, pass a packed layout containing local flags,
+ *		  timestampMs, optional dataSetFlags, then selected groups in bit order.
+ *		  The full reference structure is for big-endian decoding. Its size can
+ *		  exceed 255 bytes; the selected wire payload must still fit 255 bytes.
+ *	@note Invalid/reserved masks, oversized payloads and insufficient destination
+ *		  sizes return sbgcCOMMAND_PARAM_ASSERT_ERROR before transmission.
+ *		  Streaming returns raw wire bytes; see @ref SBGC32_ReadDataStream.
  *
  *	####	TX —> CMD_REALTIME_DATA_CUSTOM :		10 bytes
  *	####	RX <— CMD_REALTIME_DATA_CUSTOM :		2 + ? bytes
@@ -894,7 +1058,7 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *				bit17:		sbgcRealTimeDataCustomReference_t.IMU_Angles20 [3]			RTDCF_IMU_ANGLES_20			Frw. ver. 2.70b8+	\n
  *				bit18:		sbgcRealTimeDataCustomReference_t.targetAngles20 [3]		RTDCF_TARGET_ANGLES_20		Frw. ver. 2.70b8+	\n
  *				bit19:		sbgcRealTimeDataCustomReference_t.CommunicationErrors		RTDCF_COMM_ERRORS			Frw. ver. 2.72b0+	\n
- *				bit20:		sbgcRealTimeDataCustomReference_t.SystemStateFlags			RTDCF_SYSTEM_STATE			Frw. ver. 2.73+		\n
+ *				bit20:		sbgcRealTimeDataCustomReference_t.SystemState				RTDCF_SYSTEM_STATE			Frw. ver. 2.73+		\n
  *				bit21:		sbgcRealTimeDataCustomReference_t.IMU_Quat [8]				RTDCF_IMU_QUAT				Frw. ver. 2.73+		\n
  *				bit22:		sbgcRealTimeDataCustomReference_t.targetQuat [8]			RTDCF_TARGET_QUAT			Frw. ver. 2.73+		\n
  *				bit23:		sbgcRealTimeDataCustomReference_t.IMU_ToFrameQuat [8]		RTDCF_IMU_TO_FRAME_QUAT		Frw. ver. 2.73+		\n
@@ -902,7 +1066,9 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *				bit25:		sbgcRealTimeDataCustomReference_t.swLimitsDist [3][2]		RTDCF_SW_LIMITS_DIST		Frw. ver. 2.73.8+	\n
  *				bit26:		sbgcRealTimeDataCustomReference_t.followDist [3]			RTDCF_FOLLOW_DIST			Frw. ver. 2.73.8+	\n
  *				bit27:		sbgcRealTimeDataCustomReference_t.extTargetLimitMin [3],
- *							sbgcRealTimeDataCustomReference_t.extTargetLimitMax [3]		RTDCF_EXT_TARGET_LIMIT		Frw. ver. 2.73.8+
+ *							sbgcRealTimeDataCustomReference_t.extTargetLimitMax [3]		RTDCF_EXT_TARGET_LIMIT		Frw. ver. 2.73.8+	\n
+ *				bit28: 		sbgcRealTimeDataCustomReference_t.frameCamAngles20 			RTDCF_FRAME_CAM_ANGLE_20						\n
+ *				bit29:		sbgcIMU_State_t												RTDCF_MAIN_IMU_STATE
  *
  *	@pre	Board requirements:\n
  *			ENCODERS = (1 << 2) when using RTDCF_ENCODER_RAW24 \n
@@ -984,30 +1150,28 @@ static void PostRequestRealTimeDataCustom (sbgcGeneral_t *gSBGC)
  *
  *	@return	Communication status. See @ref Readme_S2
  */
-sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void *realTimeDataCustom, ui8 size
+sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void *realTimeDataCustom, ui16 size
 													  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
 {
 	sbgcAssertFrwVer(2600)
 
-	ui32 flags = *(ui32*)realTimeDataCustom;
+	if (!realTimeDataCustom || size < 4U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
 
-	#if (SBGC_NEED_ASSERTS)
+	ui32 flags;
+	memcpy(&flags, realTimeDataCustom, sizeof(flags));
+	ui16 payloadSize = SerialAPI_RealTimeCustomPayloadSize(flags, 0);
 
-		if (SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags) != sbgcCOMMAND_OK)
-			return sbgcCOMMAND_NOT_SUPPORTED_FEATURE;
+	if (!payloadSize || payloadSize > 255U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
 
+	#if (SBGC_SYS_LITTLE_ENDIAN)
+		if (size < payloadSize + 4U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	#else
+		if (size < sizeof(sbgcRealTimeDataCustomReference_t)) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
 	#endif
 
 	#if (SBGC_NEED_ASSERTS)
-
-		if (((gSBGC->_api->baseFirmwareVersion < 2680) && (flags >= RTDCF_ENCODER_RAW24)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2687) && (flags >= RTDCF_IMU_ANGLES_RAD)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2706) && (flags >= RTDCF_SYSTEM_POWER_STATE)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2708) && (flags >= RTDCF_IMU_ANGLES_20)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2720) && (flags >= RTDCF_COMM_ERRORS)) ||
-			((gSBGC->_api->baseFirmwareVersion < 2730) && (flags >= RTDCF_SYSTEM_STATE)))
-			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
-
+		sbgcCommandStatus_t status = SerialAPI_AssertRealTimeDataCustomFlags(gSBGC, flags);
+		if (status != sbgcCOMMAND_OK) return status;
 	#endif
 
 	gSBGC->_api->startWrite(gSBGC, CMD_REALTIME_DATA_CUSTOM SBGC_ADVANCED_ARGS__);
@@ -1017,6 +1181,7 @@ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void
 
 	gSBGC->_api->startRead(gSBGC, CMD_REALTIME_DATA_CUSTOM SBGC_ADVANCED_ARGS__);
 	gSBGC->_api->assignEvent(gSBGC, PostRequestRealTimeDataCustom, realTimeDataCustom, size);
+	gSBGC->_api->definePayload(gSBGC, (ui8)payloadSize);
 	gSBGC->_api->finishRead(gSBGC);
 
 	gSBGC->_api->link(gSBGC);
@@ -1027,6 +1192,205 @@ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom (sbgcGeneral_t *gSBGC, void
 }
 /**	@}
  */
+
+
+ /**	@addtogroup	Realtime_Data_Custom
+  *	@{
+  */
+ /** @brief Decodes a CMD_REALTIME_DATA_CUSTOM2 response
+ *
+ *  @note Private function. On little-endian systems, skips the local flags
+ *		  field and copies the payload into the selected PACKED__ layout.
+ *		  On big-endian systems, decodes selected fields into the complete
+ *		  sbgcRealTimeDataCustom2Reference_t structure.
+ *
+ *  @param *gSBGC - serial connection descriptor
+ *
+ *	@see SBGC32_RequestRealTimeDataCustom2
+ */
+static void PostRequestRealTimeDataCustom2 (sbgcGeneral_t *gSBGC)
+{
+	if (curCmd_->_destinationSize < (curCmd_->_payloadSize + 4U))
+	{
+		SerialAPI_FatalErrorHandler();
+		return;
+	}
+
+ 	#if (SBGC_SYS_LITTLE_ENDIAN)
+
+ 		/* Skip flags and read */
+ 		gSBGC->_api->readBuff(gSBGC, ((ui8*)curCmdDest_) + 4U, curCmd_->_payloadSize);
+
+	#else
+
+		sbgcRealTimeDataCustom2Reference_t *realTimeDataCustom2 = curCmdDest_;
+
+		realTimeDataCustom2->timestampMs = gSBGC->_api->readWord(gSBGC);
+
+		const ui32 flags = realTimeDataCustom2->flags;
+
+		/* Data Parsing */
+		realTimeDataCustom2->dataSetFlags = (flags & RTDC2F_DATA_SET_FLAGS) ? gSBGC->_api->readLong(gSBGC) : 0;
+
+		if (flags & RTDC2F_FRAME_IMU_ANGLES)
+		{
+			realTimeDataCustom2->frameIMU_Angles[ROLL] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->frameIMU_Angles[PITCH] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->frameIMU_Angles[YAW] = (i16)gSBGC->_api->readWord(gSBGC);
+		}
+
+					if (flags & RTDC2F_FRAME_GYRO)
+					{
+						realTimeDataCustom2->frameGyro[SBGC_X] = (i16)gSBGC->_api->readWord(gSBGC);
+						realTimeDataCustom2->frameGyro[SBGC_Y] = (i16)gSBGC->_api->readWord(gSBGC);
+						realTimeDataCustom2->frameGyro[SBGC_Z] = (i16)gSBGC->_api->readWord(gSBGC);
+					}
+
+		if (flags & RTDC2F_FRAME_ACC)
+		{
+			realTimeDataCustom2->frameACC[SBGC_X] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->frameACC[SBGC_Y] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->frameACC[SBGC_Z] = (i16)gSBGC->_api->readWord(gSBGC);
+		}
+
+					if (flags & RTDC2F_DEBUG)
+						for (ui8 k = 0; k < 4; k++)
+							realTimeDataCustom2->debug[k] = (i16)gSBGC->_api->readWord(gSBGC);
+
+		if (flags & RTDC2F_MAG_SENS_DATA)
+		{
+			realTimeDataCustom2->magSensData[SBGC_X] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->magSensData[SBGC_Y] = (i16)gSBGC->_api->readWord(gSBGC);
+			realTimeDataCustom2->magSensData[SBGC_Z] = (i16)gSBGC->_api->readWord(gSBGC);
+		}
+
+					if (flags & RTDC2F_PIN_STATE)
+						gSBGC->_api->readBuff(gSBGC, realTimeDataCustom2->pinState, sizeof(realTimeDataCustom2->pinState));
+
+		if (flags & RTDC2F_STAB_ERR_AMPL)
+			for (ui8 k = 0; k < 3; k++)
+				realTimeDataCustom2->StabErrAmpl[k] = gSBGC->_api->readWord(gSBGC);
+
+	#endif
+}
+
+
+/** @brief Requests configurable realtime data using CUSTOM2
+ *
+ *  #### TX -> CMD_REALTIME_DATA_CUSTOM2 : 10 bytes
+ *  #### RX <- CMD_REALTIME_DATA_CUSTOM2 : variable payload size
+ *
+ *  @pre Initialize flags with a bitwise combination of
+ *       sbgcRealTimeDataCustom2Flag_t values:
+ *       - bit 0: frameIMU_Angles[3], RTDC2F_FRAME_IMU_ANGLES.
+ *       - bit 1: frameGyro[3], RTDC2F_FRAME_GYRO.
+ *       - bit 2: frameACC[3], RTDC2F_FRAME_ACC.
+ *       - bit 3: debug[4], RTDC2F_DEBUG.
+ *       - bit 4: magSensData[3], RTDC2F_MAG_SENS_DATA.
+ *       - bit 5: pinState[8] (ui8, 8 bytes), RTDC2F_PIN_STATE.
+ *       - bit 6: StabErrAmpl[3], RTDC2F_STAB_ERR_AMPL.
+ *       - bit 31: dataSetFlags, RTDC2F_DATA_SET_FLAGS.
+ *
+ *  @note The request contains a 32-bit mask followed by six zero reserved
+ *        bytes. The response starts with timestampMs, followed by dataSetFlags
+ *        only when bit 31 is requested. Selected groups then follow in ascending
+ *        order of bits 0 through 6. Unselected groups occupy no payload space.
+ *
+ *  @note flags is local request data, not part of the received payload.
+ *        dataSetFlags is a separate optional field returned by the controller.
+ *
+ *  @note On little-endian systems, pass a PACKED__ structure beginning with
+ *        ui32 flags and ui16 timestampMs, followed by the selected fields.
+ *        Include ui32 dataSetFlags immediately after timestampMs only when
+ *        bit 31 is requested. On big-endian systems, pass the complete
+ *        sbgcRealTimeDataCustom2Reference_t structure. Unrequested data fields
+ *        are not updated; dataSetFlags is set to zero when bit 31 is absent.
+ *
+ *  @attention Firmware: 2.74.2+.
+ *             RTDC2F_STAB_ERR_AMPL requires firmware 2.74.4+.
+ *  @note PIN_STATE occupies exactly 8 bytes. Use ui8 pinState[8] in a
+ *        little-endian packed response layout. The big-endian decoder
+ *        copies these eight bytes unchanged before reading StabErrAmpl.
+ *
+ *  @note The following example uses blocking mode.
+ *  @code
+ *      #if (SBGC_SYS_LITTLE_ENDIAN)
+ *          struct PACKED__
+ *          {
+ *              ui32 flags;
+ *              ui16 timestampMs;
+ *              ui32 dataSetFlags;
+ *              i16 frameIMU_Angles[3];
+ *          } RealTimeDataCustom2 = {0};
+ *      #else
+ *          sbgcRealTimeDataCustom2Reference_t RealTimeDataCustom2 = {0};
+ *      #endif
+ *
+ *      RealTimeDataCustom2.flags =
+ *          RTDC2F_FRAME_IMU_ANGLES | RTDC2F_DATA_SET_FLAGS;
+ *
+ *      sbgcCommandStatus_t status = SBGC32_RequestRealTimeDataCustom2(
+ *          &SBGC32_Device, &RealTimeDataCustom2, sizeof(RealTimeDataCustom2));
+ *
+ *      if (status == sbgcCOMMAND_OK)
+ *      {
+ *          // Process RealTimeDataCustom2.frameIMU_Angles.
+ *      }
+ *  @endcode
+ *
+ *  @param *gSBGC - serial connection descriptor
+ *  @param *realTimeDataCustom2 - destination with initialized flags;
+ *         must remain valid until command processing is complete
+ *  @param size - complete destination size, including local flags
+ *
+ *  @return Communication status. See @ref Readme_S2
+ */
+ sbgcCommandStatus_t SBGC32_RequestRealTimeDataCustom2 (sbgcGeneral_t *gSBGC, void *realTimeDataCustom2, ui8 size
+ 													  /** @cond */ SBGC_ADVANCED_PARAMS__ /** @endcond */ )
+ {
+ 	sbgcAssertFrwVer(2742)
+
+ 	if (!realTimeDataCustom2 || size < 4U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	ui32 flags;
+	memcpy(&flags, realTimeDataCustom2, sizeof(flags));
+	ui16 payloadSize = SerialAPI_RealTimeCustomPayloadSize(flags, 1);
+	if (!payloadSize || payloadSize > 255U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	#if (SBGC_SYS_LITTLE_ENDIAN)
+		if (size < payloadSize + 4U) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	#else
+		if (size < sizeof(sbgcRealTimeDataCustom2Reference_t)) return sbgcCOMMAND_PARAM_ASSERT_ERROR;
+	#endif
+
+ 	#if (SBGC_NEED_ASSERTS)
+
+ 		sbgcCommandStatus_t status = SerialAPI_AssertRealTimeDataCustom2Flags(gSBGC, flags);
+
+ 		if (status != sbgcCOMMAND_OK)
+ 			return status;
+
+ 		if (gSBGC->_api->baseFirmwareVersion < 2742)
+ 			return sbgcCOMMAND_NOT_SUPPORTED_BY_FIRMWARE;
+
+ 	#endif
+
+ 	gSBGC->_api->startWrite(gSBGC, CMD_REALTIME_DATA_CUSTOM2 SBGC_ADVANCED_ARGS__);
+ 	gSBGC->_api->writeLong(gSBGC, flags);
+ 	gSBGC->_api->writeEmptyBuff(gSBGC, 6);  // reserved[6]
+ 	gSBGC->_api->finishWrite(gSBGC);
+
+ 	gSBGC->_api->startRead(gSBGC, CMD_REALTIME_DATA_CUSTOM2 SBGC_ADVANCED_ARGS__);
+ 	gSBGC->_api->assignEvent(gSBGC, PostRequestRealTimeDataCustom2, realTimeDataCustom2, size);
+	gSBGC->_api->definePayload(gSBGC, (ui8)payloadSize);
+ 	gSBGC->_api->finishRead(gSBGC);
+
+ 	gSBGC->_api->link(gSBGC);
+
+ 	serialAPI_GiveToken()
+
+ 	return gSBGC->_api->exit(gSBGC);
+ }
+ /**	@}
+  */
 
 
 /**	@addtogroup	Realtime_Data_3_4

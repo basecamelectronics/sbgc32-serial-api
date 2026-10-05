@@ -600,7 +600,18 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 	{
 		sbgcConfirm_t *confirm = (sbgcConfirm_t*)curCmdDest_;
 
-		SerialAPI_SkipBytes(gSBGC, 1);  // Skip commandID
+		if ((curCmd_->_payloadSize == 0) || ((curCmd_->_commandID == CMD_ERROR) && (curCmd_->_payloadSize < 2)))
+		{
+			confirm->errorCode = sbgcERR_CMD_SIZE;
+
+			memset(confirm->errorData, 0, sizeof(confirm->errorData));
+
+			confirm->status = sbgcCONFIRM_ERROR;
+
+			return;
+		}
+
+		SerialAPI_SkipBytes(gSBGC, 1);	// Skip commandID
 
 		if (curCmd_->_commandID == CMD_CONFIRM)
 		{
@@ -629,8 +640,13 @@ static void SerialAPI_AbortLastCmd (sbgcGeneral_t *gSBGC)
 		{
 			confirm->errorCode = SerialAPI_ReadByte(gSBGC);
 
-			if (curCmd_->_payloadSize > 1)
-				SerialAPI_ReadBuff(gSBGC, confirm->errorData, 4);
+			/* Some errors (including PASSWORD_REQUIRED) have no extra data. */
+			ui8 errorDataSize = curCmd_->_payloadSize - 2U;
+			if (errorDataSize > sizeof(confirm->errorData))
+				errorDataSize = sizeof(confirm->errorData);
+			memset(confirm->errorData, 0, sizeof(confirm->errorData));
+			if (errorDataSize != 0)
+				SerialAPI_ReadBuff(gSBGC, confirm->errorData, errorDataSize);
 
 			confirm->status = sbgcCONFIRM_ERROR;
 
